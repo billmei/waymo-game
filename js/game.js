@@ -63,25 +63,29 @@
   const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: "high-performance" });
   const LOW = /[?&]low\b/.test(location.search);
   renderer.setPixelRatio(LOW ? 0.6 : Math.min(TOUCH ? 1.5 : 2, window.devicePixelRatio || 1));
-  renderer.shadowMap.enabled = !LOW;
-  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  // Slop Skies' island draws its own shading and blob shadows, so the game's toys use blob shadows too
   const scene = new T.Scene();
-  const camera = new T.PerspectiveCamera(40, 1, 0.5, 4200);
-  W.build(scene);
-  if (TOUCH) W.sun.shadow.mapSize.set(1024, 1024);
+  const camera = new T.PerspectiveCamera(40, 1, 0.5, 9000);
+  W.build(scene, renderer);
   Traffic.init(scene, 18);
-  // the depot's own fleet, parked at the chargers
-  {
-    const b = W.blocks.find((k) => k.type === "depot");
-    for (let k = 0; k < 4; k++) WG.parkedCar(scene, b.x0 + W.SW + 2 + k * 4, b.z0 + W.SW + 3.4, 0);
-    for (let k = 1; k < 4; k++) WG.parkedCar(scene, b.x0 + W.SW + 2 + k * 4, b.z1 - W.SW - 3.4, Math.PI);
-  }
-
   // the crew member
   const mii = WG.makeMii();
   scene.add(mii.root);
+  // an x-ray silhouette, so the crew member never gets lost behind a row of houses. It draws after the city but before
+  // the crew member (render order 0.5 vs 1), only where the city's depth is in front of it, and writes no depth
+  {
+    const ghost = new T.MeshBasicMaterial({ color: 0x36d3c4, depthWrite: false, depthFunc: T.GreaterDepth, fog: false });
+    const list = [];
+    mii.root.traverse((o) => o.isMesh && o.geometry.type !== "PlaneGeometry" && list.push(o));
+    for (const o of list) {
+      o.renderOrder = 1;
+      const g = new T.Mesh(o.geometry, ghost);
+      g.renderOrder = 0.5;
+      o.add(g);
+    }
+  }
   const P = {
-    pos: new T.Vector3(W.rc(2) + 0.0, 0, W.rc(3) - 7),
+    pos: new T.Vector3(W.start.x, 0, W.start.z),
     yaw: Math.PI,
     speed: 0,
     path: [],
@@ -102,13 +106,23 @@
   let markerT = 9;
 
   /* ---------- walk grid and pathfinding ---------- */
-  const GR = 104,
-    GN = GR * 2,
-    grid = new Uint8Array(GN * GN);
-  for (let j = 0; j < GN; j++)
-    for (let i = 0; i < GN; i++) grid[j * GN + i] = W.isBlocked(i - GR + 0.5, j - GR + 0.5, 0.45) ? 1 : 0;
-  const cellOf = (x, z) => [clamp(Math.floor(x + GR), 0, GN - 1), clamp(Math.floor(z + GR), 0, GN - 1)];
-  const free = (i, j) => i >= 0 && j >= 0 && i < GN && j < GN && !grid[j * GN + i];
+  // 1 m cells over the play area's bounding box, blocked by the island's colliders
+  const corners = [
+      [W.AREA.lx0, W.AREA.lz0],
+      [W.AREA.lx1, W.AREA.lz0],
+      [W.AREA.lx1, W.AREA.lz1],
+      [W.AREA.lx0, W.AREA.lz1],
+    ].map(([a, b]) => W.toWorld(a, b)),
+    X0 = Math.floor(Math.min(...corners.map((c) => c[0]))),
+    Z0 = Math.floor(Math.min(...corners.map((c) => c[1]))),
+    NX = Math.ceil(Math.max(...corners.map((c) => c[0]))) - X0,
+    NZ = Math.ceil(Math.max(...corners.map((c) => c[1]))) - Z0,
+    GN = NX,
+    grid = new Uint8Array(NX * NZ);
+  for (let j = 0; j < NZ; j++)
+    for (let i = 0; i < NX; i++) grid[j * NX + i] = W.isBlocked(X0 + i + 0.5, Z0 + j + 0.5, 0.45) ? 1 : 0;
+  const cellOf = (x, z) => [clamp(Math.floor(x - X0), 0, NX - 1), clamp(Math.floor(z - Z0), 0, NZ - 1)];
+  const free = (i, j) => i >= 0 && j >= 0 && i < NX && j < NZ && !grid[j * NX + i];
   function nearestFree(i, j) {
     if (free(i, j)) return [i, j];
     for (let r = 1; r < 12; r++)
@@ -127,9 +141,9 @@
     }
     return true;
   }
-  const gScore = new Float32Array(GN * GN),
-    from = new Int32Array(GN * GN),
-    seen = new Uint32Array(GN * GN);
+  const gScore = new Float32Array(NX * NZ),
+    from = new Int32Array(NX * NZ),
+    seen = new Uint32Array(NX * NZ);
   let stamp = 0;
   function findPath(sx, sz, tx, tz) {
     const s = nearestFree(...cellOf(sx, sz)),
@@ -180,7 +194,7 @@
     push(si, h(si));
     let found = false,
       iters = 0;
-    while (heap.length && iters++ < 60000) {
+    while (heap.length && iters++ < 250000) {
       const [, n] = popH();
       if (n === ti) {
         found = true;
@@ -207,7 +221,7 @@
     }
     if (!found) return [];
     const pts = [];
-    for (let n = ti; n !== -1; n = from[n]) pts.push([(n % GN) - GR + 0.5, ((n / GN) | 0) - GR + 0.5]);
+    for (let n = ti; n !== -1; n = from[n]) pts.push([X0 + (n % GN) + 0.5, Z0 + ((n / GN) | 0) + 0.5]);
     pts.reverse();
     if (free(...cellOf(tx, tz))) pts[pts.length - 1] = [tx, tz];
     // string-pull
@@ -960,17 +974,19 @@
   addEventListener("keydown", wake, true);
 
   /* ---------- camera ---------- */
-  let zoom = TOUCH ? 44 : 40;
-  const camPos = new T.Vector3(160, 90, 160),
-    camLook = new T.Vector3(0, 10, 0),
+  let zoom = TOUCH ? 46 : 38;
+  const CAM = { pitch: 52 };
+  const camPos = new T.Vector3(420 + Math.sin(0.6) * 2300, 640, -620 + Math.cos(0.6) * 2300),
+    camLook = new T.Vector3(420, 60, -620),
     wantPos = new T.Vector3(),
     wantLook = new T.Vector3();
   function cameraUpdate(dt) {
     let k = 2.2;
     if (G.state === "title" || G.state === "howto" || G.state === "final") {
-      const a = G.t * 0.04;
-      wantLook.set(Math.sin(a * 0.7) * 20, 8, -10);
-      wantPos.set(Math.sin(a) * 175, 88, Math.cos(a) * 175);
+      // a slow orbit over Slop Skies' San Francisco, around the downtown end of the city
+      const a = 0.6 + G.t * 0.025;
+      wantLook.set(420, 60, -620);
+      wantPos.set(420 + Math.sin(a) * 2300, 640, -620 + Math.cos(a) * 2300);
       k = 1.2;
     } else if (G.state === "brief" || G.state === "result") {
       const a = G.t * 0.06;
@@ -980,7 +996,8 @@
     } else if (JOB.active) {
       k = JOB.camera(wantPos, wantLook);
     } else {
-      const pitch = (52 * Math.PI) / 180;
+      // a 3/4 view down onto the street; the crew member shows through the houses in front as a silhouette
+      const pitch = (CAM.pitch * Math.PI) / 180;
       wantLook.set(P.pos.x, P.pos.y + 1, P.pos.z - 2);
       wantPos.set(P.pos.x, P.pos.y + 1 + Math.sin(pitch) * zoom, P.pos.z - 2 + Math.cos(pitch) * zoom);
       k = G.state === "play" ? 6 : 3;
@@ -990,6 +1007,15 @@
     camLook.lerp(wantLook, f);
     camera.position.copy(camPos);
     camera.lookAt(camLook);
+    // the aerial views need Slop Skies' long depth range, the street needs a near one
+    const far = camPos.y - W.height(camPos.x, camPos.z) > 220,
+      near = far ? 4 : 0.5,
+      farP = far ? 60000 : 9000;
+    if (camera.near !== near) {
+      camera.near = near;
+      camera.far = farP;
+      camera.updateProjectionMatrix();
+    }
   }
 
   /* ---------- the crew member ---------- */
@@ -1064,7 +1090,7 @@
         nz = P.pos.z + uz * step,
         ok = (x, z) => !W.isBlocked(x, z, 0.4);
       // if a car nudged us into a wall, let us walk out of it
-      if (!ok(P.pos.x, P.pos.z) && W.coastD(nx, nz) < W.LAND + 2) {
+      if (!ok(P.pos.x, P.pos.z) && W.inArea(nx, nz)) {
         P.pos.x = nx;
         P.pos.z = nz;
       } else if (ok(nx, nz)) {
@@ -1082,8 +1108,8 @@
       if (Math.abs(rx) > 4 || Math.abs(rz) > 4) continue;
       const along = rx * c.fwd.x + rz * c.fwd.z,
         lat = -rx * c.fwd.z + rz * c.fwd.x,
-        ea = 2.75 - Math.abs(along),
-        el = 1.4 - Math.abs(lat);
+        ea = 2.45 - Math.abs(along),
+        el = 1.25 - Math.abs(lat);
       if (ea > 0 && el > 0) {
         if (el < ea) {
           const s = Math.sign(lat) || 1;
@@ -1221,8 +1247,8 @@
     }
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();
-    W.update(G.t, dt, P.pos);
     cameraUpdate(dt);
+    W.update(G.t, dt, P.pos, camera, innerWidth, innerHeight);
     markerT += dt;
     marker.material.opacity = clamp(1 - markerT * 1.8, 0, 0.9);
     marker.scale.setScalar(1 + markerT * 1.2);
@@ -1261,5 +1287,14 @@
   if (TOUCH) document.body.classList.add("touch");
   WG.G = G;
   WG.P = P;
-  WG.debug = { scene, camera, renderer, spawnProblem, startJob, findPath };
+  WG.debug = {
+    scene,
+    camera,
+    renderer,
+    spawnProblem,
+    startJob,
+    findPath,
+    CAM,
+    setZoom: (z) => (zoom = z),
+  };
 })();

@@ -33,6 +33,37 @@
     return g;
   }
 
+  /* ---------- soft blob shadows under the toys (the island has no shadow maps either) ---------- */
+  const BLOB = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d"),
+      g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, "rgba(20,30,60,0.55)");
+    g.addColorStop(0.6, "rgba(20,30,60,0.32)");
+    g.addColorStop(1, "rgba(20,30,60,0)");
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+    const m = new T.MeshBasicMaterial({
+        map: new T.CanvasTexture(c),
+        transparent: true,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+      }),
+      geo = new T.PlaneGeometry(1, 1);
+    geo.rotateX(-Math.PI / 2);
+    return (sx, sz) => {
+      const b = new T.Mesh(geo, m);
+      b.scale.set(sx, 1, sz);
+      b.position.y = 0.06;
+      b.renderOrder = 2;
+      return b;
+    };
+  })();
+  WG.blob = BLOB;
+
   /* ---------- the robotaxi ---------- */
   const MAT = {
     body: new T.MeshPhongMaterial({ color: 0xf8f9fb, shininess: 70, specular: 0x666666 }),
@@ -143,6 +174,7 @@
       root = new T.Group(),
       g = new T.Group();
     root.add(g);
+    root.add(BLOB(2.9, 5.6));
     const body = new T.Mesh(C.body[0], C.body[1]);
     body.castShadow = true;
     g.add(body);
@@ -464,27 +496,31 @@
     car.parts.tex.needsUpdate = true;
   }
 
-  /* ---------- traffic ---------- */
-  const DIRS = [
-    [0, -1],
-    [1, 0],
-    [0, 1],
-    [-1, 0],
-  ];
-  const LANE = 2.2,
-    CURBLAT = 4.0,
-    END = 6.2,
-    CRUISE = 9;
-  const node = (i, j) => [W.rc(i), W.rc(j)];
-  const valid = (i, j) => i >= 0 && j >= 0 && i <= W.N && j <= W.N;
+  /* ---------- traffic: robotaxis on the island's street graph (world.js W.graph) ---------- */
+  // Slop Skies' streets are 8 m between the block pads: one lane each way, and pulling over half onto the curb
+  const LANE = 1.7,
+    CURBLAT = 3.3,
+    END = 5.6,
+    CRUISE = 9,
+    CAR_SCALE = 0.88;
   const locks = {};
+  const nodeAt = (k) => W.graph.nodes[k];
+  function segOf(a, b) {
+    const A = nodeAt(a),
+      B = nodeAt(b),
+      dx = B.x - A.x,
+      dz = B.z - A.z,
+      len = Math.hypot(dx, dz);
+    return { A, B, dx: dx / len, dz: dz / len, len };
+  }
 
-  function Car(scene, i, j, d, s) {
+  function Car(scene, a, b, s) {
     this.parts = makeCar();
+    this.parts.root.scale.setScalar(CAR_SCALE);
     scene.add(this.parts.root);
-    this.i = i;
-    this.j = j;
-    this.d = d;
+    this.a = a;
+    this.b = b;
+    this.seg = segOf(a, b);
     this.s = s;
     this.lat = LANE;
     this.piece = "line";
@@ -504,40 +540,41 @@
     this.place();
   }
   Car.prototype.to = function () {
-    return [this.i + DIRS[this.d][0], this.j + DIRS[this.d][1]];
+    return this.b;
   };
   Car.prototype.chooseNext = function () {
-    const [ti, tj] = this.to(),
+    const B = nodeAt(this.b),
       opts = [];
-    for (const [dd, w] of [
-      [this.d, 2],
-      [(this.d + 1) % 4, 1],
-      [(this.d + 3) % 4, 1],
-    ])
-      if (valid(ti + DIRS[dd][0], tj + DIRS[dd][1])) for (let k = 0; k < w; k++) opts.push(dd);
-    this.next = opts.length ? opts[(Math.random() * opts.length) | 0] : (this.d + 2) % 4;
+    for (const n of B.nb) {
+      if (n === this.a && B.nb.length > 1) continue;
+      const s2 = segOf(this.b, n),
+        w = s2.dx * this.seg.dx + s2.dz * this.seg.dz > 0.7 ? 2 : 1;
+      for (let k = 0; k < w; k++) opts.push(n);
+    }
+    this.next = opts.length ? opts[(Math.random() * opts.length) | 0] : this.a;
   };
   Car.prototype.linePos = function (s, lat, out) {
-    const [ax, az] = node(this.i, this.j),
-      [dx, dz] = DIRS[this.d],
-      [rx, rz] = DIRS[(this.d + 1) % 4];
-    out[0] = ax + dx * s + rx * lat;
-    out[1] = az + dz * s + rz * lat;
+    const g = this.seg;
+    out[0] = g.A.x + g.dx * s - g.dz * lat;
+    out[1] = g.A.z + g.dz * s + g.dx * lat;
     return out;
   };
   Car.prototype.startTurn = function () {
-    const [ti, tj] = this.to(),
-      [bx, bz] = node(ti, tj),
-      d1 = DIRS[this.d],
-      r1 = DIRS[(this.d + 1) % 4],
-      d2 = DIRS[this.next],
-      r2 = DIRS[(this.next + 1) % 4];
-    const p0 = this.linePos(W.P - END, this.lat, [0, 0]),
-      p1 = [bx + d2[0] * END + r2[0] * LANE, bz + d2[1] * END + r2[1] * LANE];
+    const g = this.seg,
+      g2 = segOf(this.b, this.next),
+      B = g.B,
+      dot = g.dx * g2.dx + g.dz * g2.dz;
+    const p0 = this.linePos(g.len - END, this.lat, [0, 0]),
+      p1 = [B.x + g2.dx * END - g2.dz * LANE, B.z + g2.dz * END + g2.dx * LANE];
     let c;
-    if (this.next === this.d) c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
-    else if (this.next === (this.d + 2) % 4) c = [bx + d1[0] * 2, bz + d1[1] * 2];
-    else c = [bx + r1[0] * LANE + r2[0] * LANE, bz + r1[1] * LANE + r2[1] * LANE];
+    if (dot > 0.95) c = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+    else if (dot < -0.95) c = [B.x + g.dx * 2, B.z + g.dz * 2];
+    else {
+      // where the two lanes cross: p0 + t·d1 = p1 - u·d2
+      const den = g.dx * g2.dz - g.dz * g2.dx,
+        t = ((p1[0] - p0[0]) * g2.dz - (p1[1] - p0[1]) * g2.dx) / den;
+      c = [p0[0] + g.dx * t, p0[1] + g.dz * t];
+    }
     let len = 0,
       px = p0[0],
       pz = p0[1];
@@ -549,8 +586,17 @@
       px = x;
       pz = z;
     }
-    this.turn = { p0, c, p1, len, u: 0, straight: this.next === this.d };
+    this.turn = { p0, c, p1, len, u: 0, straight: dot > 0.95, g2 };
     this.piece = "turn";
+  };
+  Car.prototype.endTurn = function () {
+    this.a = this.b;
+    this.b = this.next;
+    this.seg = this.turn.g2;
+    this.s = END;
+    this.lat = LANE;
+    this.piece = "line";
+    this.chooseNext();
   };
   const _a = [0, 0];
   Car.prototype.xz = function (out) {
@@ -562,8 +608,8 @@
   };
   Car.prototype.heading = function (out) {
     if (this.piece === "line") {
-      out[0] = DIRS[this.d][0];
-      out[1] = DIRS[this.d][1];
+      out[0] = this.seg.dx;
+      out[1] = this.seg.dz;
       return out;
     }
     const { p0, c, p1, u } = this.turn;
@@ -642,7 +688,14 @@
     return this.doorParts;
   };
   Car.prototype.canPull = function () {
-    return this.state === "drive" && this.piece === "line" && this.s > 6.4 && this.s < W.P - END - 15;
+    if (this.state !== "drive" || this.piece !== "line" || this.s < 6.4 || this.s > this.seg.len - END - 15) return false;
+    // keep clear of the street trees along the curb where it would stop
+    const p = [0, 0];
+    for (const ds of [4.8, 7, 9.2]) {
+      this.linePos(this.s + ds, CURBLAT + 0.6, p);
+      if (W.hits(p[0], p[1], 0.5)) return false;
+    }
+    return true;
   };
   Car.prototype.pullOver = function () {
     this.state = "pulling";
@@ -652,22 +705,22 @@
   const Traffic = {
     cars: [],
     init(scene, n) {
-      const used = new Set();
+      const used = new Set(),
+        N = W.graph.nodes;
       for (let k = 0; k < n; k++) {
-        let i, j, d, tries = 0;
+        let a, b, tries = 0;
         do {
-          i = (Math.random() * (W.N + 1)) | 0;
-          j = (Math.random() * (W.N + 1)) | 0;
-          d = (Math.random() * 4) | 0;
+          a = (Math.random() * N.length) | 0;
+          b = N[a].nb[(Math.random() * N[a].nb.length) | 0];
           tries++;
-        } while ((!valid(i + DIRS[d][0], j + DIRS[d][1]) || used.has(i + "," + j + "," + d)) && tries < 200);
-        used.add(i + "," + j + "," + d);
-        this.cars.push(new Car(scene, i, j, d, 8 + Math.random() * 8));
+        } while (used.has(a + ">" + b) && tries < 200);
+        used.add(a + ">" + b);
+        const len = segOf(a, b).len;
+        this.cars.push(new Car(scene, a, b, END + 2 + Math.random() * Math.max(1, len - 2 * END - 10)));
       }
     },
     update(dt, t, player, look) {
       const cars = this.cars;
-      HEAD_MAT.emissive.set(look === "dusk" ? 0xfff2b0 : look === "fog" ? 0xbbb38a : 0x333322);
       for (const c of cars) {
         let want = CRUISE;
         if (c.piece === "turn") want = c.turn.straight ? 8 : 5;
@@ -693,10 +746,10 @@
               along = rx * c.fwd.x + rz * c.fwd.z;
             if (along <= 0 || along > 14) continue;
             const lat = -rx * c.fwd.z + rz * c.fwd.x;
-            if (Math.abs(lat) > 1.45) continue;
+            if (Math.abs(lat) > 1.25) continue;
             const ofw = o.fwd.x * c.fwd.x + o.fwd.z * c.fwd.z;
             if (ofw < -0.3) continue; // oncoming
-            want = Math.min(want, Math.max(0, along - 5.6) * 1.4);
+            want = Math.min(want, Math.max(0, along - 5.2) * 1.4);
           }
           // and stop for the crew
           if (player) {
@@ -704,8 +757,8 @@
               rz = player.z - c.pos.z,
               along = rx * c.fwd.x + rz * c.fwd.z,
               lat = -rx * c.fwd.z + rz * c.fwd.x;
-            if (along > 0 && along < 9 && Math.abs(lat) < 1.7) {
-              want = Math.min(want, Math.max(0, along - 3.4) * 1.2);
+            if (along > 0 && along < 9 && Math.abs(lat) < 1.5) {
+              want = Math.min(want, Math.max(0, along - 3.2) * 1.2);
               if (c.speed < 0.5) {
                 c.wait += dt;
                 if (c.wait > 1.4 && t - c.beepT > 4) {
@@ -716,11 +769,11 @@
             } else c.wait = 0;
           }
           // one car at a time through each intersection
-          if (c.piece === "line" && W.P - END - c.s < 7) {
-            const key = c.to().join(","),
+          if (c.piece === "line" && c.seg.len - END - c.s < 7) {
+            const key = c.b,
               L = locks[key];
             if (!L || L.car === c || t - L.t > 5) locks[key] = { car: c, t: L && L.car === c ? L.t : t };
-            else want = Math.min(want, Math.max(0, W.P - END - c.s - 0.6) * 1.5);
+            else want = Math.min(want, Math.max(0, c.seg.len - END - c.s - 0.6) * 1.5);
           }
         }
         const acc = want > c.speed ? 5 : 14;
@@ -728,7 +781,7 @@
         let dist = c.speed * dt;
         while (dist > 1e-6) {
           if (c.piece === "line") {
-            const end = W.P - END;
+            const end = c.seg.len - END;
             if (c.s + dist < end) {
               c.s += dist;
               dist = 0;
@@ -744,16 +797,8 @@
               dist = 0;
             } else {
               dist -= (1 - c.turn.u) * c.turn.len;
-              const key = c.to().join(",");
-              if (locks[key] && locks[key].car === c) delete locks[key];
-              const [ti, tj] = c.to();
-              c.i = ti;
-              c.j = tj;
-              c.d = c.next;
-              c.s = END;
-              c.lat = LANE;
-              c.piece = "line";
-              c.chooseNext();
+              if (locks[c.b] && locks[c.b].car === c) delete locks[c.b];
+              c.endTurn();
             }
           }
         }
@@ -807,15 +852,6 @@
   };
   WG.Traffic = Traffic;
 
-  /* ---------- a parked robotaxi for the depot ---------- */
-  WG.parkedCar = function (scene, x, z, ry) {
-    const p = makeCar();
-    p.root.position.set(x, W.height(x, z) + W.CURB, z);
-    p.root.rotation.y = ry;
-    scene.add(p.root);
-    return p;
-  };
-
   /* ---------- the crew member ---------- */
   function makeMii(o) {
     o = o || {};
@@ -830,6 +866,7 @@
     const root = new T.Group(),
       body = new T.Group();
     root.add(body);
+    root.add(BLOB(1.1, 1.1));
     const S = (geo, m, x, y, z, sx, sy, sz, p) => add(p || body, geo, m, x, y, z, sx, sy, sz);
     // legs (pivot at the hips)
     const legs = [];

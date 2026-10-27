@@ -1,6 +1,8 @@
 # Waymo Care
 
-A browser game about being the robotaxi pit crew in a toy San Francisco. Robotaxis pull over with problems, and you run over and fix them before the rider loses patience. Every job is played right on the 3D car: the camera swoops in close and you work on the car itself.
+A browser game about being the robotaxi pit crew in [Slop Skies](https://slop.inc/)' toy San Francisco. Robotaxis pull over with problems, and you run over and fix them before the rider loses patience. Every job is played right on the 3D car: the camera swoops in close and you work on the car itself.
+
+The city is the same map as Slop Skies, with the same buildings. Your beat is the street grid of Western Addition, around Alamo Square and the Painted Ladies, with the rest of the city all around.
 
 | Job | What happened | What you do |
 | --- | --- | --- |
@@ -34,13 +36,22 @@ It also deploys as-is to GitHub Pages or any static host.
 
 ## How it's made
 
-The game is modelled on [Slop Skies](https://slop.inc/), whose shipped source is kept for reference in `reference/slop-skies/`. It uses the same stack: three.js r128 (`lib/three.min.js`), a hand-built low-poly San Francisco, and a glossy, rounded UI in the style of 2006-era console sports games.
+The game is modelled on [Slop Skies](https://slop.inc/), whose shipped source is kept for reference in `reference/slop-skies/`. It uses the same stack: three.js r128 (`lib/three.min.js`), Slop Skies' own island, and a glossy, rounded UI in the style of 2006-era console sports games.
 
-- `js/world.js`: the city. It has hills, a 5×5 street grid with crosswalks, painted-lady rows, downtown towers, the Transamerica Pyramid, Coit Tower, the Ferry Building, the Golden Gate and Bay bridges, Alcatraz and the bay, plus the three lighting looks (sun, fog, dusk). Static scenery is merged into a few vertex-coloured meshes.
-- `js/actors.js`: the robotaxi model (with a spinning lidar dome), traffic that drives the grid and pulls over when something goes wrong, status bubbles, and the big-headed crew member.
+- `js/isle.js`: the island, **generated** by `tools/extract_isle.py` from `reference/slop-skies/dr.js`. It contains Slop Skies' own `src/core.js`, `src/data.js`, `src/island.js` and `src/render.js`, verbatim:
+  - terrain and neighbourhoods
+  - Victorian terraces, flats, towers and the landmarks (Painted Ladies, City Hall, Transamerica, Salesforce, Coit Tower, both bridges and more)
+  - trees, boats, sea, sky, clouds, and their shaders and blob shadows
+
+  Don't edit `js/isle.js` by hand; run `python3 tools/extract_isle.py` to regenerate it.
+- `js/world.js`: stands the game on that island. It boots the island and reads Western Addition's street grid into a graph for the robotaxis, checking it against the island's own colliders. It answers ground-height and collision questions, and it turns Slop Skies' sky, haze and light into the three shifts: its own `promo` grade for the morning, plus Karl the Fog and Golden Hour.
+- `js/actors.js`: the robotaxi model (with a spinning lidar dome) and the big-headed crew member, both with blob shadows like the island's. It also handles traffic that drives the street graph and pulls over to the curb when something goes wrong (keeping clear of street trees), and the status bubbles.
 - `js/jobs.js`: the seven jobs, played in the 3D scene with the main camera. This covers the dirt you scrub off, the charging cart and cable, the cones you fling, the pigeons, the lidar scan rings, the cutaway cabin for vacuuming, and the skateboard. A small job bar shows the hint and progress.
 - `js/audio.js`: all music and sound effects, synthesised live with Web Audio. There are no audio files. It includes a bossa-nova menu theme, a swing-pop gameplay theme that speeds up for the last 20 seconds, a results theme, and SFX such as the referee whistle, crowd cheers, chimes, sponge squeaks, pigeon coos, lidar beeps, door slams, the vacuum's hum and the skateboard's roll.
-- `js/game.js`: the rules, rounds, scoring, camera, click-to-walk pathfinding (A* on a 1 m grid), the HUD and the screens.
+- `js/game.js`: the rules, rounds, scoring and HUD. It also covers:
+  - the camera: an aerial orbit over the city on the title screen, a 3/4 street view in play, and an X-ray silhouette when houses hide the crew member
+  - click-to-walk pathfinding: A* on a 1 m grid over the play area
+  - the screens
 - `css/style.css`: the UI.
 
 This is a fan-made game and is not affiliated with Waymo.

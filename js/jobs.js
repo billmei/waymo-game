@@ -467,7 +467,7 @@
       return this.phase === "plug" ? 0.15 * clamp(1 - this.plug.position.distanceTo(PORT) / 3, 0, 1) : 0.15 + 0.85 * this.charge;
     },
     cam() {
-      return { p: [-5.7, 3.3, 0.5], l: [-1.3, 0.75, 0.0] };
+      return { p: [-5.3, 4.8, 1.0], l: [-1.2, 0.5, 0.2] };
     },
     init() {
       const g = this.car.parts.g;
