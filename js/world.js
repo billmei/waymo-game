@@ -1,10 +1,10 @@
 /* Waymo Care · the world. The city is Slop Skies' own toy San Francisco (js/isle.js, generated from its engine: terrain,
    neighbourhoods, terraces, towers, landmarks, trees, sea, sky and clouds, all with its shaders). The game is played on
-   streets round its landmarks: each shift works a patch of one district's grid (the Marina by the Palace of Fine Arts,
-   Russian Hill to Telegraph Hill, the Financial District down to the Ferry Building, Alamo Square, Ocean Beach). This file
-   boots the island, reads the district's street grid into a graph for the robotaxis, answers ground and collision
-   questions from the island's own colliders, lets the camera see through the houses in its way, and turns Slop's look
-   into our shifts (morning, sun, Karl the Fog, dusk). */
+   streets round its landmarks: each shift works a small patch of street grid (Russian Hill between Lombard Street and
+   Coit Tower, the Presidio's Main Post, the Financial District's towers, Alamo Square, the windmills by Ocean Beach),
+   filled in by js/extras.js. This file boots the island, reads the patch's street grid into a graph for the robotaxis,
+   answers ground and collision questions from the island's own colliders, lets the camera see through the houses in its
+   way, and turns Slop's look into our shifts (morning, sun, Karl the Fog, dusk). */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -17,30 +17,17 @@
      (real-sized) robotaxis and crew. Game positions are in metres; the island's own functions take island units. ---------- */
   const SCALE = 1.6;
 
-  /* ---------- the play areas: each shift works a patch of one district's street grid (island.js DIST rows: name,
-     grid angle, u by v island units per block) round its landmarks. i0..i1, j0..j1 are the street lines that bound the
+  /* ---------- the play areas: each shift works a small patch of street grid round its landmarks. ang, u and v are the
+     grid's angle and block size in island units: a district's own (island.js DIST rows: name, grid angle, u by v), or a
+     finer one with an extra street down each block (the windmills' Sunset blocks, halved), or, for a park with no grid of
+     its own, the next district's (the Presidio takes the Marina's). i0..i1, j0..j1 are the street lines that bound the
      patch; names are the districts whose streets it keeps; pad widens the walkable ground past the streets (island units
      west, east, north, south of the grid) to take in a landmark; slope is the steepest street the robotaxis will climb;
-     avoid keeps streets off a landmark (island x, z, radius); marks are the island's landmarks the shift shows off (the
-     crew starts by the first, facing it) ---------- */
+     avoid keeps streets off a landmark (island x, z, radius); marks are the island's landmarks the shift shows off, in
+     the briefing's tour and with name tags in play (the crew starts by the first, facing it). A landmark can stand
+     outside the patch, on the skyline. js/extras.js builds the houses and buildings that fill in each patch's blocks ---------- */
   const ZONES = {
-    // the Marina's lawns round the Palace of Fine Arts and its lagoon, the Golden Gate Bridge over the Presidio
-    marina: {
-      name: "Marina",
-      label: "Marina & Presidio",
-      names: ["Marina", "Crissy Field"],
-      ang: -8,
-      u: 60,
-      v: 82,
-      i0: -7,
-      i1: -2,
-      j0: -18,
-      j1: -15,
-      pad: [50, 0, 0, 0],
-      avoid: [[-608, -1345, 48]],
-      marks: ["Palace of Fine Arts", "Golden Gate Bridge"],
-    },
-    // from the top of Lombard's crooked bricks on Russian Hill, down through North Beach and up to Coit Tower
+    // the blocks between the top of Lombard's crooked bricks on Russian Hill and Telegraph Hill, under Coit Tower
     lombard: {
       name: "Russian Hill",
       label: "Lombard to Coit Tower",
@@ -48,66 +35,75 @@
       ang: -8,
       u: 56,
       v: 76,
-      i0: 10,
-      i1: 20,
+      i0: 12,
+      i1: 18,
       j0: -16,
       j1: -14,
       slope: 0.75,
-      avoid: [
-        [375, -1226, 32],
-        [425, -1222, 32],
-        [475, -1218, 32],
-      ],
       marks: ["Lombard Street", "Coit Tower"],
     },
-    // the Financial District's towers down to the Embarcadero and the Ferry Building, Salesforce Tower on the corner
-    ferry: {
+    // the Presidio's Main Post on its plateau west of the Palace of Fine Arts, the Golden Gate Bridge over the trees
+    presidio: {
+      name: "Presidio",
+      label: "The Presidio",
+      names: ["Presidio", "Crissy Field", "Marina"],
+      ang: -8,
+      u: 60,
+      v: 82,
+      i0: -17,
+      i1: -12,
+      j0: -18,
+      j1: -15,
+      marks: ["Golden Gate Bridge", "Palace of Fine Arts"],
+    },
+    // the Financial District's towers, from the Transamerica Pyramid down to Market Street under Salesforce Tower
+    downtown: {
       name: "Financial District",
-      label: "Downtown & Ferry Building",
-      names: ["Financial District", "Embarcadero"],
+      label: "Downtown",
+      names: ["Financial District", "Embarcadero", "SoMa"],
       ang: -8,
       u: 62,
       v: 82,
-      i0: 19,
-      i1: 24,
+      i0: 17,
+      i1: 21,
       j0: -8,
       j1: -4,
-      pad: [0, 0, 0, 30],
-      marks: ["Transamerica Pyramid", "Ferry Building", "Salesforce Tower"],
+      marks: ["Transamerica Pyramid", "555 California", "Salesforce Tower"],
     },
-    // the streets round Alamo Square and the Painted Ladies, Sutro Tower on the ridge to the west
+    // the streets round Alamo Square and the Painted Ladies, Sutro Tower on the ridge to the southwest
     ladies: {
       name: "Western Addition",
-      label: "Painted Ladies & Sutro Tower",
+      label: "Alamo Square",
       names: ["Western Addition", "Haight-Ashbury", "Castro"],
       ang: -8,
       u: 62,
       v: 82,
       i0: 3,
-      i1: 8,
-      j0: -7,
-      j1: -2,
+      i1: 7,
+      j0: -6,
+      j1: -3,
+      slope: 0.5,
+      avoid: [[232, -380, 64]],
       marks: ["Alamo Square", "Painted Ladies", "Sutro Tower"],
     },
-    // the Great Highway along Ocean Beach, from the Outer Sunset past both windmills up to the ruins of Sutro Baths
-    beach: {
+    // the west end of Golden Gate Park by Ocean Beach, from the Dutch Windmill down the Great Highway to the Murphy
+    // Windmill
+    windmills: {
       name: "Ocean Beach",
-      label: "Outer Sunset & Sutro Baths",
+      label: "The windmills",
       names: ["Ocean Beach", "Sunset", "Golden Gate Park", "Richmond", "Lands End"],
       ang: 0,
       u: 60,
-      v: 132,
-      i0: -31,
+      v: 66,
+      i0: -30,
       i1: -27,
-      j0: -7,
-      j1: -1,
-      pad: [70, 0, 0, 0],
-      marks: ["Murphy Windmill", "Dutch Windmill", "Lands End ruins"],
+      j0: -6,
+      j1: -2,
+      pad: [0, 0, 25, 0],
+      marks: ["Dutch Windmill", "Murphy Windmill"],
     },
   };
-  // the island's names for its landmarks, as the game shows them
-  const MARK_NAMES = { "Lands End ruins": "Sutro Baths" };
-  let ZONE = ZONES.marina,
+  let ZONE = ZONES.lombard,
     ZA = 0,
     ZC = 1,
     ZS = 0;
@@ -161,8 +157,10 @@
       const [cx, cz] = toWorld((i + 0.5) * ZONE.u, (j + 0.5) * ZONE.v),
         row = I.ISL.DIST.find((d) => d[1] === zoneAt(cx, cz));
       p = false;
-      // a block with a grid and something built on it
-      if (row && row[6])
+      // a block the game built up (js/extras.js), or one with a grid and something built on it
+      const built = WG.extraPads && WG.extraPads[W.zoneKey];
+      if (built && built.has(i + "," + j)) p = true;
+      else if (row && row[6])
         for (let a = -2; a <= 2 && !p; a++)
           for (let b = -2; b <= 2 && !p; b++) {
             const [sx, sz] = toWorld((i + 0.5 + a * 0.18) * ZONE.u, (j + 0.5 + b * 0.18) * ZONE.v);
@@ -535,7 +533,7 @@
     seeThrough(renderer);
     addGrades();
     I.setGrade("default");
-    W.setArea("marina");
+    W.setArea("lombard");
 
     // light for the game's own toys (robotaxis, the crew), from Slop's sun
     W.hemi = new T.HemisphereLight(0xd7ecff, 0x8f7f5f, 0.6);
@@ -575,7 +573,7 @@
 
   // move the play area to another district: its street graph, paving, middle and the crew's start
   W.setArea = function (key) {
-    const z = ZONES[key] || ZONES.marina;
+    const z = ZONES[key] || ZONES.lombard;
     if (W.zone === z && W.graph) return false;
     useZone(z);
     PADS.clear();
@@ -593,7 +591,7 @@
     W.marks = (z.marks || [])
       .map((n) => I.MARKS.find((m) => m.name === n))
       .filter(Boolean)
-      .map((m) => ({ name: MARK_NAMES[m.name] || m.name, x: m.x * SCALE, z: m.z * SCALE, y: m.y * SCALE, h: m.h * SCALE }));
+      .map((m) => ({ name: m.name, x: m.x * SCALE, z: m.z * SCALE, y: m.y * SCALE, h: m.h * SCALE }));
     // the crew starts on a street corner just outside the first landmark's grounds, facing it, so its foot is in the frame
     const m0 = W.marks[0] || { x: cx, z: cz, h: 0 },
       D = clamp(footprint(m0.x, m0.z) + 8, 30, 60),
