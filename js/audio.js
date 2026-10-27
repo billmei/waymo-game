@@ -1,6 +1,7 @@
 /* Waymo Care · sound. Everything is synthesised with Web Audio: no files to load.
    Music is a small step sequencer (swung eighths) driving FM e-piano, vibes, round bass, brass stabs and a brush kit,
-   in the bright, jazzy "plaza" style of a 2006 console sports menu. Sound effects are one-shot voices on their own bus. */
+   in the bright, jazzy "plaza" style of a 2006 console sports menu. Sound effects are one-shot voices on their own bus,
+   and the voice lines (js/voice.js) have a third. */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -8,6 +9,7 @@
   let ctx = null,
     master,
     musBus,
+    voxBus,
     sfxBus,
     verb,
     verbSend,
@@ -44,6 +46,9 @@
     musBus = ctx.createGain();
     musBus.gain.value = 0.42;
     musBus.connect(master);
+    voxBus = ctx.createGain();
+    voxBus.gain.value = 1.15;
+    voxBus.connect(master);
     sfxBus = ctx.createGain();
     sfxBus.gain.value = 1.0;
     sfxBus.connect(master);
@@ -77,6 +82,15 @@
 
     if (ctx.state === "suspended") ctx.resume().catch(() => {});
     return ctx;
+  }
+
+  const dBg = (d) => Math.pow(10, d / 20);
+  const DUCK = { job: false, vox: false };
+  function applyDuck(tau) {
+    if (!ctx) return;
+    const k = DUCK.vox ? dBg(-9) : 1;
+    musBus.gain.cancelScheduledValues(ctx.currentTime);
+    musBus.gain.setTargetAtTime(0.42 * k * (DUCK.job ? 0.48 : 1), ctx.currentTime, tau);
   }
 
   /* ---------- voices ---------- */
@@ -852,8 +866,20 @@
     setIntense(on) {
       M.intense = !!on;
     },
+    // a job ducks the music a little; a voice line ducks it under the words (Slop's radio: -9 dB, quick in, slow out)
     duck(on) {
-      if (ctx) musBus.gain.setTargetAtTime(on ? 0.2 : 0.42, ctx.currentTime, 0.2);
+      DUCK.job = !!on;
+      applyDuck(0.2);
+    },
+    voxDuck(on) {
+      DUCK.vox = !!on;
+      applyDuck(on ? 0.07 : 0.42);
+    },
+    get ctx() {
+      return ctx;
+    },
+    get voxBus() {
+      return voxBus;
     },
   };
 })();

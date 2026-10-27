@@ -1,7 +1,7 @@
 /* Waymo Care · the jobs, played right on the 3D car with the main camera: the camera swoops in, you scrub, drag, fling,
    tap, vacuum or skate in the world, and a small job bar (title, hint, progress, Leave) sits over the scene.
-   dirty → scrub the spots · charge → plug in, then pump the meter · cone → fling the cones · birds → shoo them
-   reboot → key in the code · vacuum → clean the cabin (roof off) · doors → skateboard around and slam the open doors */
+   dirty → scrub the spots · charge → plug in, then pump the meter · cone → fling away the cones boxing the car in
+   birds → shoo them · reboot → key in the code · vacuum → clean the cabin (roof off) · doors → skateboard around and slam the open doors */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -254,6 +254,7 @@
       j.t += dt;
       j.update(dt);
       el.hint.textContent = j.hint();
+      el.hint.classList.toggle("nudge", !!(j.nudge && j.nudge()));
       el.bar.style.transform = "scaleX(" + clamp(j.progress(), 0, 1) + ")";
     } else {
       j.doneT += dt;
@@ -310,20 +311,20 @@
   /* dirty: scrub the spots off the car                                                    */
   /* ===================================================================================== */
   const DIRT = [0x7a5636, 0xf1f1ea, 0xb59a6a];
-  // the side of the body is a rounded box (half-width 0.95, radius 0.34, centre height 0.82)
-  function sideAt(y) {
-    const dy = Math.abs(y - 0.82) - 0.06;
-    if (dy <= 0) return [0.95, 0];
-    const nx = Math.sqrt(Math.max(0, 0.34 * 0.34 - dy * dy)),
-      ny = Math.sign(y - 0.82) * dy;
-    return [0.61 + nx, ny / 0.34, nx / 0.34];
-  }
   JOBS.dirty = {
     par() {
       return 7;
     },
     hint() {
+      if (this.nudge())
+        return TOUCH
+          ? "Can't see the rest? Hold the turn arrows to look round the other side of the car!"
+          : "Can't see the rest? Press Q or E to turn the camera round the car!";
       return TOUCH ? "Rub your finger over the dirty spots to scrub them off!" : "Hold the mouse button and scrub the dirty spots off!";
+    },
+    // nothing scrubbed for five seconds: the rest of the dirt is probably round the other side
+    nudge() {
+      return !this.done && this.t - this.lastClean > 5;
     },
     progress() {
       let s = 0;
@@ -336,29 +337,10 @@
     init() {
       const P = this.car.parts;
       P.dirt.visible = false;
-      const spots = [];
-      // the street-side flank, its windows, the hood, the roof, the dome and the tail
-      for (const [y, z, s, k] of [
-        [0.62, -1.75, 0.2, 0],
-        [0.95, -0.95, 0.26, 0],
-        [0.6, -0.15, 0.22, 2],
-        [0.88, 0.7, 0.24, 0],
-        [0.64, 1.55, 0.22, 2],
-        [0.98, 1.85, 0.15, 1],
-      ]) {
-        const [x, ny, nx] = sideAt(y);
-        spots.push([-x - 0.01, y, z, -(nx === undefined ? 1 : nx), ny, 0, s, k]);
-      }
-      spots.push(
-        [-0.875, 1.43, -0.5, -1, 0, 0, 0.17, 1],
-        [-0.875, 1.5, 0.95, -1, 0, 0, 0.15, 0],
-        [-0.35, 1.232, -1.8, 0, 1, 0, 0.24, 0],
-        [0.3, 1.232, -1.4, 0, 1, 0, 0.18, 1],
-        [-0.3, 1.895, 0.0, 0, 1, 0, 0.2, 1],
-        [0.25, 1.895, 1.0, 0, 1, 0, 0.18, 0],
-        [0, 2.37, 0.1, 0, 1, 0, 0.14, 0],
-        [-0.45, 0.82, 2.31, 0, 0, 1, 0.2, 2],
-      );
+      // the dirt sits where it landed this time (actors.js lays it out afresh for every wash)
+      const pr = this.car.problem,
+        spots = (pr.spots || (pr.spots = WG.dirtSpots(12))).map((d) => [d.p.x, d.p.y, d.p.z, d.n.x, d.n.y, d.n.z, d.s, d.k]);
+      this.lastClean = 0;
       this.splats = spots.map(([x, y, z, nx, ny, nz, s, k]) => {
         const mat = lam(DIRT[k], { transparent: true, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
           g = new T.Group();
@@ -413,6 +395,7 @@
         s.g.getWorldPosition(s.w);
         if (s.w.distanceTo(p) > 0.4 + s.size) continue;
         s.dirt -= d * 1.5 + 0.003;
+        this.lastClean = this.t;
         s.mat.opacity = 0.2 + 0.8 * Math.max(0, s.dirt);
         const k = 0.45 + 0.55 * Math.max(0, s.dirt);
         s.g.scale.set(k, 1, k);
@@ -618,39 +601,41 @@
   };
 
   /* ===================================================================================== */
-  /* cone: grab the cones and fling them off                                               */
+  /* cone: somebody boxed the car in with cones on the road; grab them and fling them away */
   /* ===================================================================================== */
   JOBS.cone = {
+    // stand clear of the ring, at the front corner on the street side
+    spot: V3(-2.9, 0, -4.3),
     par() {
-      return 1.2 + this.cones.length * 1.2;
+      return 1 + this.cones.length * 1.0;
     },
     hint() {
-      return TOUCH ? "Grab each cone and flick it off the car!" : "Grab each cone and fling it off the car! (Space flicks one)";
+      return TOUCH
+        ? "Someone boxed the car in! Grab each cone and flick it off the road."
+        : "Someone boxed the car in! Grab each cone and fling it off the road. (Space flicks one)";
     },
     progress() {
       return this.cones.filter((c) => c.st === "gone").length / this.cones.length;
     },
     cam() {
-      return { p: [-4.8, 4.6, 1.3], l: [0, 1.55, -0.4] };
+      // high on the street side, to see the whole ring of cones round the car
+      return { p: [-6.6, 7.6, 1.6], l: [-0.6, 0.2, 0] };
     },
     init() {
-      const g = this.car.parts.g;
+      const g = this.car.parts.g,
+        pr = this.car.problem;
       this.car.parts.cone.visible = false;
-      const spots = [
-        [0, 1.232, -1.55, 0.12],
-        [0, 2.37, 0.1, 0],
-        [0.25, 1.895, 0.95, -0.1],
-      ];
-      const n = this.round >= 3 ? 3 : this.round >= 2 ? 2 : Math.random() < 0.4 ? 2 : 1;
-      this.cones = spots.slice(0, n).map(([x, y, z, r]) => {
+      // the same cones you saw from the street, on the road round the car
+      const spots = pr.spots || (pr.spots = WG.coneSpots(pr.n || 3));
+      this.cones = spots.map(([x, z, r]) => {
         const o = WG.makeCone();
-        o.scale.setScalar(1.25);
-        o.position.set(x, y, z);
-        o.rotation.z = r;
+        o.scale.setScalar(1.3);
+        o.position.set(x, 0, z);
+        o.rotation.y = r;
         own(this, o, g);
-        const c = { o, home: V3(x, y, z), r, st: "on", samples: [] };
+        const c = { o, home: V3(x, 0, z), r: 0, st: "on", samples: [] };
         o.traverse((m) => m.isMesh && (m.userData.cone = c));
-        mesh(SPH, HIT, 0, 0.45, 0, 0.45, 0.6, 0.45, o).userData.cone = c;
+        mesh(SPH, HIT, 0, 0.45, 0, 0.5, 0.65, 0.5, o).userData.cone = c;
         return c;
       });
       this.hits = [];
@@ -677,6 +662,7 @@
       c.samples.push([performance.now() / 1000, p.clone()]);
       if (c.samples.length > 6) c.samples.shift();
       this.car.parts.g.worldToLocal(p);
+      p.y = Math.max(0, p.y);
       c.o.position.copy(p);
       c.o.rotation.z = clamp((p.x - c.home.x) * 0.4, -0.7, 0.7);
     },
@@ -700,28 +686,26 @@
         A().sfx("bonk");
       }
     },
+    // away from the car: a gentle toss carries on outward
+    out(c, k) {
+      const out = c.o.getWorldPosition(V3(0, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
+      out.y = 0;
+      return out.normalize().multiplyScalar(k);
+    },
     fling(c, v) {
-      if (v.length() < 3) {
-        // a gentle toss: carry on outward from the car
-        const out = c.o.getWorldPosition(V3(0, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 1.2, 0)));
-        out.y = 0;
-        v = out.normalize().multiplyScalar(4);
-      }
+      if (v.length() < 3) v = this.out(c, 5);
       if (v.length() > 16) v.setLength(16);
       v.y = Math.max(v.y, 3.5);
       c.st = "gone";
       launch(c.o, v);
       A().sfx("whoosh");
-      word(["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0], c.o.getWorldPosition(V3(0, 0, 0)), "orange");
+      word(["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0], c.o.getWorldPosition(V3(0, 1, 0)), "orange");
       if (this.cones.every((k) => k.st === "gone")) this.allT = 0.4;
     },
     key(code) {
       if (code !== "Space" && code !== "Enter") return false;
       const c = this.cones.find((k) => k.st === "on");
-      if (c) {
-        const side = this.car.parts.g.localToWorld(V3(-1, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
-        this.fling(c, side.multiplyScalar(rr(4, 7)).add(V3(0, rr(4, 6), 0)));
-      }
+      if (c) this.fling(c, this.out(c, rr(5, 7)).add(V3(0, rr(4, 6), 0)));
       return true;
     },
     update(dt) {
@@ -731,6 +715,12 @@
           c.o.rotation.z += (c.r - c.o.rotation.z) * Math.min(1, dt * 12);
           if (c.o.position.distanceTo(c.home) < 0.01) c.st = "on";
         } else if (c.st === "on") c.o.rotation.z = c.r + Math.sin(this.t * 3 + c.home.z) * 0.04;
+      }
+      // the boxed-in car honks now and then
+      this.honk = (this.honk || 1.5) - dt;
+      if (this.honk <= 0 && !this.done) {
+        this.honk = rr(2.5, 4);
+        A().sfx("carBeep", 0);
       }
       if (this.allT !== undefined && !this.done) {
         this.allT -= dt;

@@ -74,6 +74,7 @@
     tail: new T.MeshLambertMaterial({ color: 0xe8433f, emissive: 0x330000 }),
     teal: new T.MeshLambertMaterial({ color: 0x36d3c4, emissive: 0x0b4a44 }),
     mud: new T.MeshLambertMaterial({ color: 0x7a5636 }),
+    dust: new T.MeshLambertMaterial({ color: 0xb59a6a }),
     poop: new T.MeshLambertMaterial({ color: 0xf0efe6 }),
     cone: new T.MeshLambertMaterial({ color: 0xff7a1a }),
     white: new T.MeshLambertMaterial({ color: 0xffffff }),
@@ -188,25 +189,11 @@
     ring.castShadow = false;
     const wheels = [],
       headMat = HEAD_MAT;
-    // the problems you can see from the street
+    // the problems you can see from the street (the dirt and the cones are laid out afresh each time)
     const dirt = new T.Group();
     g.add(dirt);
-    const splats = [
-      [0.3, 1.24, -1.5, 0.32, 0.05, 0.26, 0],
-      [-0.4, 1.23, -1.1, 0.22, 0.05, 0.2, 1],
-      [0.97, 0.8, 0.6, 0.04, 0.24, 0.42, 0],
-      [-0.97, 0.75, -0.2, 0.04, 0.22, 0.36, 0],
-      [0.97, 0.66, -1.2, 0.04, 0.16, 0.3, 0],
-      [-0.97, 0.9, 1.3, 0.04, 0.2, 0.28, 1],
-      [0.2, 1.9, 0.6, 0.26, 0.04, 0.2, 1],
-      [-0.2, 1.89, -0.2, 0.18, 0.04, 0.16, 0],
-      [0.0, 0.95, 2.31, 0.5, 0.2, 0.04, 0],
-    ];
-    for (const [x, y, z, sx, sy, sz, k] of splats) add(dirt, GEO.sph, k ? MAT.poop : MAT.mud, x, y, z, sx, sy, sz);
     dirt.visible = false;
-    const cone = makeCone();
-    cone.position.set(0, 1.22, -1.55);
-    cone.rotation.z = 0.15;
+    const cone = new T.Group();
     cone.visible = false;
     g.add(cone);
     const birds = new T.Group();
@@ -241,13 +228,71 @@
   }
   WG.makeCar = makeCar;
 
+  // dirt where it lands this time: rays from all round the car onto its body, spread out, clear of the wheels, the skirt
+  // and the lidar
+  let _probe = null;
+  const _ray = new T.Raycaster(),
+    UP = new T.Vector3(0, 1, 0);
+  function dirtSpots(n) {
+    if (!_probe) {
+      const C = carGeo();
+      _probe = new T.Mesh(C.body[0], new T.MeshBasicMaterial({ side: T.FrontSide }));
+      _probe.updateMatrixWorld(true);
+    }
+    const out = [],
+      o = new T.Vector3(),
+      at = new T.Vector3();
+    for (let k = 0; out.length < n && k < 600; k++) {
+      const a = Math.random() * Math.PI * 2,
+        e = Math.random() * 1.2;
+      o.set(Math.cos(a) * Math.cos(e) * 6, 0.8 + Math.sin(e) * 6, Math.sin(a) * Math.cos(e) * 7);
+      at.set((Math.random() - 0.5) * 1.2, 0.7 + Math.random() * 1.1, (Math.random() - 0.5) * 4);
+      _ray.set(o, at.sub(o).normalize());
+      const h = _ray.intersectObject(_probe, false)[0];
+      if (!h || !h.face) continue;
+      const p = h.point,
+        nr = h.face.normal.clone();
+      if (p.y < 0.55 || p.y > 2.05) continue;
+      if (Math.abs(p.x) > 0.9 && p.y < 0.9 && Math.abs(Math.abs(p.z) - 1.45) < 0.55) continue;
+      if (out.some((q) => q.p.distanceTo(p) < 0.62)) continue;
+      const q = Math.random();
+      out.push({ p: p.clone().addScaledVector(nr, 0.01), n: nr, s: 0.15 + Math.random() * 0.12, k: q < 0.22 ? 1 : q < 0.5 ? 2 : 0 });
+    }
+    return out;
+  }
+  WG.dirtSpots = dirtSpots;
+  // where the cones go when somebody boxes a car in: on the road ahead, behind and on the street side (car units)
+  const CONE_RING = [
+    [0.1, -3.3],
+    [-0.9, -3.0],
+    [0.95, -3.1],
+    [-1.75, -1.6],
+    [-1.85, 0.2],
+    [-1.75, 1.8],
+    [0.0, 3.25],
+    [-0.95, 3.0],
+    [0.9, 3.1],
+  ];
+  function coneSpots(n) {
+    // always one ahead and one behind, so the car really is stuck; the rest anywhere round it
+    const front = [0, 1, 2].sort(() => Math.random() - 0.5),
+      back = [6, 7, 8].sort(() => Math.random() - 0.5),
+      rest = front.slice(1).concat(back.slice(1), [3, 4, 5]).sort(() => Math.random() - 0.5),
+      pick = [front[0], back[0]].concat(rest).slice(0, n);
+    return pick.map((i) => {
+      const [x, z] = CONE_RING[i];
+      return [x + (Math.random() - 0.5) * 0.3, z + (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3];
+    });
+  }
+  WG.coneSpots = coneSpots;
+
   /* ---------- status icons (also used by the HUD) ---------- */
   const KIND = {
     dirty: { col: "#3aa6e8", label: "Dirty" },
     charge: { col: "#3cc35a", label: "Low battery" },
-    cone: { col: "#ff8a1f", label: "Coned" },
+    cone: { col: "#ff8a1f", label: "Coned in" },
     birds: { col: "#8a7fd8", label: "Pigeons" },
-    reboot: { col: "#e8508a", label: "Lost" },
+    reboot: { col: "#e8508a", label: "Needs reboot" },
     vacuum: { col: "#e0a21a", label: "Messy inside" },
     doors: { col: "#1fae9f", label: "Doors open" },
   };
@@ -642,9 +687,18 @@
   Car.prototype.setProblem = function (p) {
     this.problem = p;
     const P = this.parts;
-    P.dirt.visible = p && p.type === "dirty";
-    P.cone.visible = p && p.type === "cone";
-    P.birds.visible = p && p.type === "birds";
+    // fresh dirt (and cones) in fresh places every time
+    if (p && p.type === "dirty") {
+      if (!p.spots) p.spots = dirtSpots(12);
+      this.showDirt(p.spots);
+    }
+    if (p && p.type === "cone") {
+      if (!p.spots) p.spots = coneSpots(p.n || 3);
+      this.showCones(p.spots);
+    }
+    P.dirt.visible = !!(p && p.type === "dirty");
+    P.cone.visible = !!(p && p.type === "cone");
+    P.birds.visible = !!(p && p.type === "birds");
     P.sprite.visible = !!p;
     // doors passengers left open
     const want = p && p.type === "doors" ? p.doors || [] : [];
@@ -659,6 +713,28 @@
     P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : 0x36d3c4);
     P.ring.material.emissive.set(p && p.type === "charge" ? 0x551010 : 0x0b4a44);
     this.bubbleT = 0;
+  };
+  Car.prototype.showDirt = function (spots) {
+    const D = this.parts.dirt;
+    while (D.children.length) D.remove(D.children[0]);
+    for (const s of spots) {
+      const g = new T.Group();
+      g.position.copy(s.p);
+      g.quaternion.setFromUnitVectors(UP, s.n);
+      add(g, GEO.sph, s.k === 1 ? MAT.poop : s.k === 2 ? MAT.dust : MAT.mud, 0, 0, 0, s.s, 0.03, s.s * 0.8);
+      D.add(g);
+    }
+  };
+  // the cones stand on the road round the car (the car's group sits at road level)
+  Car.prototype.showCones = function (spots) {
+    const D = this.parts.cone;
+    while (D.children.length) D.remove(D.children[0]);
+    for (const [x, z, r] of spots) {
+      const c = makeCone();
+      c.position.set(x, 0, z);
+      c.rotation.y = r;
+      D.add(c);
+    }
   };
   const DOOR_PANEL = roundBox(0.07, 0.62, 0.98, 0.03, 2),
     DOOR_GLASS = roundBox(0.05, 0.34, 0.78, 0.03, 2),
@@ -706,7 +782,16 @@
 
   const Traffic = {
     cars: [],
+    // a fresh fleet on the current street graph (the shifts work different districts)
+    reset() {
+      for (const c of this.cars) this.scene.remove(c.parts.root);
+      this.cars = [];
+      for (const k in locks) delete locks[k];
+      this.init(this.scene, this.n);
+    },
     init(scene, n) {
+      this.scene = scene;
+      this.n = n;
       const used = new Set(),
         N = W.graph.nodes;
       for (let k = 0; k < n; k++) {
@@ -807,6 +892,8 @@
         c.place();
         // animation
         const P = c.parts;
+        // a car that needs nothing looks like it
+        if (!c.problem && (P.dirt.visible || P.cone.visible || P.birds.visible || P.sprite.visible)) c.setProblem(null);
         let spin = 7;
         if (c.problem && c.problem.type === "reboot") {
           const calm = c.problem.calm || 0;
