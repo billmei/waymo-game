@@ -2,7 +2,9 @@
    the markers is plain JSON: tools/gen_voice.py reads it to record voice/<id>.mp3 for every line. Ids that share a
    prefix and end in a number (disp.good.1, disp.good.2, …) are variants the game picks between.
    Dispatch talks like Karl on Slop Skies' radio: bubbly, kind and a little cheeky, cheering you on and never scolding.
-   The riders are a different San Franciscan every time: a tourist, a grandma, a founder late for standup, a jaded local. */
+   The riders are a cast of San Franciscans, each with their own voice: TOURIST (a wide-eyed dad from Ohio), INFLUENCER
+   (vocal fry, every smudge a crisis), GRANDMA (sweet, a little confused), FOUNDER (late for standup), LOCAL (deadpan,
+   seen it all), ARTIST (dreamy, from the Mission) and STUDENT (frazzled and sorry). */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -43,21 +45,21 @@
     "disp.final.silver": ["DISPATCH", "Silver! A really solid day. I'm proud of you!"],
     "disp.final.bronze": ["DISPATCH", "Bronze! You kept the city moving. That counts!"],
     "disp.final.none": ["DISPATCH", "Rough day, huh? Grab a coffee. We'll get them next time!"],
-    "rider.dirty.1": ["RIDER", "Is that a seagull's doing? On my window? I'm on vacation!"],
-    "rider.dirty.2": ["RIDER", "I can't see the Bay Bridge! I came all the way from Ohio!"],
-    "rider.dirty.3": ["RIDER", "I cannot take a selfie in a muddy car. I just can't."],
-    "rider.charge.1": ["RIDER", "It says two percent, dear. Is that bad?"],
-    "rider.charge.2": ["RIDER", "We stopped? I have a standup in four minutes!"],
-    "rider.charge.3": ["RIDER", "Two percent? Same, buddy. Same."],
-    "rider.cone.1": ["RIDER", "Cones! All the way around us! Is this an art piece?"],
-    "rider.cone.2": ["RIDER", "Coned in. Again. Classic San Francisco."],
-    "rider.birds.1": ["RIDER", "The pigeons won't let us leave! Do I tip them?"],
-    "rider.birds.2": ["RIDER", "There's a gull staring at me through the roof. He wants my fries."],
-    "rider.reboot.1": ["RIDER", "The car says it can't see. Honestly? Me neither!"],
-    "rider.reboot.2": ["RIDER", "Hello? Car? Are you okay in there? Blink twice!"],
-    "rider.vacuum.1": ["RIDER", "Whose sock is this? Why is it warm?"],
-    "rider.vacuum.2": ["RIDER", "I am not sitting in that popcorn. I'm wearing linen!"],
-    "rider.doors.1": ["RIDER", "Oops! Did I leave the door open? All of them?"],
-    "rider.doors.2": ["RIDER", "Sorry! My hands were full of burritos!"]
+    "rider.dirty.1": ["TOURIST", "Is that a seagull's doing? On my window? I'm on vacation!"],
+    "rider.dirty.2": ["TOURIST", "I can't see the Bay Bridge! I came all the way from Ohio!"],
+    "rider.dirty.3": ["INFLUENCER", "I cannot take a selfie in a muddy car. I just can't."],
+    "rider.charge.1": ["GRANDMA", "It says two percent, dear. Is that bad?"],
+    "rider.charge.2": ["FOUNDER", "We stopped? I have a standup in four minutes!"],
+    "rider.charge.3": ["LOCAL", "Two percent? Same, buddy. Same."],
+    "rider.cone.1": ["ARTIST", "Cones! All the way around us! Is this an art piece?"],
+    "rider.cone.2": ["LOCAL", "Coned in. Again. Classic San Francisco."],
+    "rider.birds.1": ["ARTIST", "The pigeons won't let us leave! Do I tip them?"],
+    "rider.birds.2": ["LOCAL", "There's a gull staring at me through the roof. He wants my fries."],
+    "rider.reboot.1": ["GRANDMA", "The car says it can't see. Honestly? Me neither!"],
+    "rider.reboot.2": ["FOUNDER", "Hello? Car? Are you okay in there? Blink twice!"],
+    "rider.vacuum.1": ["GRANDMA", "Whose sock is this? Why is it warm?"],
+    "rider.vacuum.2": ["INFLUENCER", "I am not sitting in that popcorn. I'm wearing linen!"],
+    "rider.doors.1": ["STUDENT", "Oops! Did I leave the door open? All of them?"],
+    "rider.doors.2": ["STUDENT", "Sorry! My hands were full of burritos!"]
   } /*END*/;
 })();

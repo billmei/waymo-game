@@ -4,17 +4,21 @@
 Slop Skies' radio lines (reference/slop-skies/voice/) are short mono mp3s: 32 kHz, 56 kbps, 1.5 to 3 seconds,
 loudness-matched, with no silence at either end. This script asks a text-to-speech service for each line, then uses
 ffmpeg to trim, normalise and encode it the same way, and writes voice/index.json (the list the game checks before it
-tries to play a file; lines without a file fall back to the "babble" placeholder voice).
+tries to play a file).
 
 Providers (pick one with --provider):
-  elevenlabs  ELEVENLABS_API_KEY; voices are ids from your ElevenLabs voice library (or Voice Design)
+  elevenlabs  ELEVENLABS_API_KEY; eleven_v3, acting out the [audio tags] in tools/voice_direction.json
   openai      OPENAI_API_KEY; gpt-4o-mini-tts, with a speaking-style instruction per speaker
+
+Each speaker in js/lines.js (Dispatch and the seven riders) has their own voice and personality: see SPEAKERS below.
 
 Usage:
   python3 tools/gen_voice.py --provider openai                 # every line that has no file yet
   python3 tools/gen_voice.py --provider openai --only disp.good # lines whose id starts with disp.good
   python3 tools/gen_voice.py --provider elevenlabs --force      # re-record everything
   python3 tools/gen_voice.py --index-only                       # just rebuild voice/index.json
+  python3 tools/gen_voice.py --from-dir takes/                  # encode takes saved as takes/<id>.mp3 (e.g. from
+                                                                # the ElevenLabs app) instead of calling a service
 
 Edit SPEAKERS below to choose the voices. Use designed or stock voices, not clones of real people.
 """
@@ -31,21 +35,86 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LINES_JS = os.path.join(ROOT, "js", "lines.js")
 OUT = os.path.join(ROOT, "voice")
 
-# who says what: a voice per speaker for each provider, and how they should sound
+# who says what: a voice per speaker for each provider, and how they should sound. The ElevenLabs voices are the ones
+# the recorded lines in voice/ use: Dispatch, Tourist and Influencer were made with Voice Design, the rest are stock
+# ElevenLabs voices. Override any of them with VOICE_<SPEAKER>=<voice id>.
+def _spk(name, style, openai_voice, elevenlabs_id):
+    return {
+        "style": style,
+        "openai": {"voice": openai_voice},
+        "elevenlabs": {"voice_id": os.environ.get("VOICE_" + name, elevenlabs_id)},
+    }
+
+
 SPEAKERS = {
-    "DISPATCH": {
-        "style": "A bubbly, kind fleet dispatcher on a two-way radio, like Karl, the friendly radio voice of Slop Skies. "
+    "DISPATCH": _spk(
+        "DISPATCH",
+        "A bubbly, kind fleet dispatcher on a two-way radio, like Karl, the friendly radio voice of Slop Skies. "
         "Bright and playful, a little cheeky, always encouraging and never bossy or shouty, smiling as they talk.",
-        "openai": {"voice": "coral"},
-        "elevenlabs": {"voice_id": os.environ.get("VOICE_DISPATCH", "")},
-    },
-    "RIDER": {
-        "style": "A robotaxi passenger in San Francisco, comic and expressive. Play the character the line suggests: "
-        "a delighted tourist, a sweet grandma, a stressed founder late for standup, a deadpan local.",
-        "openai": {"voice": "ballad"},
-        "elevenlabs": {"voice_id": os.environ.get("VOICE_RIDER", "")},
-    },
+        "coral",
+        "bJjxezNCwWpBRZx2u0Bf",  # "Waymo Care - Dispatch" (Voice Design)
+    ),
+    "TOURIST": _spk(
+        "TOURIST",
+        "A wide-eyed Midwestern dad from Ohio on his first trip to San Francisco. Loud, earnest and easily amazed, "
+        "flustered and indignant in a harmless, lovable way.",
+        "ash",
+        "6ui9ZqWTggkoymSPMSag",  # "Waymo Care - Tourist" (Voice Design)
+    ),
+    "INFLUENCER": _spk(
+        "INFLUENCER",
+        "A dramatic young influencer with a Californian vocal fry. Slow and theatrical: every small inconvenience is a "
+        "crisis. Exasperated and self-absorbed, but funny.",
+        "shimmer",
+        "paGnAuwQGTexFrQQrwfB",  # "Waymo Care - Influencer" (Voice Design)
+    ),
+    "GRANDMA": _spk(
+        "GRANDMA",
+        "A sweet, slightly confused grandmother in her late seventies. Soft, warm and polite, calls everyone dear, "
+        "chuckles at her own jokes, curious rather than worried.",
+        "sage",
+        "vFLqXa8bgbofGarf6fZh",  # "Grandma Muffins Oxley" (voice library)
+    ),
+    "FOUNDER": _spk(
+        "FOUNDER",
+        "A stressed, over-caffeinated startup founder, always late for standup. Fast, clipped and a bit breathless; "
+        "impatient but never mean.",
+        "nova",
+        "EXAVITQu4vr4xnSDxMaL",  # "Sarah" (ElevenLabs stock voice)
+    ),
+    "LOCAL": _spk(
+        "LOCAL",
+        "A jaded San Francisco local who has seen it all. Low, gravelly and unimpressed; flat, deadpan and dry, with "
+        "weary pauses.",
+        "onyx",
+        "LysucvtFmzi1NVAE0rKp",  # "Marshal - Grumpy Sourpuss" (voice library)
+    ),
+    "ARTIST": _spk(
+        "ARTIST",
+        "A dreamy, mellow Mission District artist. Airy and laid-back, slow and wondering, finds everything fascinating "
+        "and a little cosmic.",
+        "fable",
+        "SAz9YHcvj6GT2YYXdXww",  # "River" (ElevenLabs stock voice)
+    ),
+    "STUDENT": _spk(
+        "STUDENT",
+        "A frazzled, apologetic college student. Young, fast and sheepish, with a nervous laugh; scatterbrained but "
+        "good-natured.",
+        "echo",
+        "TX3LPaxmHKxFdv7VOQHJ",  # "Liam" (ElevenLabs stock voice)
+    ),
 }
+
+# ElevenLabs' v3 and v4 models act out [audio tags]: this is how each line was performed. The tags go to the text-to-
+# speech service only; the caption in the game is the plain line from js/lines.js. Lines not listed are read as written.
+DIRECTION_JSON = os.path.join(ROOT, "tools", "voice_direction.json")
+
+
+def load_direction():
+    if not os.path.exists(DIRECTION_JSON):
+        return {}
+    with open(DIRECTION_JSON, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def load_lines():
@@ -77,17 +146,10 @@ def tts_openai(text, spk):
 
 def tts_elevenlabs(text, spk):
     key = os.environ["ELEVENLABS_API_KEY"]
-    vid = spk["elevenlabs"]["voice_id"]
-    if not vid:
-        sys.exit("Set VOICE_DISPATCH / VOICE_RIDER to ElevenLabs voice ids (or edit SPEAKERS).")
     return post(
-        "https://api.elevenlabs.io/v1/text-to-speech/" + vid + "?output_format=mp3_44100_128",
+        "https://api.elevenlabs.io/v1/text-to-speech/" + spk["elevenlabs"]["voice_id"] + "?output_format=mp3_44100_128",
         {"xi-api-key": key, "Content-Type": "application/json"},
-        {
-            "text": text,
-            "model_id": "eleven_multilingual_v2",
-            "voice_settings": {"stability": 0.35, "similarity_boost": 0.8, "style": 0.55, "use_speaker_boost": True},
-        },
+        {"text": text, "model_id": "eleven_v3"},
     )
 
 
@@ -121,22 +183,35 @@ def main():
     ap.add_argument("--provider", choices=["openai", "elevenlabs"])
     ap.add_argument("--only", default="", help="only ids starting with this")
     ap.add_argument("--force", action="store_true", help="re-record lines that already have a file")
+    ap.add_argument("--from-dir", help="encode <dir>/<id>.mp3 takes instead of calling a service")
     ap.add_argument("--index-only", action="store_true")
     args = ap.parse_args()
     lines = load_lines()
+    direction = load_direction()
     os.makedirs(OUT, exist_ok=True)
     if not args.index_only:
-        if not args.provider:
-            ap.error("--provider is required (or pass --index-only)")
+        if not args.provider and not args.from_dir:
+            ap.error("--provider or --from-dir is required (or pass --index-only)")
         if not shutil.which("ffmpeg"):
             sys.exit("ffmpeg is needed to trim and encode the lines")
-        tts = tts_openai if args.provider == "openai" else tts_elevenlabs
         for k, (who, text) in lines.items():
             dest = os.path.join(OUT, k + ".mp3")
             if not k.startswith(args.only) or (os.path.exists(dest) and not args.force):
                 continue
-            print(f"{k:24} {who:9} {text}")
-            encode(tts(text, SPEAKERS[who]), dest)
+            if args.from_dir:
+                take = os.path.join(args.from_dir, k + ".mp3")
+                if not os.path.exists(take):
+                    continue
+                print(f"{k:24} {who:10} {take}")
+                with open(take, "rb") as f:
+                    encode(f.read(), dest)
+            elif args.provider == "openai":
+                print(f"{k:24} {who:10} {text}")
+                encode(tts_openai(text, SPEAKERS[who]), dest)
+            else:
+                said = direction.get(k, text)
+                print(f"{k:24} {who:10} {said}")
+                encode(tts_elevenlabs(said, SPEAKERS[who]), dest)
     write_index(lines)
 
 
