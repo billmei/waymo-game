@@ -108,46 +108,6 @@
     return V.buf[id];
   }
 
-  // the placeholder voice: a syllable per couple of letters, pitched by the letters.
-  // Each character babbles at their own pitch, so even unrecorded lines tell them apart.
-  const PITCH = { DISPATCH: 330, TOURIST: 210, INFLUENCER: 300, GRANDMA: 360, FOUNDER: 280, LOCAL: 150, ARTIST: 240, STUDENT: 260 };
-  function babble(ctx, who, text) {
-    const dest = A().voxBus,
-      base = PITCH[who] || 240 + Math.random() * 160,
-      words = text.replace(/[^a-zA-Z' ]/g, "").split(/\s+/).filter(Boolean);
-    let t = ctx.currentTime + 0.06;
-    const t0 = t;
-    for (const w of words) {
-      const syl = Math.max(1, Math.round(w.length / 2.6));
-      for (let s = 0; s < syl; s++) {
-        const ch = w.charCodeAt(Math.min(w.length - 1, s * 2)) || 97,
-          f = base * (1 + ((ch % 7) - 3) * 0.045) * (s === syl - 1 && /[!?]/.test(text) ? 1.12 : 1),
-          d = 0.075 + (ch % 3) * 0.012,
-          o = ctx.createOscillator(),
-          g = ctx.createGain(),
-          bp = ctx.createBiquadFilter();
-        o.type = "triangle";
-        o.frequency.setValueAtTime(f, t);
-        o.frequency.linearRampToValueAtTime(f * (0.94 + (ch % 5) * 0.03), t + d);
-        bp.type = "bandpass";
-        bp.frequency.value = f * (2.2 + (ch % 4) * 0.5);
-        bp.Q.value = 1.4;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(0.16, t + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0008, t + d);
-        o.connect(bp);
-        bp.connect(g);
-        o.connect(g);
-        g.connect(dest);
-        o.start(t);
-        o.stop(t + d + 0.02);
-        t += d + 0.022;
-      }
-      t += 0.05;
-    }
-    return t - t0 + 0.1;
-  }
-
   function show(q) {
     const el = $("#radio");
     if (!el) return;
@@ -194,23 +154,20 @@
       q.end = V.t + read;
       return;
     }
-    A().voxDuck(true);
-    const p = V.known.has(q.id) && !V.bad[q.id] ? load(q.id) : null;
-    if (p)
-      Promise.resolve(p).then((b) => {
-        if (V.cur !== q) return;
-        if (!b) {
-          q.end = V.t + Math.max(read, babble(ctx, q.who, q.text));
-          return;
-        }
-        const s = ctx.createBufferSource();
-        s.buffer = b;
-        s.connect(A().voxBus);
-        s.start();
-        q.src = s;
-        q.end = V.t + Math.max(read * 0.8, b.duration + 0.35);
-      });
-    else q.end = V.t + Math.max(read, babble(ctx, q.who, q.text));
+    Promise.resolve(p).then((b) => {
+      if (V.cur !== q) return;
+      if (!b) {
+        q.end = V.t + read;
+        return;
+      }
+      A().voxDuck(true);
+      const s = ctx.createBufferSource();
+      s.buffer = b;
+      s.connect(A().voxBus);
+      s.start();
+      q.src = s;
+      q.end = V.t + Math.max(read * 0.8, b.duration + 0.35);
+    });
   }
 
   function update(dt) {
