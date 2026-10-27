@@ -14,9 +14,11 @@
     verb,
     verbSend,
     noiseBuf;
-  let muted = false;
+  let muted = false,
+    musicOn = true;
   try {
     muted = localStorage.getItem("wc.muted") === "1";
+    musicOn = localStorage.getItem("wc.music") !== "0";
   } catch (e) {}
 
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -44,7 +46,7 @@
     comp.connect(ctx.destination);
 
     musBus = ctx.createGain();
-    musBus.gain.value = 0.42;
+    musBus.gain.value = musicOn ? 0.42 : 0;
     musBus.connect(master);
     voxBus = ctx.createGain();
     voxBus.gain.value = 1.15;
@@ -90,7 +92,7 @@
     if (!ctx) return;
     const k = DUCK.vox ? dBg(-9) : 1;
     musBus.gain.cancelScheduledValues(ctx.currentTime);
-    musBus.gain.setTargetAtTime(0.42 * k * (DUCK.job ? 0.48 : 1), ctx.currentTime, tau);
+    musBus.gain.setTargetAtTime(musicOn ? 0.42 * k * (DUCK.job ? 0.48 : 1) : 0, ctx.currentTime, tau);
   }
 
   /* ---------- voices ---------- */
@@ -859,6 +861,17 @@
         localStorage.setItem("wc.muted", muted ? "1" : "0");
       } catch (e) {}
       if (ctx) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05);
+    },
+    // the background music on or off (the pause menu's setting); the sound effects and voices keep playing
+    get musicOn() {
+      return musicOn;
+    },
+    setMusicOn(on) {
+      musicOn = !!on;
+      try {
+        localStorage.setItem("wc.music", musicOn ? "1" : "0");
+      } catch (e) {}
+      applyDuck(0.08);
     },
     setTempo(mul) {
       M.tempoMul = mul;

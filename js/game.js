@@ -1109,6 +1109,22 @@
     A.sfx("back");
     toTitle();
   });
+  // the pause menu's settings: background music, and the voices (with their captions)
+  function syncSettings() {
+    $("#pz-music").setAttribute("aria-checked", String(A.musicOn));
+    $("#pz-voice").setAttribute("aria-checked", String(VOX.on));
+  }
+  on("pz-music", () => {
+    A.setMusicOn(!A.musicOn);
+    A.sfx("select");
+    syncSettings();
+  });
+  on("pz-voice", () => {
+    VOX.setOn(!VOX.on);
+    A.sfx("select");
+    syncSettings();
+  });
+  syncSettings();
   const sndBtn = $("#snd");
   function syncSnd() {
     sndBtn.classList.toggle("off", A.muted);
