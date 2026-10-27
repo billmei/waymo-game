@@ -34,13 +34,14 @@ OUT = os.path.join(ROOT, "voice")
 # who says what: a voice per speaker for each provider, and how they should sound
 SPEAKERS = {
     "DISPATCH": {
-        "style": "An upbeat, warm fleet dispatcher on a two-way radio, like a cheerful sports-game announcer. "
-        "Quick, punchy and encouraging, smiling as they talk.",
+        "style": "A bubbly, kind fleet dispatcher on a two-way radio, like Karl, the friendly radio voice of Slop Skies. "
+        "Bright and playful, a little cheeky, always encouraging and never bossy or shouty, smiling as they talk.",
         "openai": {"voice": "coral"},
         "elevenlabs": {"voice_id": os.environ.get("VOICE_DISPATCH", "")},
     },
     "RIDER": {
-        "style": "A slightly flustered but friendly robotaxi passenger in San Francisco, comic and expressive.",
+        "style": "A robotaxi passenger in San Francisco, comic and expressive. Play the character the line suggests: "
+        "a delighted tourist, a sweet grandma, a stressed founder late for standup, a deadpan local.",
         "openai": {"voice": "ballad"},
         "elevenlabs": {"voice_id": os.environ.get("VOICE_RIDER", "")},
     },
