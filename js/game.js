@@ -1,4 +1,4 @@
-/* Waymo Care · the game: three shifts on the San Francisco fleet crew. Walk (WASD / arrows, or click / tap to go),
+/* Waymo Care · the game: five shifts on the San Francisco fleet crew, each round a different set of landmarks. Walk (WASD / arrows, or click / tap to go),
    reach a robotaxi that needs help and do the job. Faster and calmer riders mean more points; streaks multiply them. */
 (function () {
   "use strict";
@@ -19,47 +19,76 @@
   /* ---------- rounds ---------- */
   const SHIFTS = [
     {
-      name: "Morning Rush",
-      look: "day",
-      blurb: "Sunny skies over the Financial District. The commuters are in — and leaving muddy footprints, open doors and the odd ring of traffic cones behind them.",
+      name: "Bridge View",
+      look: "morning",
+      blurb:
+        "Morning by the Palace of Fine Arts, with the Golden Gate Bridge over the Presidio. The early riders left crumbs, flat batteries and open doors behind them.",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
-      patience: 42,
-      kinds: ["dirty", "charge", "cone", "doors"],
+      patience: 44,
+      kinds: ["vacuum", "charge", "doors"],
       key: 0,
-      zone: "downtown",
+      zone: "marina",
     },
     {
-      name: "Karl the Fog",
-      look: "fog",
-      blurb: "Karl the Fog rolls over the Outer Sunset off the Pacific. Some cars need a reboot, and the night crowd left popcorn everywhere.",
+      name: "Crooked Street",
+      look: "day",
+      blurb:
+        "Sunshine from the top of Lombard Street, down through North Beach and up Telegraph Hill to Coit Tower. Mind the hills, and the birds on the warm sensors.",
+      dur: 100,
+      every: [5, 7],
+      max: 3,
+      patience: 42,
+      kinds: ["vacuum", "charge", "doors", "birds"],
+      key: 2,
+      zone: "lombard",
+    },
+    {
+      name: "Lunch Rush",
+      look: "day",
+      blurb:
+        "Noon in the Financial District, from the Transamerica Pyramid down to the Ferry Building, Salesforce Tower on the corner. The towers empty out, and the gulls have been at the paintwork.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
-      patience: 38,
-      kinds: ["dirty", "charge", "cone", "reboot", "vacuum"],
-      key: 2,
-      zone: "sunset",
+      patience: 40,
+      kinds: ["vacuum", "charge", "doors", "birds", "dirty"],
+      key: 3,
+      zone: "ferry",
     },
     {
       name: "Golden Hour",
       look: "dusk",
-      blurb: "Golden hour in the Mission! Everything goes wrong at once — and the seagulls are out.",
+      blurb:
+        "Golden hour on Alamo Square: the Painted Ladies glow and Sutro Tower stands on the ridge. Somebody's been boxing the cars in with traffic cones.",
+      dur: 100,
+      every: [4.2, 6],
+      max: 4,
+      patience: 38,
+      kinds: ["vacuum", "charge", "doors", "birds", "dirty", "cone"],
+      key: 5,
+      zone: "ladies",
+    },
+    {
+      name: "Karl the Fog",
+      look: "fog",
+      blurb:
+        "Karl the Fog rolls in off the Pacific over Ocean Beach, from the Outer Sunset past both windmills up to the ruins of Sutro Baths. Everything goes wrong at once, and the seagulls are out!",
       dur: 100,
       every: [3.8, 5.4],
       max: 5,
-      patience: 34,
-      kinds: ["dirty", "charge", "cone", "reboot", "birds", "vacuum", "doors"],
-      key: 5,
-      zone: "mission",
+      patience: 38,
+      kinds: ["vacuum", "charge", "doors", "birds", "dirty", "cone", "reboot"],
+      key: 7,
+      zone: "beach",
     },
   ];
   const MEDALS = [
-    { name: "Platinum", at: 6200, col: "plat" },
-    { name: "Gold", at: 4600, col: "gold" },
-    { name: "Silver", at: 3000, col: "silver" },
-    { name: "Bronze", at: 1500, col: "bronze" },
+    { name: "Platinum", at: 10300, col: "plat" },
+    { name: "Gold", at: 7700, col: "gold" },
+    { name: "Silver", at: 5000, col: "silver" },
+    { name: "Bronze", at: 2500, col: "bronze" },
   ];
 
   /* ---------- renderer and scene ---------- */
@@ -372,13 +401,17 @@
   function moveDistrict(zone) {
     if (!W.setArea(zone)) return;
     buildGrid();
+    Traffic.n = W.fleet;
     Traffic.reset();
+    CAM.yaw = W.start.yaw;
+    CAM.lift = 0;
     P.pos.set(W.start.x, 0, W.start.z);
     P.pos.y = W.groundY(P.pos.x, P.pos.z);
     P.path = [];
     P.target = null;
     P.speed = 0;
     snapCamera = true;
+    makeTags();
   }
   const JOBNAME = {
     dirty: "Wash",
@@ -491,12 +524,13 @@
     const s = shift(),
       cand = Traffic.cars.filter((c) => c.canPull() && !c.problem && c.coolT === undefined);
     if (!cand.length) return false;
-    // prefer cars a short jog away
+    // prefer cars a short jog away (the longer patches, from Lombard to Coit or along Ocean Beach, still send you across
+    // now and then)
     let best = null,
       bw = -1;
     for (const c of cand) {
       const d = Math.hypot(c.pos.x - P.pos.x, c.pos.z - P.pos.z),
-        w = (d < 14 ? 0.3 : d < 95 ? 1 : 0.35) * rr(0.5, 1.5);
+        w = (d < 14 ? 0.3 : d < 95 ? 1 : 1 / (1 + ((d - 95) / 120) ** 2)) * rr(0.5, 1.5);
       if (w > bw) {
         bw = w;
         best = c;
@@ -747,6 +781,39 @@
     }, 1600 + (delay || 0) * 1000);
   }
   const floaters = [];
+  // the shift's landmarks, named over the city (in the briefing, the one the camera is touring)
+  const tags = [];
+  function makeTags() {
+    for (const t of tags.splice(0)) t.e.remove();
+    for (const m of W.marks) {
+      const e = document.createElement("div");
+      e.className = "tag";
+      e.textContent = m.name;
+      e.style.opacity = 0;
+      $("#tags").appendChild(e);
+      // over its top, or over its foot when the top is out of the frame
+      tags.push({ e, m, p: [new T.Vector3(m.x, m.y + m.h + 4, m.z), new T.Vector3(m.x, m.y + Math.min(m.h, 12), m.z)] });
+    }
+  }
+  makeTags();
+  function placeTags() {
+    const v = new T.Vector3(),
+      street = (G.state === "play" || G.state === "ready") && !JOB.active,
+      tour = G.state === "brief" ? tourMark() : null;
+    for (const t of tags) {
+      let o = 0;
+      if (street || t.m === tour)
+        for (const q of t.p) {
+          v.copy(q).project(camera);
+          if (!(v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05)) continue;
+          o = t.m === tour ? 1 : clamp((1700 - camera.position.distanceTo(q)) / 600, 0, 1);
+          t.e.style.transform =
+            "translate(" + ((v.x * 0.5 + 0.5) * innerWidth).toFixed(1) + "px," + ((-v.y * 0.5 + 0.5) * innerHeight - 14).toFixed(1) + "px) translate(-50%,-100%)";
+          break;
+        }
+      if (+t.e.style.opacity !== o) t.e.style.opacity = o;
+    }
+  }
   function placeFloaters() {
     const v = new T.Vector3();
     for (const e of floaters) {
@@ -1150,9 +1217,9 @@
 
   /* ---------- camera ---------- */
   const S = W.SCALE;
-  let zoom = TOUCH ? 27 : 22;
+  let zoom = TOUCH ? 34 : 30;
   // yaw turns the view around the crew member (Q / E, right-drag, or the on-screen arrows); jobYaw orbits the car in a job
-  const CAM = { pitch: 46, lift: 0, yaw: 0, jobYaw: 0, jobPitch: 0 };
+  const CAM = { pitch: 34, lift: 0, yaw: W.start.yaw, jobYaw: 0, jobPitch: 0 };
   let snapCamera = false;
   const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
   function turnCamera(dyaw, dpitch) {
@@ -1169,20 +1236,22 @@
     wantPos = new T.Vector3(),
     wantLook = new T.Vector3(),
     _o = new T.Vector3();
-  // is the view from look to pos blocked by the island (a house, a tower, a hill)?
-  function blockedLine(a, b) {
+  // is the view from look to pos blocked by the island? Only hills count when the houses go see-through (in play and in
+  // jobs, world.js W.see); the aerial views also keep clear of the houses and towers
+  function blockedLine(a, b, houses) {
     const n = Math.ceil(a.distanceTo(b) / 1.2);
     for (let k = 2; k <= n; k++) {
       const t = k / n,
         x = a.x + (b.x - a.x) * t,
         y = a.y + (b.y - a.y) * t,
         z = a.z + (b.z - a.z) * t;
-      if (y < W.height(x, z) + 0.6 || W.hitsAt(x, y, z, 0.8)) return true;
+      if (y < W.height(x, z) + 0.6 || (houses && W.hitsAt(x, y, z, 0.8))) return true;
     }
     return false;
   }
-  // the lowest elevation (radians, from minA) at which the camera clears the houses, swinging up over the look point
-  function clearAngle(look, pos, minA) {
+  // the lowest elevation (radians, from minA) at which the camera clears the hills (and the houses), swinging up over the
+  // look point
+  function clearAngle(look, pos, minA, houses) {
     _o.subVectors(pos, look);
     const L = _o.length(),
       h = Math.hypot(_o.x, _o.z) || 1e-3,
@@ -1191,7 +1260,7 @@
       p = new T.Vector3();
     for (let a = minA; a < 1.52; a += 0.06) {
       p.set(look.x + hx * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + hz * Math.cos(a) * L);
-      if (!blockedLine(look, p)) return a;
+      if (!blockedLine(look, p, houses)) return a;
     }
     return 1.52;
   }
@@ -1201,11 +1270,15 @@
       h = Math.hypot(_o.x, _o.z) || 1e-3;
     pos.set(look.x + (_o.x / h) * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + (_o.z / h) * Math.cos(a) * L);
   }
-  function clearShot(look, pos) {
+  function clearShot(look, pos, houses) {
     _o.subVectors(pos, look);
     const a0 = Math.atan2(_o.y, Math.hypot(_o.x, _o.z));
-    if (blockedLine(look, pos)) setElevation(look, pos, clearAngle(look, pos, a0));
+    if (blockedLine(look, pos, houses)) setElevation(look, pos, clearAngle(look, pos, a0, houses));
   }
+  // the briefing tours the shift's landmarks, a few seconds on each, circling it with the landmark to the right of the
+  // briefing card on a wide screen
+  const TOUR = 6;
+  const tourMark = () => (W.marks.length ? W.marks[Math.floor(G.stateT / TOUR) % W.marks.length] : null);
   function cameraUpdate(dt) {
     let k = 2.2;
     if (G.state === "play") {
@@ -1218,11 +1291,27 @@
       wantLook.set(420 * S, 60 * S, -620 * S);
       wantPos.set((420 + Math.sin(a) * 2300) * S, 640 * S, (-620 + Math.cos(a) * 2300) * S);
       k = 1.2;
+    } else if (G.state === "brief" && tourMark()) {
+      const m = tourMark(),
+        a = G.t * 0.07 + W.marks.indexOf(m) * 1.9,
+        r = clamp(m.h * 1.5 + 30, 50, 650);
+      wantLook.set(m.x, m.y + m.h * 0.45, m.z);
+      wantPos.set(m.x + Math.sin(a) * r, m.y + m.h * 0.55 + r * 0.3, m.z + Math.cos(a) * r);
+      clearShot(wantLook, wantPos, false);
+      if (camera.aspect > 1.3) {
+        // aim left of the landmark, so it stands in the right-hand part of the frame
+        const d = wantLook.distanceTo(wantPos),
+          side = d * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect * 0.42;
+        _o.subVectors(wantLook, wantPos).normalize();
+        wantLook.x += _o.z * side;
+        wantLook.z -= _o.x * side;
+      }
+      k = 1.2;
     } else if (G.state === "brief" || G.state === "result") {
       const a = G.t * 0.06;
       wantLook.set(P.pos.x, P.pos.y + 2, P.pos.z);
       wantPos.set(P.pos.x + Math.sin(a) * 26, P.pos.y + 16, P.pos.z + Math.cos(a) * 26);
-      clearShot(wantLook, wantPos);
+      clearShot(wantLook, wantPos, true);
       k = 1.5;
     } else if (JOB.active) {
       k = JOB.camera(wantPos, wantLook);
@@ -1238,16 +1327,16 @@
           a = clamp(Math.atan2(_o.y, Math.hypot(_o.x, _o.z)) + CAM.jobPitch, 0.08, 1.45);
         wantPos.set(wantLook.x + (x / h) * Math.cos(a) * L, wantLook.y + Math.sin(a) * L, wantLook.z + (z / h) * Math.cos(a) * L);
       }
-      clearShot(wantLook, wantPos);
+      clearShot(wantLook, wantPos, false);
     } else {
-      // close behind and above the crew member, looking along the camera's heading (north to start with). Where the houses
-      // would block the view the camera swings up over the rooftops (and eases back down once it can)
+      // close behind and above the crew member, looking along the camera's heading (toward the shift's landmark to start
+      // with). Houses in the way go see-through; only a hill swings the camera up (easing back down once it can)
       const pitch = (CAM.pitch * Math.PI) / 180,
         sy = Math.sin(CAM.yaw),
         cy = Math.cos(CAM.yaw);
       wantLook.set(P.pos.x - sy, P.pos.y + 1.6, P.pos.z - cy);
       wantPos.set(wantLook.x + sy * Math.cos(pitch) * zoom, wantLook.y + Math.sin(pitch) * zoom, wantLook.z + cy * Math.cos(pitch) * zoom);
-      const need = clearAngle(wantLook, wantPos, pitch);
+      const need = clearAngle(wantLook, wantPos, pitch, false);
       CAM.lift = need > CAM.lift ? need : Math.max(need, CAM.lift - dt * 0.35);
       if (CAM.lift > pitch) setElevation(wantLook, wantPos, CAM.lift);
       k = G.state === "play" ? 6 : 3;
@@ -1258,6 +1347,11 @@
     camLook.lerp(wantLook, f);
     camera.position.copy(camPos);
     camera.lookAt(camLook);
+    // the houses between the camera and the crew member (or, in a job, the car) go see-through
+    const street = G.state === "play" || G.state === "ready" || G.state === "timeup" || G.state === "pause";
+    if (!street) W.see(null);
+    else if (JOB.active) W.see(_o.set(camLook.x, Math.min(camLook.y, P.pos.y), camLook.z));
+    else W.see(P.pos);
     // the aerial views need Slop Skies' long depth range, the street needs a near one
     const far = camPos.y - W.height(camPos.x, camPos.z) > 220,
       near = far ? 4 : 0.3,
@@ -1551,6 +1645,7 @@
     renderer.render(scene, camera);
     drawHud(dt);
     placeFloaters();
+    placeTags();
   }
 
   function resize() {

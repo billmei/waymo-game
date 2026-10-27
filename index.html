@@ -59,6 +59,7 @@
       <div id="h-prompt" class="prompt" hidden></div>
       <div id="h-tip" class="tip" hidden></div>
     </div>
+    <div id="tags" aria-hidden="true"></div>
     <div id="floaters" aria-live="polite"></div>
     <div id="radio" aria-live="polite"><span class="r-who"></span><span class="r-txt"></span></div>
     <div id="big" aria-live="assertive"></div>
@@ -101,8 +102,9 @@
         <div class="panel-b">
           <p class="lead">
             You are the robotaxi pit crew. When a car near you pulls over with a bubble over its roof, run to it and fix the problem right
-            there on the street before the rider runs out of patience. You work three shifts of 100 seconds, each in a different part of
-            town: Downtown's Financial District, the foggy Outer Sunset and the Mission.
+            there on the street before the rider runs out of patience. You work five shifts of 100 seconds, each round a different set of
+            landmarks: the Palace of Fine Arts by the Golden Gate Bridge, Lombard Street to Coit Tower, Downtown to the Ferry Building,
+            the Painted Ladies under Sutro Tower, and the windmills and Sutro Baths on foggy Ocean Beach.
           </p>
           <ul class="how-jobs">
             <li data-k="dirty"><canvas width="64" height="64"></canvas><b>Wash</b><span>Hold and drag the sponge to scrub off mud and bird droppings.</span></li>
@@ -111,7 +113,7 @@
             <li data-k="birds"><canvas width="64" height="64"></canvas><b>Shoo birds</b><span>Pigeons love warm sensors. Tap them to send them off. Gulls take two.</span></li>
             <li data-k="reboot"><canvas width="64" height="64"></canvas><b>Reboot</b><span>The car needs rebooting. Key in the restart code with the arrows.</span></li>
             <li data-k="vacuum"><canvas width="64" height="64"></canvas><b>Vacuum</b><span>The roof comes off! Sweep the vacuum over the crumbs, popcorn and lost socks.</span></li>
-            <li data-k="doors"><canvas width="64" height="64"></canvas><b>Close doors</b><span>Riders left the doors open. Hop on your skateboard and slam them shut.</span></li>
+            <li data-k="doors"><canvas width="64" height="64"></canvas><b>Close doors</b><span>Riders left the doors open. Run round the car and bump them shut.</span></li>
           </ul>
           <div class="how-ctl">
             <div><b>Move</b><span class="desk">WASD / arrow keys, or click the street</span><span class="tch">Tap (or hold) where you want to go</span></div>
@@ -130,7 +132,7 @@
     <!-- ===== shift briefing ===== -->
     <section id="brief" class="screen" hidden>
       <div class="panel">
-        <header class="panel-h"><small id="br-n">Shift 1 of 3</small><span id="br-t">Morning Rush</span></header>
+        <header class="panel-h"><small id="br-n">Shift 1 of 5</small><span id="br-t">Bridge View</span></header>
         <div class="panel-b">
           <p class="lead" id="br-p"></p>
           <p class="sub">Jobs this shift</p>
@@ -146,7 +148,7 @@
     <!-- ===== shift results ===== -->
     <section id="result" class="screen" hidden>
       <div class="panel">
-        <header class="panel-h"><small id="rs-t">Morning Rush</small><span id="rs-n">Shift complete!</span></header>
+        <header class="panel-h"><small id="rs-t">Bridge View</small><span id="rs-n">Shift complete!</span></header>
         <div class="panel-b">
           <dl class="stats">
             <div><dt>Cars helped</dt><dd id="rs-done">0</dd></div>
@@ -225,7 +227,6 @@
         <div class="jm-track"><i class="jm-good"></i><i class="jm-perfect"></i><b id="job-needle"></b></div>
         <div class="jm-batt"><span><i id="job-batt-i"></i></span><b id="job-batt-t">8%</b></div>
       </div>
-      <button type="button" id="job-ollie" hidden>Ollie!</button>
       <div id="job-code" hidden>
         <div class="code-row" id="job-code-row"></div>
         <div class="code-pad">

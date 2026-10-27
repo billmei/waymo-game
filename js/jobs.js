@@ -1,7 +1,7 @@
 /* Waymo Care · the jobs, played right on the 3D car with the main camera: the camera swoops in, you scrub, drag, fling,
-   tap, vacuum or skate in the world, and a small job bar (title, hint, progress, Leave) sits over the scene.
+   tap, vacuum or run about in the world, and a small job bar (title, hint, progress, Leave) sits over the scene.
    dirty → scrub the spots · charge → plug in, then pump the meter · cone → fling away the cones boxing the car in
-   birds → shoo them · reboot → key in the code · vacuum → clean the cabin (roof off) · doors → skateboard around and slam the open doors */
+   birds → shoo them · reboot → key in the code · vacuum → clean the cabin (roof off) · doors → run round the car and bump the open doors shut */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -158,11 +158,6 @@
     el.code = $("#job-code");
     el.row = $("#job-code-row");
     $("#job-leave").addEventListener("click", () => J.cancel());
-    el.ollie = $("#job-ollie");
-    el.ollie.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      if (J.active && J.active.key && !J.active.done) J.active.key("Space");
-    });
     el.code.querySelectorAll("button[data-k]").forEach((b) =>
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -203,7 +198,6 @@
     el.title.textContent = TITLE[kind];
     el.root.dataset.kind = kind;
     el.root.hidden = false;
-    el.ollie.hidden = kind !== "doors";
     const ix = el.icon.getContext("2d");
     ix.clearRect(0, 0, 64, 64);
     WG.drawIcon(ix, kind, 32, 34, 1);
@@ -1162,17 +1156,17 @@
   };
 
   /* ===================================================================================== */
-  /* doors: hop on a skateboard and slam the doors the passengers left open                */
+  /* doors: run round the car and bump shut the doors the passengers left open             */
   /* ===================================================================================== */
   JOBS.doors = {
     drives: true,
     par() {
-      return 2.5 + this.open.length * 1.6;
+      return 3 + this.open.length * 1.9;
     },
     hint() {
       return TOUCH
-        ? "Skate into the open doors to slam them shut! Hold to steer."
-        : "Skate into the open doors to slam them shut! WASD / arrows (or hold the mouse) to steer, Space to ollie.";
+        ? "Run into the open doors to bump them shut! Hold to steer."
+        : "Run into the open doors to bump them shut! WASD / arrows (or hold the mouse) to steer.";
     },
     progress() {
       return this.open.filter((d) => d.shut).length / this.open.length;
@@ -1183,33 +1177,17 @@
         l = V3(c.x, c.y + 0.5, c.z).lerp(P.pos, 0.55);
       const asp = env.camera.aspect,
         f = asp < 1.25 ? Math.min(2, Math.pow(1.25 / asp, 0.7)) : 1;
-      // steep and high, so the row houses never get between the camera and the skater
+      // steep and high, so the whole car and the runner stay in view
       return { world: true, p: l.clone().add(V3(0, 17 * f, 6 * f)), l, k: 4 };
     },
     init() {
       const D = this.car.ensureDoors(),
         want = this.car.problem.doors || [0, 2];
       this.open = want.map((i) => Object.assign(D[i], { i, shut: false, k: 0 }));
-      // the board
-      const b = new T.Group();
-      mesh(WG.roundBox(0.32, 0.05, 1.0, 0.024, 2), lam(0xff5a7a), 0, 0.12, 0, 1, 1, 1, b);
-      mesh(WG.roundBox(0.3, 0.012, 0.92, 0.006, 1), lam(0x2b3038), 0, 0.15, 0, 1, 1, 1, b);
-      for (const [x, z] of [
-        [-0.11, -0.32],
-        [0.11, -0.32],
-        [-0.11, 0.32],
-        [0.11, 0.32],
-      ]) {
-        const w = mesh(CYL, lam(0xffd23a), x, 0.05, z, 0.05, 0.05, 0.05, b);
-        w.rotation.z = Math.PI / 2;
-      }
-      this.board = own(this, b);
       env.P.vel = V3(0, 0, 0);
-      this.jump = 0;
       this.steer = null;
-      this.lean = 0;
-      A().sfx("ollie");
-      word("Board on!", env.P.pos.clone().add(V3(0, 2.5, 0)), "teal");
+      this.phase = 0;
+      this.stepI = 0;
     },
     down() {
       this.steerOn = true;
@@ -1222,16 +1200,9 @@
       if (this.pressed && this.ptr) this.steer = env.pickGround(this.ptr.x, this.ptr.y);
     },
     key(code) {
-      if (code === "Space") {
-        if (this.jump <= 0) {
-          this.jump = 0.6;
-          A().sfx("ollie");
-        }
-        return true;
-      }
       return /^(Arrow|Key[WASD])/.test(code);
     },
-    // move the skater (called by the game in place of walking)
+    // move the runner (called by the game in place of walking): quick to start and stop, no coasting
     drive(dt, ix, iz) {
       const P = env.P,
         v = P.vel;
@@ -1251,36 +1222,20 @@
         }
       }
       if (this.done) dx = dz = 0;
-      v.x += dx * 26 * dt;
-      v.z += dz * 26 * dt;
-      const fr = dx || dz ? 0.7 : 2.2;
-      v.multiplyScalar(Math.max(0, 1 - fr * dt));
-      const sp = Math.hypot(v.x, v.z);
-      if (sp > 12) v.multiplyScalar(12 / sp);
+      const k = Math.min(1, dt * 12);
+      v.x += (dx * 9 - v.x) * k;
+      v.z += (dz * 9 - v.z) * k;
       const ok = (x, z) => !W.isBlocked(x, z, 0.45);
       const nx = P.pos.x + v.x * dt,
         nz = P.pos.z + v.z * dt;
       if (ok(nx, P.pos.z)) P.pos.x = nx;
-      else {
-        v.x *= -0.4;
-        A().sfx("bonk");
-      }
+      else v.x = 0;
       if (ok(P.pos.x, nz)) P.pos.z = nz;
-      else {
-        v.z *= -0.4;
-        A().sfx("bonk");
-      }
+      else v.z = 0;
       const spd = Math.hypot(v.x, v.z);
-      if (spd > 0.6) {
-        const want = Math.atan2(-v.x, -v.z);
-        let d = want - P.yaw;
-        d = Math.atan2(Math.sin(d), Math.cos(d));
-        this.lean += (clamp(d * 2, -0.5, 0.5) - this.lean) * Math.min(1, dt * 6);
-        P.yawWant = want;
-      } else this.lean *= 0.9;
+      if (spd > 0.6) P.yawWant = Math.atan2(-v.x, -v.z);
       P.speed = spd;
-      A().loop("skate", this.jump > 0 ? 0 : Math.min(1, spd / 10));
-      // slam any open door we roll into
+      // bump shut any open door we run into
       if (!this.done)
         for (const d of this.open) {
           if (d.shut) continue;
@@ -1295,30 +1250,26 @@
             d.shut = true;
             d.k = 0;
             A().sfx("slam");
-            const air = this.jump > 0;
-            word(air ? "AIR SLAM!" : ["SLAM!", "Shut!", "Bam!"][(Math.random() * 3) | 0], b.clone().add(V3(0, 1.4, 0)), air ? "gold" : "teal");
+            word(["SLAM!", "Shut!", "Bam!", "Hip check!"][(Math.random() * 4) | 0], b.clone().add(V3(0, 1.4, 0)), "teal");
             sparkle(b, 5, 1.6);
             this.car.sad = 0.25;
           }
         }
     },
+    // a running stride, as the crew member walks about the street
     pose(mii, dt) {
-      const P = env.P;
-      let jy = 0;
-      if (this.jump > 0) {
-        this.jump -= dt;
-        jy = Math.sin(((0.6 - this.jump) / 0.6) * Math.PI) * 0.9;
-        if (this.jump <= 0) A().sfx("land");
-      }
-      const s = 1 / mii.root.scale.x;
-      mii.body.position.y = (0.15 + jy) * s;
-      mii.body.rotation.set(-0.05, 0.55, this.lean * 0.6);
-      mii.legs[0].rotation.set(0, 0, -0.28);
-      mii.legs[1].rotation.set(0, 0, 0.28);
-      mii.arms[0].rotation.set(Math.sin(this.t * 3) * 0.2, 0, -1.15);
-      mii.arms[1].rotation.set(-Math.sin(this.t * 3) * 0.2, 0, 1.15);
-      this.board.position.set(P.pos.x, P.pos.y + jy, P.pos.z);
-      this.board.rotation.set(0, P.yaw, this.jump > 0 ? ((0.6 - this.jump) / 0.6) * Math.PI * 2 : this.lean * 0.3);
+      const sp = Math.min(1.2, env.P.speed / 9);
+      this.phase += dt * (4 + 10 * sp);
+      const sw = Math.sin(this.phase) * 0.9 * sp;
+      mii.legs[0].rotation.set(sw, 0, 0);
+      mii.legs[1].rotation.set(-sw, 0, 0);
+      mii.arms[0].rotation.set(-sw * 1.1, 0, -0.18);
+      mii.arms[1].rotation.set(sw * 1.1, 0, 0.18);
+      mii.body.position.y = Math.abs(Math.sin(this.phase)) * 0.11 * sp;
+      mii.body.rotation.set(-0.16 * sp, 0, 0);
+      const stepI = Math.floor(this.phase / Math.PI);
+      if (stepI !== this.stepI && sp > 0.4) A().sfx("step");
+      this.stepI = stepI;
     },
     update(dt) {
       for (const d of this.open)
@@ -1330,7 +1281,6 @@
       if (!this.done && this.open.every((d) => d.shut)) finish(this);
     },
     cleanup(ok) {
-      A().loop("skate", 0);
       if (!ok && this.car.problem) this.car.problem.doors = this.open.filter((d) => !d.shut).map((d) => d.i);
       const mii = env.mii;
       mii.body.position.y = 0;
