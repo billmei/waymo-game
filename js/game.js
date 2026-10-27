@@ -452,12 +452,13 @@
     setTimeout(() => G.state === "play" && G.round === r && VOX.say("disp.start." + W.zoneKey), 700);
   }
   function timeUp() {
+    // the shift ends now, even mid-job
+    if (JOB.active) JOB.close();
     setState("timeup");
     big("Time's up!", "up");
     VOX.interrupt("disp.timeup");
     A.music(null);
     A.sfx("timeup");
-    if (JOB.active) JOB.cancel();
     P.path = [];
     P.target = null;
   }
@@ -1579,12 +1580,11 @@
           A.sfx(sec % 2 ? "tick" : "tock");
         }
       }
-      if (G.left <= 0 && !JOB.active) {
+      if (G.left <= 0) {
         G.left = 0;
         timeUp();
         return;
       }
-      if (G.left <= 0) G.left = 0;
       // spawn
       if (G.left > 6) {
         G.spawnT -= dt;

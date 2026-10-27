@@ -239,6 +239,12 @@
     A().sfx("back");
     end(j, null);
   };
+  // end the job on the spot (the shift is over): one already finished still counts, one in progress is dropped
+  J.close = function () {
+    const j = J.active;
+    if (!j) return;
+    end(j, j.done ? { time: j.time, q: j.q } : null);
+  };
   J.update = function (dt) {
     fxUpdate(dt);
     const j = J.active;
