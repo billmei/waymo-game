@@ -1,6 +1,7 @@
 {
  "lines": [
   "disp.call.birds",
+  "disp.call.charge",
   "disp.call.cone",
   "disp.call.dirty",
   "disp.call.doors",
@@ -8,7 +9,11 @@
   "disp.call.vacuum",
   "disp.combo.1",
   "disp.combo.2",
+  "disp.final.bronze",
+  "disp.final.gold",
+  "disp.final.none",
   "disp.final.platinum",
+  "disp.final.silver",
   "disp.good.1",
   "disp.good.2",
   "disp.good.3",

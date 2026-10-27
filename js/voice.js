@@ -1,4 +1,4 @@
-/* Waymo Care · voices, in the manner of Slop Skies' radio. Dispatch (on a radio-filtered line) and the riders say short
+/* Waymo Care · voices, in the manner of Slop Skies' radio. Dispatch and the riders say short
    lines (js/lines.js) with a caption. Lines queue by priority, chatter is dropped when someone is already talking,
    stale calls expire, and the music ducks under the words. A line plays voice/<id>.mp3 when voice/index.json lists
    it (tools/gen_voice.py records them). */
@@ -108,44 +108,45 @@
     return V.buf[id];
   }
 
-  // the dispatcher's radio: band-limited and a touch driven, like Slop's phone bus
-  let radio = null;
-  function radioBus(ctx) {
-    if (radio) return radio;
-    const hp = ctx.createBiquadFilter(),
-      lp = ctx.createBiquadFilter(),
-      sh = ctx.createWaveShaper(),
-      cv = new Float32Array(256);
-    hp.type = "highpass";
-    hp.frequency.value = 320;
-    lp.type = "lowpass";
-    lp.frequency.value = 3300;
-    for (let i = 0; i < 256; i++) {
-      const x = i / 127.5 - 1;
-      cv[i] = Math.tanh(x * 1.8) / Math.tanh(1.8);
+  // the placeholder voice: a syllable per couple of letters, pitched by the letters.
+  // Each character babbles at their own pitch, so even unrecorded lines tell them apart.
+  const PITCH = { DISPATCH: 330, TOURIST: 210, INFLUENCER: 300, GRANDMA: 360, FOUNDER: 280, LOCAL: 150, ARTIST: 240, STUDENT: 260 };
+  function babble(ctx, who, text) {
+    const dest = A().voxBus,
+      base = PITCH[who] || 240 + Math.random() * 160,
+      words = text.replace(/[^a-zA-Z' ]/g, "").split(/\s+/).filter(Boolean);
+    let t = ctx.currentTime + 0.06;
+    const t0 = t;
+    for (const w of words) {
+      const syl = Math.max(1, Math.round(w.length / 2.6));
+      for (let s = 0; s < syl; s++) {
+        const ch = w.charCodeAt(Math.min(w.length - 1, s * 2)) || 97,
+          f = base * (1 + ((ch % 7) - 3) * 0.045) * (s === syl - 1 && /[!?]/.test(text) ? 1.12 : 1),
+          d = 0.075 + (ch % 3) * 0.012,
+          o = ctx.createOscillator(),
+          g = ctx.createGain(),
+          bp = ctx.createBiquadFilter();
+        o.type = "triangle";
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.linearRampToValueAtTime(f * (0.94 + (ch % 5) * 0.03), t + d);
+        bp.type = "bandpass";
+        bp.frequency.value = f * (2.2 + (ch % 4) * 0.5);
+        bp.Q.value = 1.4;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.16, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+        o.connect(bp);
+        bp.connect(g);
+        o.connect(g);
+        g.connect(dest);
+        o.start(t);
+        o.stop(t + d + 0.02);
+        t += d + 0.022;
+      }
+      t += 0.05;
     }
-    sh.curve = cv;
-    hp.connect(lp);
-    lp.connect(sh);
-    sh.connect(A().voxBus);
-    radio = hp;
-    return radio;
+    return t - t0 + 0.1;
   }
-  function out(ctx, who) {
-    return who === "DISPATCH" ? radioBus(ctx) : A().voxBus;
-  }
-
-  // the placeholder voice: a syllable per couple of letters, pitched by the letters, with a squelch on the radio.
-  const PITCH = {
-    DISPATCH: 330,
-    TOURIST: 210,
-    INFLUENCER: 300,
-    GRANDMA: 360,
-    FOUNDER: 280,
-    LOCAL: 150,
-    ARTIST: 240,
-    STUDENT: 260,
-  };
 
   function show(q) {
     const el = $("#radio");
@@ -193,20 +194,23 @@
       q.end = V.t + read;
       return;
     }
-    Promise.resolve(p).then((b) => {
-      if (V.cur !== q) return;
-      if (!b) {
-        q.end = V.t + read;
-        return;
-      }
-      A().voxDuck(true);
-      const s = ctx.createBufferSource();
-      s.buffer = b;
-      s.connect(out(ctx, q.who));
-      s.start();
-      q.src = s;
-      q.end = V.t + Math.max(read * 0.8, b.duration + 0.35);
-    });
+    A().voxDuck(true);
+    const p = V.known.has(q.id) && !V.bad[q.id] ? load(q.id) : null;
+    if (p)
+      Promise.resolve(p).then((b) => {
+        if (V.cur !== q) return;
+        if (!b) {
+          q.end = V.t + Math.max(read, babble(ctx, q.who, q.text));
+          return;
+        }
+        const s = ctx.createBufferSource();
+        s.buffer = b;
+        s.connect(A().voxBus);
+        s.start();
+        q.src = s;
+        q.end = V.t + Math.max(read * 0.8, b.duration + 0.35);
+      });
+    else q.end = V.t + Math.max(read, babble(ctx, q.who, q.text));
   }
 
   function update(dt) {

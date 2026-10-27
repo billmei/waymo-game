@@ -1,7 +1,7 @@
 /* Waymo Care · what the characters say, in the format of Slop Skies' radio (id: [speaker, text]). The block between
    the markers is plain JSON: tools/gen_voice.py reads it to record voice/<id>.mp3 for every line. Ids that share a
    prefix and end in a number (disp.good.1, disp.good.2, …) are variants the game picks between.
-   Dispatch talks like Karl on Slop Skies' radio: bubbly, kind and a little cheeky, cheering you on and never scolding.
+   Dispatch is a sarcastic, bratty young guy: snarky and smug, cheering you on in his own backhanded way.
    The riders are a cast of San Franciscans, each with their own voice: TOURIST (a wide-eyed dad from Ohio), INFLUENCER
    (vocal fry, every smudge a crisis), GRANDMA (sweet, a little confused), FOUNDER (late for standup), LOCAL (deadpan,
    seen it all), ARTIST (dreamy, from the Mission) and STUDENT (frazzled and sorry). */

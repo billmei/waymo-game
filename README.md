@@ -69,7 +69,7 @@ To turn it on once, go to the repository's **Settings → Pages** and set **Sour
 - `js/actors.js`: the robotaxi model (with a spinning lidar dome) and the big-headed crew member, both with blob shadows like the island's. It lays out the dirt afresh for every wash (rays cast onto the body from all round the car) and the ring of cones on the road for every boxed-in car. It also handles traffic that drives the street graph and pulls over to the curb when something goes wrong (keeping clear of street trees), and the status bubbles.
 - `js/jobs.js`: the seven jobs, played in the 3D scene with the main camera. This covers the dirt you scrub off, the charging cart and cable, the cones you fling off the road, the pigeons, the lidar scan rings, the cutaway cabin for vacuuming, and the run round the car to bump the doors shut. A small job bar shows the hint and progress.
 - `js/audio.js`: all music and sound effects, synthesised live with Web Audio. There are no music files. It includes a bossa-nova menu theme, a swing-pop gameplay theme that speeds up for the last 20 seconds, a results theme, and SFX such as the referee whistle, crowd cheers, chimes, sponge squeaks, pigeon coos, lidar beeps, door slams, the vacuum's hum and the skateboard's roll.
-- `js/lines.js` and `js/voice.js`: the talking, done like a radio. Dispatch (on a radio-filtered line, bubbly and kind like Karl on Slop Skies' radio) calls in jobs, cheers you on and sums up each shift, and riders comment when you arrive. The riders are a cast of seven San Franciscans, each with their own voice: a wide-eyed tourist from Ohio, an influencer with a vocal fry, a sweet grandma, a founder late for standup, a deadpan local, a dreamy Mission artist and a frazzled student. Lines show as captions, queue by priority (chatter is dropped while someone is talking), and duck the music. A line plays `voice/<id>.mp3` when `voice/index.json` lists it.
+- `js/lines.js` and `js/voice.js`: the talking. Dispatch (a sarcastic, bratty young guy) calls in jobs, cheers you on and sums up each shift, and riders comment when you arrive. The riders are a cast of seven San Franciscans, each with their own voice: a wide-eyed tourist from Ohio, an influencer with a vocal fry, a sweet grandma, a founder late for standup, a deadpan local, a dreamy Mission artist and a frazzled student. Lines show as captions, queue by priority (chatter is dropped while someone is talking), and duck the music. A line plays `voice/<id>.mp3` when `voice/index.json` lists it; until it's recorded, the speaker babbles in little pitched syllables.
 - `js/game.js`: the rules, rounds, scoring and HUD. It also covers:
   - the camera: an aerial orbit over the city on the title screen, a tour of the shift's landmarks in the briefing, and a street-level view in play that starts facing the shift's landmark, turns houses in its way see-through (and only swings up over a hill), plus an X-ray silhouette when something else hides the crew member
   - click-to-walk pathfinding: A\* on a 1 m grid over the play area
@@ -102,16 +102,16 @@ node tools/map_levels.js --grid --margin 150 --out /tmp/maps
 
 Every line is recorded with ElevenLabs (the `eleven_v4` model), one voice per character:
 
-| Speaker    | Personality                                                     | ElevenLabs voice                          |
-| ---------- | --------------------------------------------------------------- | ----------------------------------------- |
-| Dispatch   | Bubbly, kind, a little cheeky, always cheering you on           | "Waymo Care - Dispatch" (Voice Design)    |
-| Tourist    | Wide-eyed dad from Ohio, loud, easily amazed, lovably indignant | "Waymo Care - Tourist" (Voice Design)     |
-| Influencer | Californian vocal fry, every smudge is a crisis                 | "Waymo Care - Influencer" (Voice Design)  |
-| Grandma    | Sweet, a little confused, calls you dear                        | Grandma Muffins Oxley (voice library)     |
-| Founder    | Over-caffeinated, fast and clipped, late for standup            | Sarah (stock)                             |
-| Local      | Deadpan, gravelly, has seen it all                              | Marshal - Grumpy Sourpuss (voice library) |
-| Artist     | Dreamy and mellow, finds everything a little cosmic             | River (stock)                             |
-| Student    | Frazzled, sheepish, nervous laugh                               | Liam (stock)                              |
+| Speaker | Personality | ElevenLabs voice |
+| --- | --- | --- |
+| Dispatch | Sarcastic, bratty, high-pitched; cheers you on in a backhanded way | "Waymo Care - Dispatch (bratty, clean)" (Voice Design) |
+| Tourist | Wide-eyed dad from Ohio, loud, easily amazed, lovably indignant | "Waymo Care - Tourist" (Voice Design) |
+| Influencer | Californian vocal fry, every smudge is a crisis | "Waymo Care - Influencer" (Voice Design) |
+| Grandma | Sweet, a little confused, calls you dear | Matilda (pre-made), with `[elderly voice]` |
+| Founder | Over-caffeinated, fast and clipped, late for standup | Sarah (pre-made) |
+| Local | Deadpan, gravelly, has seen it all | Callum (pre-made) |
+| Artist | Dreamy and mellow, finds everything a little cosmic | River (pre-made) |
+| Student | Frazzled, sheepish, nervous laugh | Liam (pre-made) |
 
 How each line is performed (ElevenLabs audio tags like `[deadpan]` or `[giggles]`) is in `tools/voice_direction.json`; the captions in the game show the plain line from `js/lines.js`.
 

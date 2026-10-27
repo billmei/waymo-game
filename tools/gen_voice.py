@@ -36,8 +36,8 @@ LINES_JS = os.path.join(ROOT, "js", "lines.js")
 OUT = os.path.join(ROOT, "voice")
 
 # who says what: a voice per speaker for each provider, and how they should sound. The ElevenLabs voices are the ones
-# the recorded lines in voice/ use: Dispatch, Tourist and Influencer were made with Voice Design, the rest are stock
-# ElevenLabs voices. Override any of them with VOICE_<SPEAKER>=<voice id>.
+# the recorded lines in voice/ use: Dispatch, Tourist and Influencer were made with Voice Design (the plan's three
+# custom voices), the rest are ElevenLabs' pre-made voices. Override any of them with VOICE_<SPEAKER>=<voice id>.
 def _spk(name, style, openai_voice, elevenlabs_id):
     return {
         "style": style,
@@ -49,10 +49,10 @@ def _spk(name, style, openai_voice, elevenlabs_id):
 SPEAKERS = {
     "DISPATCH": _spk(
         "DISPATCH",
-        "A bubbly, kind fleet dispatcher on a two-way radio, like Karl, the friendly radio voice of Slop Skies. "
-        "Bright and playful, a little cheeky, always encouraging and never bossy or shouty, smiling as they talk.",
-        "coral",
-        "bJjxezNCwWpBRZx2u0Bf",  # "Waymo Care - Dispatch" (Voice Design)
+        "A sarcastic, bratty young dispatcher with a high-pitched voice. Snarky, smug and teasing, a little whiny, "
+        "rolling his eyes as he talks, but still cheering the crew on in his own backhanded way.",
+        "echo",
+        "7tQje3Gta0gww84jO2Ku",  # "Waymo Care - Dispatch (bratty, clean)" (Voice Design)
     ),
     "TOURIST": _spk(
         "TOURIST",
@@ -73,7 +73,7 @@ SPEAKERS = {
         "A sweet, slightly confused grandmother in her late seventies. Soft, warm and polite, calls everyone dear, "
         "chuckles at her own jokes, curious rather than worried.",
         "sage",
-        "vFLqXa8bgbofGarf6fZh",  # "Grandma Muffins Oxley" (voice library)
+        "XrExE9yKIg1WjnnlVkGX",  # "Matilda" (ElevenLabs stock voice), aged up with [elderly voice]
     ),
     "FOUNDER": _spk(
         "FOUNDER",
@@ -87,7 +87,7 @@ SPEAKERS = {
         "A jaded San Francisco local who has seen it all. Low, gravelly and unimpressed; flat, deadpan and dry, with "
         "weary pauses.",
         "onyx",
-        "LysucvtFmzi1NVAE0rKp",  # "Marshal - Grumpy Sourpuss" (voice library)
+        "N2lVS1w4EtoT3dr4eOWO",  # "Callum" (ElevenLabs stock voice)
     ),
     "ARTIST": _spk(
         "ARTIST",
@@ -146,6 +146,8 @@ def tts_openai(text, spk):
 
 def tts_elevenlabs(text, spk):
     key = os.environ["ELEVENLABS_API_KEY"]
+    if not spk["elevenlabs"]["voice_id"]:
+        sys.exit("No ElevenLabs voice for this speaker yet: set VOICE_<SPEAKER> (or edit SPEAKERS).")
     return post(
         "https://api.elevenlabs.io/v1/text-to-speech/" + spk["elevenlabs"]["voice_id"] + "?output_format=mp3_44100_128",
         {"xi-api-key": key, "Content-Type": "application/json"},
