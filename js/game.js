@@ -138,8 +138,9 @@
   scene.add(marker);
   let markerT = 9;
 
-  // the crew member's skateboard, for getting about faster (hold Shift)
-  const RIDE = 21;
+  // how fast the crew member gets about on foot, and on the skateboard (hold Shift)
+  const WALK = 16,
+    RIDE = 27;
   let boardOn = false;
   const board = new T.Group();
   {
@@ -1438,10 +1439,10 @@
       if (riding) A.sfx("ollie");
       else if (!drives) restPose();
     }
-    const want = dx || dz ? (riding ? RIDE : 12.5) : 0;
+    const want = dx || dz ? (riding ? RIDE : WALK) : 0;
     if (drives) JOB.active.drive(dt, ix, iz);
-    else if (riding) P.speed += clamp(want - P.speed, -(want ? 30 : 9) * dt, 16 * dt);
-    else P.speed += clamp(want - P.speed, -40 * dt, 30 * dt);
+    else if (riding) P.speed += clamp(want - P.speed, -(want ? 30 : 9) * dt, 21 * dt);
+    else P.speed += clamp(want - P.speed, -40 * dt, 38 * dt);
     if (P.speed > 0.05 && !drives) {
       if (dx || dz) P.dir = [dx, dz];
       const [ux, uz] = P.dir || [0, 1],
@@ -1527,7 +1528,7 @@
       mii.root.rotation.y = P.yaw;
       return;
     }
-    const sp = P.speed / 12.5;
+    const sp = P.speed / WALK;
     P.phase += dt * (4 + 9 * sp);
     const sw = Math.sin(P.phase) * 0.8 * sp;
     mii.legs[0].rotation.x = sw;
