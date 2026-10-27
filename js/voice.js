@@ -105,10 +105,12 @@
     return who === "DISPATCH" ? radioBus(ctx) : A().voxBus;
   }
 
-  // the placeholder voice: a syllable per couple of letters, pitched by the letters, with a squelch on the radio
+  // the placeholder voice: a syllable per couple of letters, pitched by the letters, with a squelch on the radio.
+  // Each character babbles at their own pitch, so even unrecorded lines tell them apart.
+  const PITCH = { DISPATCH: 330, TOURIST: 210, INFLUENCER: 300, GRANDMA: 360, FOUNDER: 280, LOCAL: 150, ARTIST: 240, STUDENT: 260 };
   function babble(ctx, who, text) {
     const dest = out(ctx, who),
-      base = who === "DISPATCH" ? 330 : 240 + Math.random() * 160,
+      base = PITCH[who] || 240 + Math.random() * 160,
       words = text.replace(/[^a-zA-Z' ]/g, "").split(/\s+/).filter(Boolean);
     let t = ctx.currentTime + 0.06;
     const t0 = t;
