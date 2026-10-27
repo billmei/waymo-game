@@ -4,7 +4,7 @@
 Slop Skies' radio lines (reference/slop-skies/voice/) are short mono mp3s: 32 kHz, 56 kbps, 1.5 to 3 seconds,
 loudness-matched, with no silence at either end. This script asks a text-to-speech service for each line, then uses
 ffmpeg to trim, normalise and encode it the same way, and writes voice/index.json (the list the game checks before it
-tries to play a file; lines without a file fall back to the "babble" placeholder voice).
+tries to play a file).
 
 Providers (pick one with --provider):
   elevenlabs  ELEVENLABS_API_KEY; eleven_v3, acting out the [audio tags] in tools/voice_direction.json
