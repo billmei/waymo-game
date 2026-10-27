@@ -74,6 +74,7 @@
     tail: new T.MeshLambertMaterial({ color: 0xe8433f, emissive: 0x330000 }),
     teal: new T.MeshLambertMaterial({ color: 0x36d3c4, emissive: 0x0b4a44 }),
     mud: new T.MeshLambertMaterial({ color: 0x7a5636 }),
+    dust: new T.MeshLambertMaterial({ color: 0xb59a6a }),
     poop: new T.MeshLambertMaterial({ color: 0xf0efe6 }),
     cone: new T.MeshLambertMaterial({ color: 0xff7a1a }),
     white: new T.MeshLambertMaterial({ color: 0xffffff }),
@@ -82,15 +83,6 @@
     beak: new T.MeshLambertMaterial({ color: 0xe9a23b }),
   };
   const GEO = {
-    body: roundBox(1.9, 0.8, 4.6, 0.34, 4),
-    skirt: roundBox(1.94, 0.3, 4.5, 0.12, 2),
-    cabin: roundBox(1.72, 0.74, 2.7, 0.3, 4),
-    roof: roundBox(1.56, 0.12, 2.2, 0.06, 2),
-    hood: roundBox(1.7, 0.2, 1.5, 0.1, 2),
-    wheel: new T.CylinderGeometry(0.4, 0.4, 0.32, 16),
-    hubG: new T.CylinderGeometry(0.22, 0.22, 0.34, 12),
-    domeB: new T.CylinderGeometry(0.42, 0.46, 0.28, 20),
-    domeT: new T.CylinderGeometry(0.34, 0.38, 0.24, 20),
     ring: new T.CylinderGeometry(0.39, 0.39, 0.06, 20),
     box: new T.BoxGeometry(1, 1, 1),
     sph: new T.SphereGeometry(1, 12, 10),
@@ -125,6 +117,222 @@
   WG.makeCone = makeCone;
   WG.CAR_MAT = MAT;
 
+  /* ---------- the robotaxi: a Firefly-style "koala" two-seater. The body is one smooth lofted shell: superellipse
+     sections along the length, rounded off at both ends and narrowing towards the roof. The paint (glass, silver door
+     panels, taillights, wheel wells) is coloured per face, so its edges stay crisp. Car units: -z is the nose, -x the
+     street side, y up from the road ---------- */
+  const BODY = { HL: 1.8, W: 0.86, BOT: 0.3, N: 2.8 },
+    WHEEL = { x: 0.66, z: 1.08, r: 0.36 };
+  WG.CAR_HALF = [BODY.HL, BODY.W];
+  function sectionAt(zn) {
+    const f = Math.max(0, -zn - 0.05) / 0.95,
+      r = Math.max(0, zn - 0.3) / 0.7,
+      top = 1.72 - 0.62 * Math.pow(f, 1.7) - 0.12 * r * r,
+      m = zn < 0 ? 2.4 : 3.2,
+      e = Math.pow(Math.max(0, 1 - Math.pow(Math.abs(zn), m)), 1 / m);
+    return { c: (top + BODY.BOT) / 2, h: ((top - BODY.BOT) / 2) * e, w: BODY.W * (1 - 0.05 * zn * zn) * e };
+  }
+  const tumble = (s) => (s > 0 ? 1 - 0.2 * s * s : 1 - 0.05 * s * s),
+    spow = (v, p) => Math.sign(v) * Math.pow(Math.abs(v), p);
+  // a point on the shell: t runs from the nose (0) to the tail (1), a around the section (0 the right flank, π/2 the roof)
+  function shell(t, a, out) {
+    const zn = -Math.cos(Math.PI * t),
+      S = sectionAt(zn),
+      s = spow(Math.sin(a), 2 / BODY.N);
+    return out.set(S.w * tumble(s) * spow(Math.cos(a), 2 / BODY.N), S.c + S.h * s, zn * BODY.HL);
+  }
+  const _s1 = new T.Vector3(),
+    _s2 = new T.Vector3();
+  function shellN(t, a, out) {
+    const e = 1e-3,
+      t0 = clamp(t, 2e-3, 1 - 2e-3);
+    shell(t0 + e, a, _s1).sub(shell(t0 - e, a, _s2));
+    const dt = _s1.clone();
+    shell(t0, a + e, _s1).sub(shell(t0, a - e, _s2));
+    return out.crossVectors(_s1, dt).normalize();
+  }
+  function inside(x, y, z) {
+    const zn = z / BODY.HL;
+    if (Math.abs(zn) >= 1) return false;
+    const S = sectionAt(zn);
+    if (S.h <= 1e-4) return false;
+    const s = (y - S.c) / S.h;
+    if (Math.abs(s) >= 1) return false;
+    return Math.abs(x) < S.w * tumble(s) * Math.pow(1 - Math.pow(Math.abs(s), BODY.N), 1 / BODY.N);
+  }
+  // where a ray from o along d first meets the shell, and the outward normal there
+  function cast(o, d) {
+    const hit = (ox, oy, oz) => {
+      let prev = 0;
+      for (let k = 1; k <= 250; k++) {
+        const t = k * 0.02;
+        if (inside(ox + d[0] * t, oy + d[1] * t, oz + d[2] * t)) {
+          let a = prev,
+            b = t;
+          for (let i = 0; i < 18; i++) {
+            const m = (a + b) / 2;
+            if (inside(ox + d[0] * m, oy + d[1] * m, oz + d[2] * m)) b = m;
+            else a = m;
+          }
+          return new T.Vector3(ox + d[0] * b, oy + d[1] * b, oz + d[2] * b);
+        }
+        prev = t;
+      }
+      return null;
+    };
+    const p = hit(o[0], o[1], o[2]);
+    if (!p) return null;
+    // the normal from two neighbouring hits
+    const D = new T.Vector3(d[0], d[1], d[2]),
+      u = new T.Vector3(0, 1, 0).cross(D);
+    if (u.lengthSq() < 1e-4) u.set(1, 0, 0);
+    u.normalize();
+    const v = D.clone().cross(u).normalize(),
+      e = 0.03,
+      pu = hit(o[0] + u.x * e, o[1] + u.y * e, o[2] + u.z * e),
+      pv = hit(o[0] + v.x * e, o[1] + v.y * e, o[2] + v.z * e);
+    let n = D.clone().negate();
+    if (pu && pv) {
+      n = pu.sub(p).cross(pv.sub(p)).normalize();
+      if (n.dot(D) > 0) n.negate();
+    }
+    return { p, n };
+  }
+  const SURF = {
+    cast,
+    top: (x, z) => cast([x, 3, z], [0, -1, 0]),
+    side: (sg, y, z) => cast([sg * 2, y, z], [-sg, 0, 0]),
+    front: (x, y) => cast([x, y, -2.6], [0, 0, 1]),
+    rear: (x, y) => cast([x, y, 2.6], [0, 0, -1]),
+    // a random point on the paintwork or the glass, clear of the wheels, the skirt and the lidar
+    random() {
+      for (let k = 0; k < 60; k++) {
+        const t = 0.04 + Math.random() * 0.92,
+          a = -0.75 + Math.random() * (Math.PI + 1.5),
+          p = shell(t, a, new T.Vector3()),
+          n = shellN(t, a, new T.Vector3());
+        if (p.y < 0.46) continue;
+        if (Math.abs(n.x) > 0.25 && Math.abs(Math.abs(p.z) - WHEEL.z) < 0.55 && p.y < 0.86) continue;
+        if (Math.hypot(p.x - DOME.x, p.z - DOME.z) < 0.42 && p.y > 1.5) continue;
+        return { p, n };
+      }
+      return { p: new T.Vector3(0, 1.72, 0.6), n: new T.Vector3(0, 1, 0) };
+    },
+  };
+  WG.carSurf = SURF;
+  const DOME = { x: 0, z: -0.05, y: 0, top: 0 };
+
+  // the paint, by where a face sits on the shell
+  const PAINT = {
+    white: "#f7f8fa",
+    glass: "#18202b",
+    frame: "#0d1015",
+    silver: "#b4bcc6",
+    skirt: "#3b4049",
+    well: "#262a31",
+    red: "#d8322f",
+    redDark: "#9a1f1f",
+  };
+  // the windows: the wraparound windscreen, a side window each side and the rear window (m widens them, for the frames)
+  function win(x, y, z, n, m) {
+    const zn = z / BODY.HL,
+      ax = Math.abs(x);
+    if (zn < -0.4 + m && y > 1.0 - m && n.y < 0.93 && ax < 0.58 + m) return true;
+    if (Math.abs(n.x) > 0.45 && y > 1.14 - m && y < 1.5 + m && zn > -0.46 - m && zn < 0.56 + m) return true;
+    return zn > 0.62 - m && n.z > 0.3 && y > 1.02 - m && y < 1.5 + m && ax < 0.42 + m;
+  }
+  function paint(x, y, z, n) {
+    const zn = z / BODY.HL,
+      ax = Math.abs(x);
+    if (Math.abs(n.x) > 0.25 && y < 0.84 && Math.hypot(y - WHEEL.r, Math.abs(z) - WHEEL.z) < 0.46) return PAINT.well;
+    if (y < 0.4) return PAINT.skirt;
+    // taillights wrapping the rear corners
+    if (zn > 0.7 && n.z > 0.15 && y > 0.8 && y < 1.36 && ax > 0.36) return PAINT.red;
+    if (win(x, y, z, n, 0)) return PAINT.glass;
+    if (win(x, y, z, n, 0.045)) return PAINT.frame;
+    // the reflector bar across the tail
+    if (zn > 0.84 && n.z > 0.3 && y > 0.47 && y < 0.56) return ax < 0.1 ? PAINT.white : PAINT.redDark;
+    if (Math.abs(n.x) > 0.5 && y > 0.44 && y < 0.86 && zn > -0.42 && zn < 0.38) return PAINT.silver;
+    return PAINT.white;
+  }
+  // push a patch of the shell into a merge, one colour per face. sh: subtracted from every vertex (a door's hinge)
+  const _c3 = new T.Color();
+  function shellPatch(M, t0, t1, nt, a0, a1, na, off, colorOf, sh, keep) {
+    const P = [],
+      N = [];
+    for (let i = 0; i <= nt; i++)
+      for (let k = 0; k <= na; k++) {
+        const t = t0 + ((t1 - t0) * i) / nt,
+          a = a0 + ((a1 - a0) * k) / na,
+          p = shell(t, a, new T.Vector3()),
+          n = shellN(t, a, new T.Vector3());
+        p.addScaledVector(n, off);
+        if (sh) p.sub(sh);
+        P.push(p);
+        N.push(n);
+      }
+    const id = (i, k) => i * (na + 1) + k,
+      ctr = new T.Vector3(),
+      cn = new T.Vector3();
+    for (let i = 0; i < nt; i++)
+      for (let k = 0; k < na; k++) {
+        const q = [id(i, k), id(i + 1, k), id(i + 1, k + 1), id(i, k + 1)];
+        ctr.set(0, 0, 0);
+        cn.set(0, 0, 0);
+        for (const j of q) {
+          ctr.add(P[j]);
+          cn.add(N[j]);
+        }
+        ctr.multiplyScalar(0.25);
+        if (sh) ctr.add(sh);
+        cn.normalize();
+        if (keep && !keep(ctr.x, ctr.y, ctr.z, cn)) continue;
+        _c3.set(colorOf(ctr.x, ctr.y, ctr.z, cn));
+        // counter-clockwise seen from outside
+        for (const j of [q[0], q[2], q[1], q[0], q[3], q[2]]) {
+          M.p.push(P[j].x, P[j].y, P[j].z);
+          M.n.push(N[j].x, N[j].y, N[j].z);
+          M.c.push(_c3.r, _c3.g, _c3.b);
+        }
+      }
+  }
+  const NT = 96,
+    NA = 84;
+  // a small part sat on the shell: geo placed at p, its local +z along the normal n, scaled
+  const _q4 = new T.Quaternion(),
+    _zA = new T.Vector3(0, 0, 1);
+  function onShell(M, geo, col, p, n, out, sx, sy, sz, spin) {
+    _q4.setFromUnitVectors(_zA, n);
+    if (spin) _q4.multiply(new T.Quaternion().setFromAxisAngle(_zA, spin));
+    M.geo(geo, col, new T.Matrix4().compose(p.clone().addScaledVector(n, out), _q4, new T.Vector3(sx, sy, sz)));
+  }
+  // the Waymo "W", two strokes of teal and two of blue, laid on the shell
+  function logo(M, hit, size, sh) {
+    if (!hit) return;
+    const n = hit.n,
+      r = new T.Vector3(0, 1, 0).cross(n).normalize(),
+      u = n.clone().cross(r).normalize(),
+      B = new T.Matrix4().makeBasis(r, u, n).setPosition(hit.p.clone().addScaledVector(n, 0.006).sub(sh || new T.Vector3()));
+    const pts = [
+      [-1, 0.75],
+      [-0.5, -0.75],
+      [0, 0.35],
+      [0.5, -0.75],
+      [1, 0.75],
+    ];
+    for (let i = 0; i < 4; i++) {
+      const [ax, ay] = pts[i],
+        [bx, by] = pts[i + 1],
+        L = Math.hypot(bx - ax, by - ay) * size * 0.5,
+        m = new T.Matrix4().compose(
+          new T.Vector3(((ax + bx) / 4) * size, ((ay + by) / 4) * size, 0),
+          new T.Quaternion().setFromAxisAngle(_zA, Math.atan2(by - ay, bx - ax)),
+          new T.Vector3(L + size * 0.09, size * 0.17, 0.008),
+        );
+      M.geo(GEO.box, i % 2 ? "#2a73dc" : "#2cc4e4", B.clone().multiply(m));
+    }
+  }
+
   // every robotaxi shares three merged, vertex-coloured meshes: the car, the spinning lidar head and the headlights
   let CAR = null;
   const HEAD_MAT = new T.MeshLambertMaterial({ color: 0xfffbe8, emissive: 0x333322 });
@@ -133,90 +341,159 @@
     const M = new W.Merge(),
       S = new W.Merge(),
       Hd = new W.Merge(),
-      put = (m, geo, col, x, y, z, sx, sy, sz, rz) => m.geo(geo, col, W.mat(x, y, z, sx || 1, sy || 1, sz || 1, 0, 0, rz || 0));
-    const WHITE = "#f8f9fb",
-      TRIM = "#2b3038";
-    put(M, GEO.skirt, TRIM, 0, 0.5, 0);
-    put(M, GEO.body, WHITE, 0, 0.82, 0);
-    put(M, GEO.cabin, "#1c2734", 0, 1.45, 0.25);
-    put(M, GEO.roof, WHITE, 0, 1.83, 0.25);
-    put(M, GEO.domeB, WHITE, 0, 2.0, 0.1);
-    // perimeter sensors and mirror pods
-    put(M, GEO.box, TRIM, 0, 0.72, -2.3, 0.7, 0.16, 0.08);
-    for (const s of [-1, 1]) {
-      put(M, GEO.box, WHITE, s * 1.04, 1.28, -0.75, 0.22, 0.22, 0.36);
-      put(M, GEO.box, TRIM, s * 1.1, 1.28, -0.84, 0.08, 0.16, 0.2);
-      put(M, GEO.cyl, TRIM, s * 0.82, 1.17, -1.95, 0.09, 0.2, 0.09);
-      put(M, GEO.box, "#e8433f", s * 0.64, 0.98, 2.3, 0.4, 0.12, 0.06);
-      put(Hd, GEO.box, "#fffbe8", s * 0.62, 0.92, -2.3, 0.44, 0.13, 0.06);
+      SPH = GEO.sph,
+      CYL = new T.CylinderGeometry(1, 1, 1, 18),
+      TOR = new T.TorusGeometry(1, 0.15, 8, 28);
+    shellPatch(M, 0, 1, NT, -Math.PI / 2, (3 * Math.PI) / 2, NA, 0, paint);
+    // the face: two round headlamps ringed in blue, the dark nose sensor between them, amber indicators low down
+    for (const sg of [-1, 1]) {
+      const h = SURF.front(sg * 0.4, 0.8);
+      onShell(Hd, SPH, "#fffbe8", h.p, h.n, 0.0, 0.15, 0.13, 0.035);
+      onShell(M, TOR, "#2f86e0", h.p, h.n, 0.01, 0.16, 0.14, 0.16);
+      const ind = SURF.front(sg * 0.6, 0.53);
+      if (ind) onShell(M, SPH, "#ff9a2a", ind.p, ind.n, 0, 0.055, 0.055, 0.02);
+      // mirror pods with black sensor tips, on the A-pillars
+      const m = SURF.side(sg, 1.12, -0.86),
+        pod = m.p.clone().addScaledVector(m.n, 0.09);
+      M.geo(SPH, PAINT.white, W.mat(pod.x, pod.y, pod.z, 0.075, 0.085, 0.14));
+      M.geo(SPH, PAINT.frame, W.mat(pod.x, pod.y, pod.z - 0.12, 0.05, 0.055, 0.05));
+      M.geo(GEO.box, PAINT.frame, W.mat(m.p.x + sg * 0.035, pod.y - 0.02, pod.z + 0.02, 0.07, 0.03, 0.05));
+      // hubcapped wheels: white caps with a ring of holes
+      for (const wz of [-WHEEL.z, WHEEL.z]) {
+        const x = sg * WHEEL.x,
+          ox = sg * 0.135;
+        M.geo(CYL, "#24272c", W.mat(x, WHEEL.r, wz, WHEEL.r, 0.25, WHEEL.r, 0, 0, Math.PI / 2));
+        M.geo(CYL, "#f2f3f5", W.mat(x + ox * 0.95, WHEEL.r, wz, 0.25, 0.03, 0.25, 0, 0, Math.PI / 2));
+        M.geo(CYL, "#3b4049", W.mat(x + ox * 1.06, WHEEL.r, wz, 0.055, 0.01, 0.055, 0, 0, Math.PI / 2));
+        for (let k = 0; k < 6; k++) {
+          const ang = (k / 6) * Math.PI * 2;
+          M.geo(CYL, "#8f969f", W.mat(x + ox * 1.06, WHEEL.r + Math.sin(ang) * 0.15, wz + Math.cos(ang) * 0.15, 0.04, 0.012, 0.04, 0, 0, Math.PI / 2));
+        }
+      }
+      logo(M, SURF.side(sg, 0.95, 0.1), 0.17);
     }
-    for (const [x, z] of [
-      [-0.9, -1.45],
-      [0.9, -1.45],
-      [-0.9, 1.45],
-      [0.9, 1.45],
-    ]) {
-      put(M, GEO.wheel, "#23262b", x, 0.4, z, 1, 1, 1, Math.PI / 2);
-      put(M, GEO.hubG, "#c7ccd3", x, 0.4, z, 1, 1, 1, Math.PI / 2);
-    }
-    put(S, GEO.domeT, TRIM, 0, 0, 0);
-    put(S, GEO.box, "#36d3c4", 0.3, 0.02, 0, 0.12, 0.1, 0.06);
+    const nose = SURF.front(0, 0.62);
+    onShell(M, SPH, "#15181d", nose.p, nose.n, 0, 0.17, 0.1, 0.045);
+    // the tail: plate recess, rear camera, logo on the glass
+    const plate = SURF.rear(0, 0.72);
+    onShell(M, GEO.box, "#2b3038", plate.p, plate.n, 0, 0.44, 0.17, 0.04);
+    onShell(M, GEO.box, "#fdfdf7", plate.p, plate.n, 0.022, 0.36, 0.12, 0.01);
+    const cam = SURF.rear(0, 1.47);
+    if (cam) onShell(M, SPH, PAINT.frame, cam.p, cam.n, 0, 0.06, 0.05, 0.05);
+    logo(M, SURF.rear(0, 1.2), 0.2);
+    // the lidar: a white collar on the roof, the black spinning drum with its domed cap
+    const roof = SURF.top(DOME.x, DOME.z);
+    DOME.y = roof.p.y + 0.1;
+    M.geo(CYL, PAINT.white, W.mat(DOME.x, roof.p.y + 0.03, DOME.z, 0.27, 0.16, 0.27));
+    M.geo(CYL, "#d9dde2", W.mat(DOME.x, roof.p.y + 0.105, DOME.z, 0.255, 0.012, 0.255));
+    S.geo(CYL, "#1a1d22", W.mat(0, 0.11, 0, 0.215, 0.22, 0.215));
+    S.geo(new T.SphereGeometry(1, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), "#1a1d22", W.mat(0, 0.22, 0, 0.215, 0.13, 0.215));
+    S.geo(GEO.box, "#3c4a5c", W.mat(0, 0.12, -0.2, 0.2, 0.08, 0.04));
+    S.geo(GEO.box, "#36d3c4", W.mat(0.2, 0.12, 0, 0.04, 0.04, 0.08));
+    DOME.top = DOME.y + 0.35;
     const bm = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555 })),
-      sm = S.mesh(new T.MeshLambertMaterial({ vertexColors: true })),
+      sm = S.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 90, specular: 0x777777 })),
       hm = Hd.mesh(HEAD_MAT);
     CAR = { body: [bm.geometry, bm.material], spin: [sm.geometry, sm.material], head: [hm.geometry, hm.material] };
     return CAR;
   }
   WG.CAR_HEAD = HEAD_MAT;
+  WG.CAR_DOME = DOME;
+
+  // the cabin with its roof lifted off (the vacuum job): the shell below the belt, inside and out, the beige bench, the
+  // blue dash shelf and the console with its GO and STOP NOW buttons
+  let CUT = null;
+  WG.carCutaway = function () {
+    if (CUT) return CUT;
+    const M = new W.Merge(),
+      rb = roundBox,
+      CYL = new T.CylinderGeometry(1, 1, 1, 18),
+      SEAT = "#dcc9a6",
+      SEAM = "#c6b18c",
+      BLUE = "#3a7fd5";
+    carGeo();
+    shellPatch(M, 0, 1, NT, -Math.PI / 2, (3 * Math.PI) / 2, NA, 0, paint, null, (x, y) => y < 1.0);
+    M.geo(new T.BoxGeometry(1.3, 0.04, 2.6), "#59606b", W.mat(0, 0.44, -0.05, 1, 1, 1));
+    // the bench, facing forward
+    M.geo(rb(1.3, 0.2, 0.55, 0.08, 3), SEAT, W.mat(0, 0.72, 0.42, 1, 1, 1));
+    M.geo(new T.BoxGeometry(0.02, 0.205, 0.5), SEAM, W.mat(0, 0.72, 0.42, 1, 1, 1));
+    M.geo(rb(1.3, 0.62, 0.16, 0.07, 3), SEAT, W.mat(0, 1.0, 0.78, 1, 1, 1, 0, 0.2));
+    M.geo(rb(1.4, 0.36, 0.5, 0.06, 2), "#e6e8eb", W.mat(0, 0.54, 0.45, 1, 1, 1));
+    // the dash shelf and the console
+    M.geo(rb(1.3, 0.07, 0.36, 0.03, 2), BLUE, W.mat(0, 0.98, -1.02, 1, 1, 1, 0, -0.12));
+    M.geo(rb(1.36, 0.42, 0.18, 0.05, 2), "#e6e8eb", W.mat(0, 0.74, -1.14, 1, 1, 1));
+    M.geo(rb(0.26, 0.34, 0.42, 0.06, 2), BLUE, W.mat(0, 0.62, -0.6, 1, 1, 1));
+    M.geo(CYL, "#41c45a", W.mat(-0.06, 0.8, -0.66, 0.05, 0.02, 0.05));
+    M.geo(GEO.box, "#e8433f", W.mat(0.06, 0.8, -0.62, 0.07, 0.02, 0.1));
+    for (const sg of [-1, 1])
+      for (const wz of [-WHEEL.z, WHEEL.z]) {
+        M.geo(CYL, "#24272c", W.mat(sg * WHEEL.x, WHEEL.r, wz, WHEEL.r, 0.25, WHEEL.r, 0, 0, Math.PI / 2));
+        M.geo(CYL, "#f2f3f5", W.mat(sg * (WHEEL.x + 0.128), WHEEL.r, wz, 0.25, 0.03, 0.25, 0, 0, Math.PI / 2));
+      }
+    const m = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 40, specular: 0x333333, side: T.DoubleSide }));
+    CUT = [m.geometry, m.material];
+    return CUT;
+  };
+  // where the mess lands in the cabin: the bench, the footwells, the dash shelf
+  WG.CABIN = [
+    () => [(Math.random() - 0.5) * 1.1, 0.83, 0.22 + Math.random() * 0.36],
+    () => [-0.58 + Math.random() * 0.4, 0.47, -0.8 + Math.random() * 0.75],
+    () => [0.18 + Math.random() * 0.4, 0.47, -0.8 + Math.random() * 0.75],
+    () => [(Math.random() - 0.5) * 1.0, 1.02, -1.02],
+  ];
+
+  // dirt where it lands this time: spread out, all round the car
+  function dirtSpots(n) {
+    const out = [];
+    for (let k = 0; out.length < n && k < 500; k++) {
+      const r = SURF.random();
+      if (out.some((o) => o.p.distanceTo(r.p) < 0.62)) continue;
+      const q = Math.random();
+      out.push({ p: r.p, n: r.n, s: 0.14 + Math.random() * 0.13, k: q < 0.22 ? 1 : q < 0.5 ? 2 : 0 });
+    }
+    return out;
+  }
+  WG.dirtSpots = dirtSpots;
 
   function makeCar() {
     const C = carGeo(),
       root = new T.Group(),
       g = new T.Group();
     root.add(g);
-    root.add(BLOB(2.9, 5.6));
+    root.add(BLOB(2.3, 4.4));
     const body = new T.Mesh(C.body[0], C.body[1]);
     body.castShadow = true;
     g.add(body);
     g.add(new T.Mesh(C.head[0], C.head[1]));
     // the spinning lidar
     const spin = new T.Group();
-    spin.position.set(0, 2.24, 0.1);
+    spin.position.set(DOME.x, DOME.y, DOME.z);
     g.add(spin);
     spin.add(new T.Mesh(C.spin[0], C.spin[1]));
-    const ring = add(spin, GEO.ring, MAT.teal.clone(), 0, -0.06, 0);
+    const ring = add(spin, GEO.ring, MAT.teal.clone(), 0, 0.01, 0, 0.6, 1, 0.6);
     ring.castShadow = false;
     const wheels = [],
       headMat = HEAD_MAT;
-    // the problems you can see from the street
+    // the problems you can see from the street (the dirt is laid out afresh each time)
     const dirt = new T.Group();
-    g.add(dirt);
-    const splats = [
-      [0.3, 1.24, -1.5, 0.32, 0.05, 0.26, 0],
-      [-0.4, 1.23, -1.1, 0.22, 0.05, 0.2, 1],
-      [0.97, 0.8, 0.6, 0.04, 0.24, 0.42, 0],
-      [-0.97, 0.75, -0.2, 0.04, 0.22, 0.36, 0],
-      [0.97, 0.66, -1.2, 0.04, 0.16, 0.3, 0],
-      [-0.97, 0.9, 1.3, 0.04, 0.2, 0.28, 1],
-      [0.2, 1.9, 0.6, 0.26, 0.04, 0.2, 1],
-      [-0.2, 1.89, -0.2, 0.18, 0.04, 0.16, 0],
-      [0.0, 0.95, 2.31, 0.5, 0.2, 0.04, 0],
-    ];
-    for (const [x, y, z, sx, sy, sz, k] of splats) add(dirt, GEO.sph, k ? MAT.poop : MAT.mud, x, y, z, sx, sy, sz);
     dirt.visible = false;
+    g.add(dirt);
     const cone = makeCone();
-    cone.position.set(0, 1.22, -1.55);
+    const ct = SURF.top(0, -0.62);
+    cone.position.copy(ct.p);
+    cone.rotation.x = Math.atan2(ct.n.z, ct.n.y) * 0.7;
     cone.rotation.z = 0.15;
     cone.visible = false;
     g.add(cone);
     const birds = new T.Group();
-    for (const [x, y, z, r] of [
-      [0.3, 1.9, 0.9, 0.4],
-      [-0.4, 1.9, 0.0, -0.6],
-      [0.1, 1.24, -1.4, 2.6],
+    for (const [x, z, r] of [
+      [0.3, 0.7, 0.4],
+      [-0.35, 0.0, -0.6],
+      [0.1, -0.55, 2.6],
     ]) {
-      const b = makeBird();
-      b.position.set(x, y, z);
+      const b = makeBird(),
+        h = SURF.top(x, z);
+      b.position.copy(h.p);
       b.rotation.y = r;
       birds.add(b);
     }
@@ -229,7 +506,7 @@
     const tex = new T.CanvasTexture(cv);
     const sprite = new T.Sprite(new T.SpriteMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
     sprite.scale.set(3.4, 3.4, 1);
-    sprite.position.set(0, 4.2, 0);
+    sprite.position.set(0, 4.0, 0);
     sprite.renderOrder = 10;
     sprite.visible = false;
     root.add(sprite);
@@ -503,7 +780,7 @@
     CURBLAT = 5.0,
     END = 7.2,
     CRUISE = 10,
-    CAR_SCALE = 1.05;
+    CAR_SCALE = 1.1;
   WG.CAR_SCALE = CAR_SCALE;
   const locks = {};
   const nodeAt = (k) => W.graph.nodes[k];
@@ -642,9 +919,14 @@
   Car.prototype.setProblem = function (p) {
     this.problem = p;
     const P = this.parts;
-    P.dirt.visible = p && p.type === "dirty";
-    P.cone.visible = p && p.type === "cone";
-    P.birds.visible = p && p.type === "birds";
+    // fresh dirt in fresh places every time
+    if (p && p.type === "dirty") {
+      if (!p.spots) p.spots = dirtSpots(12);
+      this.showDirt(p.spots);
+    }
+    P.dirt.visible = !!(p && p.type === "dirty");
+    P.cone.visible = !!(p && p.type === "cone");
+    P.birds.visible = !!(p && p.type === "birds");
     P.sprite.visible = !!p;
     // doors passengers left open
     const want = p && p.type === "doors" ? p.doors || [] : [];
@@ -653,39 +935,81 @@
       D.forEach((d, i) => {
         const open = want.includes(i);
         d.pivot.visible = d.patch.visible = open;
-        d.pivot.rotation.y = open ? d.side * 1.1 : 0;
+        d.pose(open ? 1 : 0);
       });
     }
     P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : 0x36d3c4);
     P.ring.material.emissive.set(p && p.type === "charge" ? 0x551010 : 0x0b4a44);
     this.bubbleT = 0;
   };
-  const DOOR_PANEL = roundBox(0.07, 0.62, 0.98, 0.03, 2),
-    DOOR_GLASS = roundBox(0.05, 0.34, 0.78, 0.03, 2),
-    DOOR_HOLE = new T.MeshLambertMaterial({ color: 0x1c2330 });
+  Car.prototype.showDirt = function (spots) {
+    const D = this.parts.dirt;
+    while (D.children.length) D.remove(D.children[0]);
+    for (const s of spots) {
+      const g = new T.Group();
+      g.position.copy(s.p);
+      g.quaternion.setFromUnitVectors(UP, s.n);
+      add(g, GEO.sph, s.k === 1 ? MAT.poop : s.k === 2 ? MAT.dust : MAT.mud, 0, 0, 0, s.s, 0.03, s.s * 0.8);
+      D.add(g);
+    }
+  };
+  // the openings: the two side doors (hinged at the front edge) and the rear hatch (hinged at the roof), each cut from
+  // the shell itself. Shared by every car; a car only builds its own pivots the first time it needs them
+  const UP = new T.Vector3(0, 1, 0);
+  let DOORS = null;
+  function doorGeo() {
+    if (DOORS) return DOORS;
+    const tz = (zn) => Math.acos(-zn) / Math.PI,
+      defs = [
+        { side: -1, t0: tz(-0.4), t1: tz(0.36), a0: Math.PI - 0.95, a1: Math.PI + 0.92, axis: "y" },
+        { side: 1, t0: tz(-0.4), t1: tz(0.36), a0: -0.92, a1: 0.95, axis: "y" },
+        { side: 0, t0: tz(0.6), t1: 1, a0: 0.5, a1: Math.PI - 0.5, axis: "x" },
+      ];
+    DOORS = defs.map((d) => {
+      const am = (d.a0 + d.a1) / 2,
+        h = d.axis === "y" ? shell(d.t0, am, new T.Vector3()) : shell(d.t0, Math.PI / 2, new T.Vector3()),
+        hinge = d.axis === "y" ? new T.Vector3(h.x, 0, h.z) : new T.Vector3(0, h.y, h.z),
+        M = new W.Merge(),
+        H = new W.Merge();
+      shellPatch(M, d.t0, d.t1, 18, d.a0, d.a1, 20, 0, paint, hinge);
+      if (d.side) logo(M, SURF.side(d.side, 0.95, 0.1), 0.17, hinge);
+      else logo(M, SURF.rear(0, 1.2), 0.2, hinge);
+      shellPatch(H, d.t0, d.t1, 12, d.a0, d.a1, 14, 0.012, () => "#1c2330");
+      const door = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555, side: T.DoubleSide })),
+        hole = H.mesh(new T.MeshLambertMaterial({ vertexColors: true }));
+      // the edge you slam it by, in the pivot's frame: the free edge of a side door, the bottom of the hatch
+      const far = shell(d.t1, am, new T.Vector3()).sub(hinge),
+        seg = d.side
+          ? [new T.Vector3(far.x * 0.1, 0.8, 0.05), new T.Vector3(far.x, 0.8, far.z)]
+          : [new T.Vector3(-0.5, -0.62, 0.62), new T.Vector3(0.5, -0.62, 0.62)];
+      return { side: d.side, axis: d.axis, hinge, door: [door.geometry, door.material], hole: [hole.geometry, hole.material], seg };
+    });
+    return DOORS;
+  }
+  WG.DOOR_N = 3;
   Car.prototype.ensureDoors = function () {
     if (this.doorParts) return this.doorParts;
-    // front-left, front-right, rear-left, rear-right; each hinged at its front edge
-    this.doorParts = [
-      [-1, -1.08],
-      [1, -1.08],
-      [-1, 0.02],
-      [1, 0.02],
-    ].map(([side, z0]) => {
+    this.doorParts = doorGeo().map((D) => {
       const pivot = new T.Group();
-      pivot.position.set(side * 0.97, 0, z0);
-      const panel = new T.Mesh(DOOR_PANEL, MAT.body);
-      panel.position.set(0, 0.82, 0.49);
-      panel.castShadow = true;
-      const glass = new T.Mesh(DOOR_GLASS, MAT.glass);
-      glass.position.set(0, 1.3, 0.45);
-      pivot.add(panel, glass);
-      const patch = new T.Mesh(GEO.box, DOOR_HOLE);
-      patch.scale.set(0.02, 0.85, 0.92);
-      patch.position.set(side * 0.958, 1.02, z0 + 0.48);
+      pivot.position.copy(D.hinge);
+      const m = new T.Mesh(D.door[0], D.door[1]);
+      m.castShadow = true;
+      pivot.add(m);
+      const patch = new T.Mesh(D.hole[0], D.hole[1]);
       this.parts.g.add(pivot, patch);
       pivot.visible = patch.visible = false;
-      return { side, z0, pivot, patch };
+      const d = {
+        side: D.side,
+        pivot,
+        patch,
+        seg: D.seg,
+        // f = 1 wide open, 0 shut
+        pose(f) {
+          if (D.axis === "y") pivot.rotation.y = D.side * 1.1 * f;
+          else pivot.rotation.x = -1.05 * f;
+        },
+      };
+      return d;
     });
     return this.doorParts;
   };
@@ -706,7 +1030,16 @@
 
   const Traffic = {
     cars: [],
+    // a fresh fleet on the current street graph (the shifts work different districts)
+    reset() {
+      for (const c of this.cars) this.scene.remove(c.parts.root);
+      this.cars = [];
+      for (const k in locks) delete locks[k];
+      this.init(this.scene, this.n);
+    },
     init(scene, n) {
+      this.scene = scene;
+      this.n = n;
       const used = new Set(),
         N = W.graph.nodes;
       for (let k = 0; k < n; k++) {
@@ -807,6 +1140,8 @@
         c.place();
         // animation
         const P = c.parts;
+        // a car that needs nothing looks like it
+        if (!c.problem && (P.dirt.visible || P.cone.visible || P.birds.visible || P.sprite.visible)) c.setProblem(null);
         let spin = 7;
         if (c.problem && c.problem.type === "reboot") {
           const calm = c.problem.calm || 0;

@@ -8,6 +8,7 @@
     A = WG.audio,
     JOB = WG.jobs,
     Traffic = WG.Traffic,
+    VOX = WG.voice,
     KIND = WG.KIND;
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -20,35 +21,38 @@
     {
       name: "Morning Rush",
       look: "day",
-      blurb: "Sunny skies over the city. Riders are waking up — and leaving muddy footprints, cones and open doors behind them.",
+      blurb: "Sunny skies over the Financial District. The commuters are in — and leaving muddy footprints, cones and open doors behind them.",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
       patience: 42,
       kinds: ["dirty", "charge", "cone", "doors"],
       key: 0,
+      zone: "downtown",
     },
     {
       name: "Karl the Fog",
       look: "fog",
-      blurb: "The fog rolls in off the Pacific. Sensors get confused and need a reboot, and the night crowd left popcorn everywhere.",
+      blurb: "Karl the Fog rolls over the Outer Sunset off the Pacific. Sensors get confused and need a reboot, and the night crowd left popcorn everywhere.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
       patience: 38,
       kinds: ["dirty", "charge", "cone", "reboot", "vacuum"],
       key: 2,
+      zone: "sunset",
     },
     {
       name: "Golden Hour",
       look: "dusk",
-      blurb: "Sunset rush! Everything goes wrong at once — and the seagulls are out.",
+      blurb: "Golden hour in the Mission! Everything goes wrong at once — and the seagulls are out.",
       dur: 100,
       every: [3.8, 5.4],
       max: 5,
       patience: 34,
       kinds: ["dirty", "charge", "cone", "reboot", "birds", "vacuum", "doors"],
       key: 5,
+      zone: "mission",
     },
   ];
   const MEDALS = [
@@ -105,22 +109,66 @@
   scene.add(marker);
   let markerT = 9;
 
+  // the crew member's skateboard, for getting about faster (hold Shift)
+  const RIDE = 21;
+  let boardOn = false;
+  const board = new T.Group();
+  {
+    const lam = (c) => new T.MeshLambertMaterial({ color: c });
+    const deck = new T.Mesh(WG.roundBox(0.32, 0.05, 1.0, 0.024, 2), lam(0xff5a7a));
+    deck.position.y = 0.12;
+    const grip = new T.Mesh(WG.roundBox(0.3, 0.012, 0.92, 0.006, 1), lam(0x2b3038));
+    grip.position.y = 0.15;
+    board.add(deck, grip);
+    const wg = new T.CylinderGeometry(0.05, 0.05, 0.05, 12),
+      wm = lam(0xffd23a);
+    for (const [x, z] of [
+      [-0.11, -0.32],
+      [0.11, -0.32],
+      [-0.11, 0.32],
+      [0.11, 0.32],
+    ]) {
+      const w = new T.Mesh(wg, wm);
+      w.position.set(x, 0.05, z);
+      w.rotation.z = Math.PI / 2;
+      board.add(w);
+    }
+    board.visible = false;
+    board.add(WG.blob(0.5, 1.2));
+    scene.add(board);
+  }
+
   /* ---------- walk grid and pathfinding ---------- */
-  // 1 m cells over the play area's bounding box, blocked by the island's colliders
-  const corners = [
+  // 1 m cells over the play area's bounding box, blocked by the island's colliders; rebuilt when the shift moves district
+  let X0 = 0,
+    Z0 = 0,
+    NX = 1,
+    NZ = 1,
+    GN = 1,
+    grid = new Uint8Array(1),
+    gScore,
+    from,
+    seen;
+  function buildGrid() {
+    const corners = [
       [W.AREA.lx0, W.AREA.lz0],
       [W.AREA.lx1, W.AREA.lz0],
       [W.AREA.lx1, W.AREA.lz1],
       [W.AREA.lx0, W.AREA.lz1],
-    ].map(([a, b]) => W.toWorld(a, b)),
-    X0 = Math.floor(Math.min(...corners.map((c) => c[0]))),
-    Z0 = Math.floor(Math.min(...corners.map((c) => c[1]))),
-    NX = Math.ceil(Math.max(...corners.map((c) => c[0]))) - X0,
-    NZ = Math.ceil(Math.max(...corners.map((c) => c[1]))) - Z0,
-    GN = NX,
+    ].map(([a, b]) => W.toWorld(a, b));
+    X0 = Math.floor(Math.min(...corners.map((c) => c[0])));
+    Z0 = Math.floor(Math.min(...corners.map((c) => c[1])));
+    NX = Math.ceil(Math.max(...corners.map((c) => c[0]))) - X0;
+    NZ = Math.ceil(Math.max(...corners.map((c) => c[1]))) - Z0;
+    GN = NX;
     grid = new Uint8Array(NX * NZ);
-  for (let j = 0; j < NZ; j++)
-    for (let i = 0; i < NX; i++) grid[j * NX + i] = W.isBlocked(X0 + i + 0.5, Z0 + j + 0.5, 0.45) ? 1 : 0;
+    for (let j = 0; j < NZ; j++)
+      for (let i = 0; i < NX; i++) grid[j * NX + i] = W.isBlocked(X0 + i + 0.5, Z0 + j + 0.5, 0.45) ? 1 : 0;
+    gScore = new Float32Array(NX * NZ);
+    from = new Int32Array(NX * NZ);
+    seen = new Uint32Array(NX * NZ);
+  }
+  buildGrid();
   const cellOf = (x, z) => [clamp(Math.floor(x - X0), 0, NX - 1), clamp(Math.floor(z - Z0), 0, NZ - 1)];
   const free = (i, j) => i >= 0 && j >= 0 && i < NX && j < NZ && !grid[j * NX + i];
   function nearestFree(i, j) {
@@ -141,9 +189,6 @@
     }
     return true;
   }
-  const gScore = new Float32Array(NX * NZ),
-    from = new Int32Array(NX * NZ),
-    seen = new Uint32Array(NX * NZ);
   let stamp = 0;
   function findPath(sx, sz, tx, tz) {
     const s = nearestFree(...cellOf(sx, sz)),
@@ -302,7 +347,8 @@
     const s = shift();
     W.setLook(s.look);
     clearProblems();
-    $("#br-n").textContent = "Shift " + (G.round + 1) + " of " + SHIFTS.length;
+    moveDistrict(s.zone);
+    $("#br-n").textContent = "Shift " + (G.round + 1) + " of " + SHIFTS.length + " · " + (W.zone.label || W.zone.name);
     $("#br-t").textContent = s.name;
     $("#br-p").textContent = s.blurb;
     const jobs = $("#br-jobs");
@@ -321,6 +367,18 @@
     setState("brief");
     A.music("title");
     focusFirst("#brief");
+  }
+  // move the crew, the walk grid and the fleet to the shift's district
+  function moveDistrict(zone) {
+    if (!W.setArea(zone)) return;
+    buildGrid();
+    Traffic.reset();
+    P.pos.set(W.start.x, 0, W.start.z);
+    P.pos.y = W.groundY(P.pos.x, P.pos.z);
+    P.path = [];
+    P.target = null;
+    P.speed = 0;
+    snapCamera = true;
   }
   const JOBNAME = {
     dirty: "Wash",
@@ -341,6 +399,7 @@
     G.perfects = 0;
     G.bestCombo = 0;
     G.spawnT = 1.2;
+    G.bag = null;
     G.tickS = -1;
     G.hurry = false;
     setState("ready");
@@ -355,10 +414,13 @@
     A.music("play", { transpose: shift().key, restart: true });
     G.spawnT = 0.8;
     G.spawn2 = 2.6;
+    const r = G.round;
+    setTimeout(() => G.state === "play" && G.round === r && VOX.say("disp.start." + W.zoneKey), 700);
   }
   function timeUp() {
     setState("timeup");
     big("Time's up!", "up");
+    VOX.interrupt("disp.timeup");
     A.music(null);
     A.sfx("timeup");
     if (JOB.active) JOB.cancel();
@@ -383,6 +445,8 @@
     $("#rs-next").textContent = G.round + 1 < SHIFTS.length ? "Next shift" : "Final results";
     setState("result");
     A.music("results");
+    const ok = G.done >= Math.max(3, G.missed * 3);
+    setTimeout(() => G.state === "result" && VOX.say(ok ? "disp.result.good" : "disp.result.ok"), 1200);
     A.sfx("chime", 1);
     focusFirst("#result");
   }
@@ -410,6 +474,7 @@
     $("#fn-next").textContent = nextM ? fmt(nextM.at - G.score) + " more points for " + nextM.name : "You are a legend of the fleet!";
     setState("final");
     W.setLook("dusk");
+    setTimeout(() => G.state === "final" && VOX.say("disp.final." + (medal ? medal.name.toLowerCase() : "none")), 1400);
     A.music("results");
     setTimeout(() => A.sfx("medal"), 400);
     updateBest();
@@ -437,14 +502,24 @@
         best = c;
       }
     }
-    const type = s.kinds[(Math.random() * s.kinds.length) | 0];
+    // jobs come out of a shuffled bag holding each of the shift's kinds once, so a shift gets about the same number of
+    // every job, in a random order (a new bag is shuffled when it runs out, never starting with the last job again)
+    if (!G.bag || !G.bag.length) {
+      const last = G.lastKind;
+      G.bag = s.kinds.slice().sort(() => Math.random() - 0.5);
+      if (G.bag.length > 1 && G.bag[G.bag.length - 1] === last) G.bag.unshift(G.bag.pop());
+    }
+    const type = G.bag.pop();
+    G.lastKind = type;
     const prob = { type, max: s.patience, left: s.patience };
     if (type === "doors") {
-      const n = Math.min(4, 2 + G.round + (Math.random() < 0.4 ? 1 : 0) - 1);
-      prob.doors = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.max(2, n));
+      // the two side doors and the rear hatch
+      const n = clamp(1 + G.round + (Math.random() < 0.4 ? 1 : 0), 2, WG.DOOR_N);
+      prob.doors = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, n);
     }
     best.setProblem(prob);
     best.pullOver();
+    VOX.say("disp.call." + type);
     if (!G.tipped) {
       G.tipped = true;
       tip(
@@ -480,6 +555,7 @@
     }
     A.sfx("chime", q);
     A.sfx("carHappy", 0);
+    VOX.say(G.combo >= 3 && G.combo % 3 === 0 ? "disp.combo" : q === 2 ? "disp.perfect" : "disp.good");
     car.setProblem(null);
     car.state = "leaving";
     car.hop = 1;
@@ -493,6 +569,7 @@
     floater(car.pos, "Missed!", "Rider gave 1★", -1);
     A.sfx("carSad", clamp((car.pos.x - P.pos.x) / 60, -1, 1));
     A.sfx("fail");
+    VOX.say("disp.miss");
     car.setProblem(null);
     car.state = "leaving";
     car.sad = 1.2;
@@ -515,6 +592,8 @@
     A.sfx("open");
     A.duck(true);
     holding = null;
+    CAM.jobYaw = CAM.jobPitch = 0;
+    VOX.say("rider." + car.problem.type);
     JOB.start(car.problem.type, car, { scene, camera, P, mii, round: G.round + 1, big, ray: rayAt, pickGround }, (res) => {
       A.duck(false);
       G.mini = null;
@@ -556,7 +635,7 @@
       m = Math.floor(s / 60);
     hud.time.textContent = m + ":" + String(s % 60).padStart(2, "0");
     hud.time.parentNode.classList.toggle("hurry", G.left <= 10 && G.state === "play");
-    hud.shift.textContent = "Shift " + (G.round + 1) + " · " + shift().name;
+    hud.shift.textContent = "Shift " + (G.round + 1) + " · " + (W.zone.label || W.zone.name);
     const r = G.rateSum / G.rateN;
     hud.rate.textContent = r.toFixed(1);
     hud.stars.style.setProperty("--r", r / 5);
@@ -705,7 +784,7 @@
     if (e.repeat && !/^(Arrow|Key[WASD])/.test(e.code)) return;
     keys.add(e.code);
     if (G.state === "play") {
-      if (e.code === "Space" || e.code === "KeyE" || e.code === "Enter") {
+      if (e.code === "Space" || e.code === "Enter") {
         const n = nearProblem();
         if (n) startJob(n);
         e.preventDefault();
@@ -795,8 +874,56 @@
     P.repath = 0.5;
   }
   let holding = null;
+  // turning the camera: drag with the right (or middle) mouse button, or with two fingers
+  let turning = null;
+  const touches = new Map();
+  cv.addEventListener("contextmenu", (e) => e.preventDefault());
+  function turnStart(e) {
+    if (e.pointerType === "mouse" ? e.button === 1 || e.button === 2 : touches.size >= 2) {
+      if (JOB.active && e.pointerType !== "mouse") JOB.pointer("up", e);
+      holding = null;
+      turning = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+      try {
+        cv.setPointerCapture(e.pointerId);
+      } catch (_) {}
+      return true;
+    }
+    return false;
+  }
+  function turnMove(e) {
+    if (!turning) return false;
+    if (e.pointerType !== "mouse") {
+      // two fingers: follow their midpoint
+      let mx = 0,
+        my = 0;
+      for (const t of touches.values()) {
+        mx += t[0] / touches.size;
+        my += t[1] / touches.size;
+      }
+      e = { clientX: mx, clientY: my };
+    }
+    turnCamera(-(e.clientX - turning.x) * 0.006, (e.clientY - turning.y) * 0.004);
+    turning.x = e.clientX;
+    turning.y = e.clientY;
+    return true;
+  }
   cv.addEventListener("pointerdown", (e) => {
     A.init();
+    if (e.pointerType !== "mouse") touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (G.state !== "play") return;
+    if (turnStart(e)) {
+      if (e.pointerType !== "mouse") {
+        let mx = 0,
+          my = 0;
+        for (const t of touches.values()) {
+          mx += t[0] / touches.size;
+          my += t[1] / touches.size;
+        }
+        turning = { x: mx, y: my };
+      }
+      return;
+    }
     if (G.state === "play" && JOB.active) {
       e.preventDefault();
       try {
@@ -824,6 +951,8 @@
     } catch (_) {}
   });
   cv.addEventListener("pointermove", (e) => {
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (turnMove(e)) return;
     if (JOB.active) JOB.pointer("move", e);
     if (holding && holding.id === e.pointerId) {
       holding.x = e.clientX;
@@ -831,6 +960,11 @@
     }
   });
   const endHold = (e) => {
+    touches.delete(e.pointerId);
+    if (turning) {
+      if (e.pointerType === "mouse" || touches.size < 2) turning = null;
+      return;
+    }
     if (JOB.active) JOB.pointer("up", e);
     if (holding && holding.id === e.pointerId) holding = null;
   };
@@ -878,6 +1012,7 @@
   }
   function toTitle() {
     if (JOB.active) JOB.cancel();
+    VOX.stop();
     clearProblems();
     setState("title");
     W.setLook("day");
@@ -937,6 +1072,29 @@
     toTitle();
   });
   on("h-pause", () => pause());
+  on("h-board", () => {
+    boardOn = !boardOn;
+    $("#h-board").classList.toggle("on", boardOn);
+    $("#h-board").setAttribute("aria-pressed", String(boardOn));
+  });
+  // the turn arrows: hold to keep turning
+  let turnHold = 0;
+  for (const [id, d] of [
+    ["h-turn-l", 1],
+    ["h-turn-r", -1],
+  ]) {
+    const b = document.getElementById(id);
+    b.addEventListener("pointerdown", (e) => {
+      A.init();
+      e.preventDefault();
+      turnHold = d;
+      try {
+        b.setPointerCapture(e.pointerId);
+      } catch (_) {}
+    });
+    for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, () => (turnHold = 0));
+    b.addEventListener("click", (e) => e.preventDefault());
+  }
   on("pz-go", () => resume());
   on("pz-restart", () => {
     A.sfx("select");
@@ -976,7 +1134,19 @@
   /* ---------- camera ---------- */
   const S = W.SCALE;
   let zoom = TOUCH ? 27 : 22;
-  const CAM = { pitch: 46, lift: 0 };
+  // yaw turns the view around the crew member (Q / E, right-drag, or the on-screen arrows); jobYaw orbits the car in a job
+  const CAM = { pitch: 46, lift: 0, yaw: 0, jobYaw: 0, jobPitch: 0 };
+  let snapCamera = false;
+  const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  function turnCamera(dyaw, dpitch) {
+    if (JOB.active) {
+      CAM.jobYaw = wrapA(CAM.jobYaw + dyaw);
+      CAM.jobPitch = clamp(CAM.jobPitch + (dpitch || 0), -0.35, 0.6);
+    } else {
+      CAM.yaw = wrapA(CAM.yaw + dyaw);
+      CAM.pitch = clamp(CAM.pitch + ((dpitch || 0) * 180) / Math.PI, 24, 78);
+    }
+  }
   const camPos = new T.Vector3((420 + Math.sin(0.6) * 2300) * S, 640 * S, (-620 + Math.cos(0.6) * 2300) * S),
     camLook = new T.Vector3(420 * S, 60 * S, -620 * S),
     wantPos = new T.Vector3(),
@@ -1021,6 +1191,10 @@
   }
   function cameraUpdate(dt) {
     let k = 2.2;
+    if (G.state === "play") {
+      const q = (keys.has("KeyQ") ? 1 : 0) - (keys.has("KeyE") ? 1 : 0) + turnHold;
+      if (q) turnCamera(q * 1.9 * dt);
+    }
     if (G.state === "title" || G.state === "howto" || G.state === "final") {
       // a slow orbit over Slop Skies' San Francisco, around the downtown end of the city
       const a = 0.6 + G.t * 0.025;
@@ -1035,19 +1209,34 @@
       k = 1.5;
     } else if (JOB.active) {
       k = JOB.camera(wantPos, wantLook);
+      // the player can orbit the car: turn the job's view around its look point
+      if (CAM.jobYaw || CAM.jobPitch) {
+        _o.subVectors(wantPos, wantLook);
+        const c = Math.cos(CAM.jobYaw),
+          sn = Math.sin(CAM.jobYaw),
+          x = _o.x * c + _o.z * sn,
+          z = -_o.x * sn + _o.z * c,
+          h = Math.hypot(x, z) || 1e-3,
+          L = _o.length(),
+          a = clamp(Math.atan2(_o.y, Math.hypot(_o.x, _o.z)) + CAM.jobPitch, 0.08, 1.45);
+        wantPos.set(wantLook.x + (x / h) * Math.cos(a) * L, wantLook.y + Math.sin(a) * L, wantLook.z + (z / h) * Math.cos(a) * L);
+      }
       clearShot(wantLook, wantPos);
     } else {
-      // close behind and above the crew member, looking north up the street. Where the houses would block the view the
-      // camera swings up over the rooftops (and eases back down once it can)
-      const pitch = (CAM.pitch * Math.PI) / 180;
-      wantLook.set(P.pos.x, P.pos.y + 1.6, P.pos.z - 1);
-      wantPos.set(P.pos.x, wantLook.y + Math.sin(pitch) * zoom, wantLook.z + Math.cos(pitch) * zoom);
+      // close behind and above the crew member, looking along the camera's heading (north to start with). Where the houses
+      // would block the view the camera swings up over the rooftops (and eases back down once it can)
+      const pitch = (CAM.pitch * Math.PI) / 180,
+        sy = Math.sin(CAM.yaw),
+        cy = Math.cos(CAM.yaw);
+      wantLook.set(P.pos.x - sy, P.pos.y + 1.6, P.pos.z - cy);
+      wantPos.set(wantLook.x + sy * Math.cos(pitch) * zoom, wantLook.y + Math.sin(pitch) * zoom, wantLook.z + cy * Math.cos(pitch) * zoom);
       const need = clearAngle(wantLook, wantPos, pitch);
       CAM.lift = need > CAM.lift ? need : Math.max(need, CAM.lift - dt * 0.35);
       if (CAM.lift > pitch) setElevation(wantLook, wantPos, CAM.lift);
       k = G.state === "play" ? 6 : 3;
     }
-    const f = 1 - Math.exp(-k * dt);
+    const f = snapCamera ? 1 : 1 - Math.exp(-k * dt);
+    snapCamera = false;
     camPos.lerp(wantPos, f);
     camLook.lerp(wantLook, f);
     camera.position.copy(camPos);
@@ -1073,6 +1262,13 @@
       if (keys.has("KeyS") || keys.has("ArrowDown")) iz += 1;
       if (keys.has("KeyA") || keys.has("ArrowLeft")) ix -= 1;
       if (keys.has("KeyD") || keys.has("ArrowRight")) ix += 1;
+      // the keys move relative to the camera
+      if (ix || iz) {
+        const yw = Math.atan2(camPos.x - camLook.x, camPos.z - camLook.z),
+          c = Math.cos(yw),
+          sn = Math.sin(yw);
+        [ix, iz] = [ix * c + iz * sn, -ix * sn + iz * c];
+      }
       if ((ix || iz) && !drives) {
         P.path = [];
         P.target = null;
@@ -1124,8 +1320,16 @@
         dz = ddz / d;
       }
     }
-    const want = dx || dz ? 12.5 : 0;
+    // hold Shift (or flip the board button) to ride the skateboard: faster, and it coasts
+    const riding = G.state === "play" && !JOB.active && (keys.has("ShiftLeft") || keys.has("ShiftRight") || boardOn);
+    if (riding !== P.riding) {
+      P.riding = riding;
+      if (riding) A.sfx("ollie");
+      else if (!drives) restPose();
+    }
+    const want = dx || dz ? (riding ? RIDE : 12.5) : 0;
     if (drives) JOB.active.drive(dt, ix, iz);
+    else if (riding) P.speed += clamp(want - P.speed, -(want ? 30 : 9) * dt, 16 * dt);
     else P.speed += clamp(want - P.speed, -40 * dt, 30 * dt);
     if (P.speed > 0.05 && !drives) {
       if (dx || dz) P.dir = [dx, dz];
@@ -1153,8 +1357,8 @@
       if (Math.abs(rx) > 4 || Math.abs(rz) > 4) continue;
       const along = rx * c.fwd.x + rz * c.fwd.z,
         lat = -rx * c.fwd.z + rz * c.fwd.x,
-        ea = 2.35 * WG.CAR_SCALE + 0.4 - Math.abs(along),
-        el = 0.98 * WG.CAR_SCALE + 0.35 - Math.abs(lat);
+        ea = WG.CAR_HALF[0] * WG.CAR_SCALE + 0.4 - Math.abs(along),
+        el = WG.CAR_HALF[1] * WG.CAR_SCALE + 0.35 - Math.abs(lat);
       if (ea > 0 && el > 0) {
         if (el < ea) {
           const s = Math.sign(lat) || 1;
@@ -1186,8 +1390,28 @@
       P.yaw += d * Math.min(1, dt * 14);
     }
     // animate
+    board.visible = riding;
     if (drives) {
       JOB.active.pose(mii, dt);
+      mii.root.position.copy(P.pos);
+      mii.root.rotation.y = P.yaw;
+      return;
+    }
+    A.loop("skate", riding ? Math.min(1, P.speed / 14) : 0);
+    if (riding) {
+      // side-on stance, knees out, arms out for balance, leaning into the turns
+      let d = (P.yawWant || P.yaw) - P.yaw;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      P.lean = lerp(P.lean || 0, clamp(d * 2, -0.5, 0.5), Math.min(1, dt * 6));
+      const k = 1 / mii.root.scale.x;
+      mii.body.position.y = 0.15 * k;
+      mii.body.rotation.set(-0.05, 0.55, P.lean * 0.6);
+      mii.legs[0].rotation.set(0, 0, -0.28);
+      mii.legs[1].rotation.set(0, 0, 0.28);
+      mii.arms[0].rotation.set(Math.sin(G.t * 3) * 0.2, 0, -1.15);
+      mii.arms[1].rotation.set(-Math.sin(G.t * 3) * 0.2, 0, 1.15);
+      board.position.copy(P.pos);
+      board.rotation.set(0, P.yaw, P.lean * 0.3);
       mii.root.position.copy(P.pos);
       mii.root.rotation.y = P.yaw;
       return;
@@ -1215,6 +1439,14 @@
     mii.root.rotation.y = P.yaw;
   }
 
+  function restPose() {
+    mii.body.position.y = 0;
+    mii.body.rotation.set(0, 0, 0);
+    for (const l of mii.legs) l.rotation.set(0, 0, 0);
+    mii.arms[0].rotation.set(0, 0, -0.18);
+    mii.arms[1].rotation.set(0, 0, 0.18);
+  }
+
   /* ---------- the loop ---------- */
   function playUpdate(dt) {
     const s = shift();
@@ -1226,6 +1458,7 @@
         A.setTempo(1.12);
         A.setIntense(true);
         big("Hurry up!", "hurry");
+        VOX.say("disp.hurry");
       }
       if (G.left <= 10 && G.left > 0) {
         const sec = Math.ceil(G.left);
@@ -1290,6 +1523,7 @@
       playUpdate(dt);
       JOB.update(dt);
     }
+    VOX.update(dt);
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();
     cameraUpdate(dt);

@@ -1,7 +1,7 @@
 /* Waymo Care · the world. The city is Slop Skies' own toy San Francisco (js/isle.js, generated from its engine: terrain,
    neighbourhoods, terraces, towers, landmarks, trees, sea, sky and clouds, all with its shaders). The game is played on
-   the streets of one of its districts: Western Addition's grid around Alamo Square and the Painted Ladies. This file
-   boots the island, reads that district's street grid into a graph for the robotaxis, answers ground and collision
+   the streets of its districts: each shift works a patch of one district's grid (Downtown's Financial District, the
+   Outer Sunset, the Mission). This file boots the island, reads the district's street grid into a graph for the robotaxis, answers ground and collision
    questions from the island's own colliders, and turns Slop's look into our three shifts (sun, Karl the Fog, dusk). */
 (function () {
   "use strict";
@@ -15,13 +15,21 @@
      (real-sized) robotaxis and crew. Game positions are in metres; the island's own functions take island units. ---------- */
   const SCALE = 1.6;
 
-  /* ---------- the play area: a patch of Western Addition's street grid (island.js DIST row 10) ---------- */
-  // three blocks by two between Alamo Square and the Painted Ladies (grid units: u by v island units per block)
-  const ZONE = { name: "Western Addition", ang: -8, u: 62, v: 82, i0: 5, i1: 8, j0: -6, j1: -4 };
-  const ZA = (ZONE.ang * Math.PI) / 180,
-    ZC = Math.cos(ZA),
-    ZS = Math.sin(ZA),
-    HALF_ST = 4; // the streets are the 8-unit gaps between the block pads
+  /* ---------- the play areas: each shift works a patch of one district's street grid (island.js DIST rows: name,
+     grid angle, u by v island units per block). i0..i1, j0..j1 are the street lines that bound the patch ---------- */
+  const ZONES = {
+    // three blocks by two of the Financial District's towers, below Transamerica
+    downtown: { name: "Financial District", label: "Downtown", ang: -8, u: 62, v: 82, i0: 19, i1: 22, j0: -10, j1: -8 },
+    // the Outer Sunset's long avenues, where Karl rolls in off the ocean
+    sunset: { name: "Sunset", label: "Outer Sunset", ang: 0, u: 60, v: 132, i0: -23, i1: -20, j0: 0, j1: 2 },
+    // the Mission's flats below Dolores Park
+    mission: { name: "Mission", label: "Mission", ang: -5, u: 68, v: 106, i0: 8, i1: 11, j0: 1, j1: 3 },
+  };
+  let ZONE = ZONES.downtown,
+    ZA = 0,
+    ZC = 1,
+    ZS = 0;
+  const HALF_ST = 4; // the streets are the 8-unit gaps between the block pads
   // grid-local island units <-> game metres
   const toWorld = (lx, lz) => [(lx * ZC - lz * ZS) * SCALE, (lx * ZS + lz * ZC) * SCALE];
   const toLocal = (x, z) => [(x * ZC + z * ZS) / SCALE, (-x * ZS + z * ZC) / SCALE];
@@ -29,12 +37,18 @@
   const terrainY = (x, z) => I.ISL.terrainY(x / SCALE, z / SCALE) * SCALE;
   const hitsAt = (x, y, z, r) => I.hitsBuilding(x / SCALE, y / SCALE, z / SCALE, r / SCALE);
   const zoneAt = (x, z) => I.zoneName(x / SCALE, z / SCALE);
-  const AREA = {
-    lx0: ZONE.i0 * ZONE.u - 22,
-    lx1: ZONE.i1 * ZONE.u + 22,
-    lz0: ZONE.j0 * ZONE.v - 22,
-    lz1: ZONE.j1 * ZONE.v + 22,
-  };
+  const AREA = { lx0: 0, lx1: 0, lz0: 0, lz1: 0 };
+  function useZone(z) {
+    ZONE = z;
+    ZA = (z.ang * Math.PI) / 180;
+    ZC = Math.cos(ZA);
+    ZS = Math.sin(ZA);
+    AREA.lx0 = z.i0 * z.u - 22;
+    AREA.lx1 = z.i1 * z.u + 22;
+    AREA.lz0 = z.j0 * z.v - 22;
+    AREA.lz1 = z.j1 * z.v + 22;
+  }
+  useZone(ZONE);
   const inArea = (x, z, m) => {
     const [lx, lz] = toLocal(x, z);
     m = (m || 0) / SCALE;
@@ -344,7 +358,7 @@
 
   const W = {
     SCALE,
-    ZONE,
+    ZONES,
     AREA,
     LOOKS,
     Merge,
@@ -365,14 +379,7 @@
     I.boot(scene, renderer, SCALE);
     addGrades();
     I.setGrade("default");
-    W.graph = buildGraph();
-    W.streets = streets(scene);
-    // the middle of the play area, and where the crew member starts
-    const [cx, cz] = toWorld(((ZONE.i0 + ZONE.i1) / 2) * ZONE.u, ((ZONE.j0 + ZONE.j1) / 2) * ZONE.v);
-    W.center = new T.Vector3(cx, height(cx, cz), cz);
-    let st = W.graph.nodes[0];
-    for (const n of W.graph.nodes) if (Math.hypot(n.x - cx, n.z - cz) < Math.hypot(st.x - cx, st.z - cz)) st = n;
-    W.start = { x: st.x, z: st.z };
+    W.setArea("downtown");
 
     // light for the game's own toys (robotaxis, the crew), from Slop's sun
     W.hemi = new T.HemisphereLight(0xd7ecff, 0x8f7f5f, 0.6);
@@ -385,13 +392,39 @@
       const s = new T.Sprite(W.puffMat),
         sz = 26 + Math.random() * 24;
       s.scale.set(sz, sz * 0.55, 1);
-      s.position.set(cx + (Math.random() - 0.5) * 300, 0, cz + (Math.random() - 0.5) * 300);
+      s.position.set(W.center.x + (Math.random() - 0.5) * 300, 0, W.center.z + (Math.random() - 0.5) * 300);
       s.userData = { v: 1.5 + Math.random() * 2.5, y: 5 + Math.random() * 12 };
       W.puffs.add(s);
     }
     W.puffs.visible = false;
     scene.add(W.puffs);
     W.setLook("day");
+  };
+
+  // move the play area to another district: its street graph, paving, middle and the crew's start
+  W.setArea = function (key) {
+    const z = ZONES[key] || ZONES.downtown;
+    if (W.zone === z && W.graph) return false;
+    useZone(z);
+    W.zone = z;
+    W.zoneKey = key;
+    W.graph = buildGraph();
+    if (W.streets) {
+      W.scene.remove(W.streets);
+      W.streets.geometry.dispose();
+    }
+    W.streets = streets(W.scene);
+    const [cx, cz] = toWorld(((z.i0 + z.i1) / 2) * z.u, ((z.j0 + z.j1) / 2) * z.v);
+    W.center = new T.Vector3(cx, height(cx, cz), cz);
+    let st = W.graph.nodes[0];
+    for (const n of W.graph.nodes) if (Math.hypot(n.x - cx, n.z - cz) < Math.hypot(st.x - cx, st.z - cz)) st = n;
+    W.start = { x: st.x, z: st.z };
+    if (W.puffs)
+      for (const s of W.puffs.children) {
+        s.position.x = cx + (Math.random() - 0.5) * 300;
+        s.position.z = cz + (Math.random() - 0.5) * 300;
+      }
+    return true;
   };
 
   W.setLook = function (name) {

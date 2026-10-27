@@ -658,6 +658,32 @@ body[data-state="play"] #snd {
 #h-pause {
   pointer-events: auto;
 }
+.hud-turn {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+}
+.hud-turn .round-btn {
+  width: 44px;
+  height: 44px;
+  opacity: 0.85;
+  touch-action: none;
+}
+.hud-turn .round-btn svg {
+  fill: none;
+}
+#h-board {
+  margin-bottom: 8px;
+}
+#h-board.on {
+  border-color: #ff5a7a;
+  background: linear-gradient(180deg, #fff, #ffd9e1);
+}
 #h-jobs {
   display: flex;
   flex-direction: column;
@@ -1425,5 +1451,62 @@ body.in-job #gl {
   *::after {
     animation-duration: 0.01s !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* ---------- the radio: who is talking, and what they said ---------- */
+#radio {
+  position: fixed;
+  left: 50%;
+  top: max(92px, calc(env(safe-area-inset-top) + 92px));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: min(520px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 6px 16px 6px 6px;
+  border: 3px solid #fff;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 16px rgba(10, 50, 100, 0.22);
+  font: 700 15px/1.25 var(--font);
+  color: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -10px) scale(0.96);
+  transition:
+    opacity 0.18s,
+    transform 0.25s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+#radio.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+#radio .r-who {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #33c3f6;
+  color: #fff;
+  font: 900 12px/1 var(--font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+#radio.rider .r-who {
+  background: #ff8a1f;
+}
+@media (max-width: 640px) {
+  /* phones: above the clock, out of the way of the job list */
+  #radio {
+    top: auto;
+    bottom: calc(max(14px, env(safe-area-inset-bottom)) + 74px);
+    font-size: 13px;
+  }
+  /* in a job: over the score cards, clear of the job's own controls */
+  body.in-job #radio {
+    top: max(8px, env(safe-area-inset-top));
+    bottom: auto;
   }
 }

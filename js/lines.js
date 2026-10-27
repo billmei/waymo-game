@@ -1,0 +1,56 @@
+/* Waymo Care · what the characters say, in the format of Slop Skies' radio (id: [speaker, text]). The block between
+   the markers is plain JSON: tools/gen_voice.py reads it to record voice/<id>.mp3 for every line. Ids that share a
+   prefix and end in a number (disp.good.1, disp.good.2, …) are variants the game picks between. */
+(function () {
+  "use strict";
+  const WG = (window.WG = window.WG || {});
+  WG.LINES = /*LINES*/ {
+    "disp.start.downtown": ["DISPATCH", "Morning, crew! Downtown's rush hour is on. Keep those robotaxis rolling!"],
+    "disp.start.sunset": ["DISPATCH", "Karl's rolling in over the Sunset. Watch out for foggy sensors!"],
+    "disp.start.mission": ["DISPATCH", "Golden hour in the Mission! Everybody needs something. Go, go, go!"],
+    "disp.call.dirty": ["DISPATCH", "One of ours took a mud bath. Grab the sponge!"],
+    "disp.call.charge": ["DISPATCH", "Battery's running on fumes. Plug it in!"],
+    "disp.call.cone": ["DISPATCH", "Somebody coned a car again. Get it off!"],
+    "disp.call.birds": ["DISPATCH", "Pigeons on the lidar! Shoo them off!"],
+    "disp.call.reboot": ["DISPATCH", "A car's lost in the fog. It needs a reboot!"],
+    "disp.call.vacuum": ["DISPATCH", "Popcorn everywhere in that cabin. Vacuum time!"],
+    "disp.call.doors": ["DISPATCH", "Riders left the doors open. Board's in the trunk!"],
+    "disp.good.1": ["DISPATCH", "Nice work!"],
+    "disp.good.2": ["DISPATCH", "Spotless!"],
+    "disp.good.3": ["DISPATCH", "Back on the road!"],
+    "disp.good.4": ["DISPATCH", "That rider's smiling!"],
+    "disp.good.5": ["DISPATCH", "Smooth!"],
+    "disp.good.6": ["DISPATCH", "Five stars!"],
+    "disp.perfect.1": ["DISPATCH", "Perfect! Not a second wasted!"],
+    "disp.perfect.2": ["DISPATCH", "Textbook! Do that again!"],
+    "disp.perfect.3": ["DISPATCH", "Record time! Are you even human?"],
+    "disp.combo.1": ["DISPATCH", "You're on a roll! Keep it going!"],
+    "disp.combo.2": ["DISPATCH", "Combo! The whole fleet's cheering!"],
+    "disp.miss.1": ["DISPATCH", "Oh no, that rider gave up and walked."],
+    "disp.miss.2": ["DISPATCH", "Too slow! We lost that one."],
+    "disp.miss.3": ["DISPATCH", "One got away. Shake it off!"],
+    "disp.hurry": ["DISPATCH", "Twenty seconds left! Hustle!"],
+    "disp.timeup": ["DISPATCH", "That's time! Bring it in!"],
+    "disp.result.good": ["DISPATCH", "Great shift! The riders love you."],
+    "disp.result.ok": ["DISPATCH", "Not bad! Let's tighten it up next shift."],
+    "disp.final.platinum": ["DISPATCH", "Platinum! Best pit crew in San Francisco!"],
+    "disp.final.gold": ["DISPATCH", "Gold! The fleet's never looked better!"],
+    "disp.final.silver": ["DISPATCH", "Silver! A solid day on the streets."],
+    "disp.final.bronze": ["DISPATCH", "Bronze! You kept the city moving."],
+    "disp.final.none": ["DISPATCH", "Rough day. Grab a coffee and try again!"],
+    "rider.dirty.1": ["RIDER", "Ew! Is that a seagull's doing on my window?"],
+    "rider.dirty.2": ["RIDER", "I can't see the Bay Bridge through all this mud!"],
+    "rider.charge.1": ["RIDER", "It says two percent. Is that bad?"],
+    "rider.charge.2": ["RIDER", "We just stopped. Are we out of juice?"],
+    "rider.cone.1": ["RIDER", "Why does my car have a hat?"],
+    "rider.cone.2": ["RIDER", "Somebody put a cone on us. Again!"],
+    "rider.birds.1": ["RIDER", "The pigeons won't let us leave!"],
+    "rider.birds.2": ["RIDER", "There's a gull staring at me through the roof!"],
+    "rider.reboot.1": ["RIDER", "The car keeps saying it can't see. Me neither!"],
+    "rider.reboot.2": ["RIDER", "Hello? Car? Are you okay in there?"],
+    "rider.vacuum.1": ["RIDER", "Whose sock is this?"],
+    "rider.vacuum.2": ["RIDER", "I'm not sitting in that popcorn!"],
+    "rider.doors.1": ["RIDER", "Oops! I left the door open, didn't I?"],
+    "rider.doors.2": ["RIDER", "Sorry! My hands were full of burritos!"]
+  } /*END*/;
+})();
