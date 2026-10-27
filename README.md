@@ -2,15 +2,17 @@
 
 A browser game about being the robotaxi pit crew in toy San Francisco. Robotaxis pull over with problems, and you run over and fix them before the rider loses patience. Every job is played right on the 3D car: the camera swoops in close and you work on the car itself.
 
-Each shift works the streets round a different set of San Francisco landmarks, which stand inside the play area for you to run around (and get a tour in the shift's briefing, with name tags over them in play):
+Each shift works a few blocks of streets round a different set of San Francisco landmarks. The landmarks get a tour in the shift's briefing and name tags over them in play; some stand in the play area for you to run around, others on the skyline beyond it:
 
 | Shift | Where | Landmarks | Light | Jobs |
 | --- | --- | --- | --- | --- |
-| 1. **Bridge View** | Marina & Presidio | Palace of Fine Arts, Golden Gate Bridge | Morning | Vacuum, Recharge, Close doors |
-| 2. **Crooked Street** | Russian Hill to Telegraph Hill | Lombard Street, Coit Tower | Sunny | + Shoo birds |
-| 3. **Lunch Rush** | Downtown & Embarcadero | Transamerica Pyramid, Ferry Building, Salesforce Tower | Sunny | + Wash |
+| 1. **Crooked Street** | Russian Hill, between Lombard Street and Telegraph Hill | Lombard Street, Coit Tower | Morning | Vacuum, Recharge, Close doors |
+| 2. **Main Post** | The Presidio, west of the Palace of Fine Arts | Golden Gate Bridge, Palace of Fine Arts | Sunny | + Shoo birds |
+| 3. **Lunch Rush** | Downtown, between the Financial District's towers | Transamerica Pyramid, 555 California, Salesforce Tower | Sunny | + Wash |
 | 4. **Golden Hour** | Alamo Square | Painted Ladies, Sutro Tower | Sunset | + Remove cones |
-| 5. **Karl the Fog** | Ocean Beach & the Outer Sunset | Murphy and Dutch windmills, Sutro Baths | Fog | + Reboot |
+| 5. **Karl the Fog** | The west end of Golden Gate Park, by Ocean Beach | Dutch and Murphy windmills | Fog | + Reboot |
+
+Every play area is about 300 to 600 m across. `node tools/map_levels.js` draws a top-down map of each one (see [Maps of the play areas](#maps-of-the-play-areas)).
 
 | Job | What happened | What you do |
 | --- | --- | --- |
@@ -52,15 +54,22 @@ To turn it on once, go to the repository's **Settings → Pages** and set **Sour
 
 ## How it's made
 
-- `js/isle.js`: the island, **generated** by `tools/extract_isle.py`, `src/island.js` and `src/render.js`, verbatim:
+- `js/isle.js`: the island, first extracted by `tools/extract_isle.py` from Slop Skies' `src/core.js`, `src/data.js`, `src/island.js` and `src/render.js`:
   - terrain and neighbourhoods
   - Victorian terraces, flats, towers and the landmarks (Painted Ladies, City Hall, Transamerica, Salesforce, Coit Tower, both bridges and more)
   - trees, boats, sea, sky, clouds, and their shaders and blob shadows
 
-  Don't edit `js/isle.js` by hand; run `python3 tools/extract_isle.py` to regenerate it.
+  It has since been edited by hand, and two additions are the game's own: the island's builders are exported as `ISL.kit`, and its boot runs an `extras` step (after the city, before the trees) that calls `WG.isleExtras`. Re-running `tools/extract_isle.py` would drop them, so carry them over if you regenerate it.
+- `js/extras.js`: the game's own additions to the island, built during that `extras` step with the island's builders and colours. Slop Skies' city is made to be flown over, so it leaves gaps that show at street level: empty blocks round the landmarks, and bare parkland in the Presidio and Golden Gate Park. This fills them in:
+  - rows of Victorians and Outer Sunset houses
+  - single houses stepped up the steep blocks of Russian Hill and round Alamo Square
+  - towers between the downtown ones
+  - the Presidio's Main Post: the red-brick Montgomery Street Barracks with their white porches on the Parade Ground, Mission Revival offices and the Officers' Club (white stucco, red tile roofs and curved parapets), and white officers' houses
+
+  `PLAN` lists the blocks each play area fills, and only free ground is built on.
 - `js/world.js`: stands the game on that island:
   - boots the island enlarged by `SCALE`, converting between game metres and island units at every call
-  - reads each shift's district street grid into a graph for the robotaxis, checked against the island's own colliders (each play area is defined in `ZONES`: the grid lines, the districts it keeps, extra walkable ground round a landmark, the steepest street, ground kept clear of streets, and the landmarks it features)
+  - reads each shift's street grid into a graph for the robotaxis, checked against the island's own colliders. Each play area is defined in `ZONES`: its grid (a district's own, a finer one, or a neighbour's for a park), the grid lines that bound it, the districts it keeps, extra walkable ground round a landmark, the steepest street, ground kept clear of streets, and the landmarks it features
   - paves those streets using the island's terrain shader
   - answers ground-height and collision questions
   - lets the camera see through the houses: the island's building, landmark and tree shaders are patched so whatever stands between the camera and the crew member (or the car in a job) goes semi-transparent
@@ -76,6 +85,26 @@ To turn it on once, go to the repository's **Settings → Pages** and set **Sour
 - `css/style.css`: the UI.
 
 This is a fan-made game and is not affiliated with Waymo.
+
+## Maps of the play areas
+
+`tools/map_levels.js` draws a top-down map of every play area, to check its size and layout. It serves the game, renders the real scene from straight above (north up) and draws on top:
+
+- the play area's boundary (red dashes)
+- the ground the crew can walk on (teal)
+- the robotaxis' streets (yellow)
+- where the crew starts (cyan dot)
+- the shift's landmarks (white diamonds, with an arrow and a distance for one off the map)
+
+Each map is headed with the area's size, its walkable ground, its streets, the fleet and how far the farthest corner is from the start. It needs Playwright with Chromium.
+
+```sh
+node tools/map_levels.js                  # every play area, into maps/
+node tools/map_levels.js presidio ladies  # just these (keys of ZONES in js/world.js)
+node tools/map_levels.js --grid --margin 150 --out /tmp/maps
+```
+
+`--grid` also draws the grid's street lines, numbered, past the play area, for picking new bounds. `maps/` is ignored by git.
 
 ## Recording the voices
 

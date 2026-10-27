@@ -9317,6 +9317,50 @@
       KEEP,
       OCC,
       reseed,
+      // the builders, for Waymo Care's own additions to the island (js/extras.js)
+      kit: {
+        R,
+        RR,
+        PK,
+        hh,
+        hex,
+        reseed,
+        terrainY,
+        ground,
+        sdAt,
+        zoneN,
+        parkAt,
+        footG,
+        onRoad,
+        occAt,
+        occRect,
+        occDisc,
+        rectFree,
+        addColl,
+        obAdd,
+        urbMark,
+        box,
+        cbox,
+        prism,
+        stick,
+        lathe,
+        fc,
+        gable,
+        hip,
+        terrace,
+        blockPad,
+        lot,
+        streetTree,
+        LMC,
+        HCOL,
+        FCOL,
+        TOWERC,
+        ROOFC,
+        SIDEW,
+        PLAZA,
+        YARD,
+        BLOBS,
+      },
       get ncoll() {
         return NCOLL;
       },
@@ -9370,6 +9414,11 @@
       }),
       step("downtown", () => ISL.city(HG, FG, true)),
       step("neighbourhoods", () => ISL.city(HG, FG, false)),
+      // Waymo Care's own streets, houses and buildings round its play areas, before the trees so they keep clear
+      step("extras", () => {
+        const f = window.WG && window.WG.isleExtras;
+        if (f) f(G, HG, SG, ISL.kit);
+      }),
       step("parks and trees", () => ISL.trees(G, SG)),
       step("roads and boats", () => {
         ISL.roads(G);

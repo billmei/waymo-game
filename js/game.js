@@ -19,43 +19,43 @@
   /* ---------- rounds ---------- */
   const SHIFTS = [
     {
-      name: "Bridge View",
+      name: "Crooked Street",
       look: "morning",
       blurb:
-        "Morning by the Palace of Fine Arts, with the Golden Gate Bridge over the Presidio. The early riders left crumbs, flat batteries and open doors behind them.",
+        "Morning on Russian Hill, between the top of Lombard Street's crooked bricks and Coit Tower. The early riders left crumbs, flat batteries and open doors behind them. Mind the hills!",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
       patience: 44,
       kinds: ["vacuum", "charge", "doors"],
       key: 0,
-      zone: "marina",
+      zone: "lombard",
     },
     {
-      name: "Crooked Street",
+      name: "Main Post",
       look: "day",
       blurb:
-        "Sunshine from the top of Lombard Street, down through North Beach and up Telegraph Hill to Coit Tower. Mind the hills, and the birds on the warm sensors.",
+        "Sunshine on the Presidio's old Army post, the Golden Gate Bridge over the trees: red-brick barracks and Mission Revival offices round the Parade Ground. Watch out for birds on the warm sensors.",
       dur: 100,
       every: [5, 7],
       max: 3,
       patience: 42,
       kinds: ["vacuum", "charge", "doors", "birds"],
       key: 2,
-      zone: "lombard",
+      zone: "presidio",
     },
     {
       name: "Lunch Rush",
       look: "day",
       blurb:
-        "Noon in the Financial District, from the Transamerica Pyramid down to the Ferry Building, Salesforce Tower on the corner. The towers empty out, and the gulls have been at the paintwork.",
+        "Noon between the Financial District's towers, from the Transamerica Pyramid down to Salesforce Tower on Market Street. The towers empty out, and the gulls have been at the paintwork.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
       patience: 40,
       kinds: ["vacuum", "charge", "doors", "birds", "dirty"],
       key: 3,
-      zone: "ferry",
+      zone: "downtown",
     },
     {
       name: "Golden Hour",
@@ -74,14 +74,14 @@
       name: "Karl the Fog",
       look: "fog",
       blurb:
-        "Karl the Fog rolls in off the Pacific over Ocean Beach, from the Outer Sunset past both windmills up to the ruins of Sutro Baths. Everything goes wrong at once, and the seagulls are out!",
+        "Karl the Fog rolls in off the Pacific over the west end of Golden Gate Park, between the Dutch and Murphy windmills. Everything goes wrong at once, and the seagulls are out!",
       dur: 100,
       every: [3.8, 5.4],
       max: 5,
       patience: 38,
       kinds: ["vacuum", "charge", "doors", "birds", "dirty", "cone", "reboot"],
       key: 7,
-      zone: "beach",
+      zone: "windmills",
     },
   ];
   const MEDALS = [
