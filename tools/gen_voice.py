@@ -36,8 +36,8 @@ LINES_JS = os.path.join(ROOT, "js", "lines.js")
 OUT = os.path.join(ROOT, "voice")
 
 # who says what: a voice per speaker for each provider, and how they should sound. The ElevenLabs voices are the ones
-# the recorded lines in voice/ use: Dispatch, Tourist and Influencer were made with Voice Design, the rest are stock
-# ElevenLabs voices. Override any of them with VOICE_<SPEAKER>=<voice id>.
+# the recorded lines in voice/ use: Dispatch, Tourist and Influencer were made with Voice Design (the plan's three
+# custom voices), the rest are ElevenLabs' pre-made voices. Override any of them with VOICE_<SPEAKER>=<voice id>.
 def _spk(name, style, openai_voice, elevenlabs_id):
     return {
         "style": style,
@@ -52,7 +52,7 @@ SPEAKERS = {
         "A sarcastic, bratty young dispatcher with a high-pitched voice. Snarky, smug and teasing, a little whiny, "
         "rolling his eyes as he talks, but still cheering the crew on in his own backhanded way.",
         "echo",
-        "",  # "Waymo Care - Dispatch (bratty)" (Voice Design): set once the voice is saved
+        "njX9gv1g1XDQKbuzpjys",  # "Waymo Care - Dispatch (bratty)" (Voice Design)
     ),
     "TOURIST": _spk(
         "TOURIST",
@@ -73,7 +73,7 @@ SPEAKERS = {
         "A sweet, slightly confused grandmother in her late seventies. Soft, warm and polite, calls everyone dear, "
         "chuckles at her own jokes, curious rather than worried.",
         "sage",
-        "vFLqXa8bgbofGarf6fZh",  # "Grandma Muffins Oxley" (voice library)
+        "XrExE9yKIg1WjnnlVkGX",  # "Matilda" (ElevenLabs stock voice), aged up with [elderly voice]
     ),
     "FOUNDER": _spk(
         "FOUNDER",
@@ -87,7 +87,7 @@ SPEAKERS = {
         "A jaded San Francisco local who has seen it all. Low, gravelly and unimpressed; flat, deadpan and dry, with "
         "weary pauses.",
         "onyx",
-        "LysucvtFmzi1NVAE0rKp",  # "Marshal - Grumpy Sourpuss" (voice library)
+        "N2lVS1w4EtoT3dr4eOWO",  # "Callum" (ElevenLabs stock voice)
     ),
     "ARTIST": _spk(
         "ARTIST",

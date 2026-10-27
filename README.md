@@ -86,11 +86,11 @@ Every line is recorded with ElevenLabs (the `eleven_v4` model), one voice per ch
 | Dispatch | Sarcastic, bratty, high-pitched; cheers you on in a backhanded way | "Waymo Care - Dispatch (bratty)" (Voice Design) |
 | Tourist | Wide-eyed dad from Ohio, loud, easily amazed, lovably indignant | "Waymo Care - Tourist" (Voice Design) |
 | Influencer | Californian vocal fry, every smudge is a crisis | "Waymo Care - Influencer" (Voice Design) |
-| Grandma | Sweet, a little confused, calls you dear | Grandma Muffins Oxley (voice library) |
-| Founder | Over-caffeinated, fast and clipped, late for standup | Sarah (stock) |
-| Local | Deadpan, gravelly, has seen it all | Marshal - Grumpy Sourpuss (voice library) |
-| Artist | Dreamy and mellow, finds everything a little cosmic | River (stock) |
-| Student | Frazzled, sheepish, nervous laugh | Liam (stock) |
+| Grandma | Sweet, a little confused, calls you dear | Matilda (pre-made), with `[elderly voice]` |
+| Founder | Over-caffeinated, fast and clipped, late for standup | Sarah (pre-made) |
+| Local | Deadpan, gravelly, has seen it all | Callum (pre-made) |
+| Artist | Dreamy and mellow, finds everything a little cosmic | River (pre-made) |
+| Student | Frazzled, sheepish, nervous laugh | Liam (pre-made) |
 
 How each line is performed (ElevenLabs audio tags like `[deadpan]` or `[giggles]`) is in `tools/voice_direction.json`; the captions in the game show the plain line from `js/lines.js`.
 
