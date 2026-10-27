@@ -21,7 +21,7 @@
     {
       name: "Morning Rush",
       look: "day",
-      blurb: "Sunny skies over the Financial District. The commuters are in — and leaving muddy footprints, cones and open doors behind them.",
+      blurb: "Sunny skies over the Financial District. The commuters are in — and leaving muddy footprints, open doors and the odd ring of traffic cones behind them.",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
@@ -33,7 +33,7 @@
     {
       name: "Karl the Fog",
       look: "fog",
-      blurb: "Karl the Fog rolls over the Outer Sunset off the Pacific. Sensors get confused and need a reboot, and the night crowd left popcorn everywhere.",
+      blurb: "Karl the Fog rolls over the Outer Sunset off the Pacific. Some cars need a reboot, and the night crowd left popcorn everywhere.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
@@ -513,10 +513,11 @@
     G.lastKind = type;
     const prob = { type, max: s.patience, left: s.patience };
     if (type === "doors") {
-      // the two side doors and the rear hatch
-      const n = clamp(1 + G.round + (Math.random() < 0.4 ? 1 : 0), 2, WG.DOOR_N);
-      prob.doors = [0, 1, 2].sort(() => Math.random() - 0.5).slice(0, n);
+      const n = Math.min(4, 2 + G.round + (Math.random() < 0.4 ? 1 : 0) - 1);
+      prob.doors = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.max(2, n));
     }
+    // more cones boxing the car in as the day goes on
+    if (type === "cone") prob.n = Math.min(6, 3 + G.round + (Math.random() < 0.4 ? 1 : 0));
     best.setProblem(prob);
     best.pullOver();
     VOX.say("disp.call." + type);
@@ -1357,8 +1358,8 @@
       if (Math.abs(rx) > 4 || Math.abs(rz) > 4) continue;
       const along = rx * c.fwd.x + rz * c.fwd.z,
         lat = -rx * c.fwd.z + rz * c.fwd.x,
-        ea = WG.CAR_HALF[0] * WG.CAR_SCALE + 0.4 - Math.abs(along),
-        el = WG.CAR_HALF[1] * WG.CAR_SCALE + 0.35 - Math.abs(lat);
+        ea = 2.35 * WG.CAR_SCALE + 0.4 - Math.abs(along),
+        el = 0.98 * WG.CAR_SCALE + 0.35 - Math.abs(lat);
       if (ea > 0 && el > 0) {
         if (el < ea) {
           const s = Math.sign(lat) || 1;
@@ -1375,7 +1376,7 @@
     // step to the work spot (the street-side front corner, out of the camera's way) and face the car
     if (G.mini && JOB.active && !drives) {
       const c = G.mini,
-        spot = c.parts.g.localToWorld(JOB.SPOT.clone()),
+        spot = c.parts.g.localToWorld((JOB.active.spot || JOB.SPOT).clone()),
         f = Math.min(1, dt * 6);
       if (!W.isBlocked(spot.x, spot.z, 0.3)) {
         P.pos.x += (spot.x - P.pos.x) * f;

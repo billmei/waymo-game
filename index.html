@@ -107,9 +107,9 @@
           <ul class="how-jobs">
             <li data-k="dirty"><canvas width="64" height="64"></canvas><b>Wash</b><span>Hold and drag the sponge to scrub off mud and bird droppings.</span></li>
             <li data-k="charge"><canvas width="64" height="64"></canvas><b>Recharge</b><span>Drag the plug to the port, then tap when the needle is in the green.</span></li>
-            <li data-k="cone"><canvas width="64" height="64"></canvas><b>De-cone</b><span>Someone put a cone on the hood again. Grab it and fling it away.</span></li>
+            <li data-k="cone"><canvas width="64" height="64"></canvas><b>De-cone</b><span>Someone boxed a car in with traffic cones. Grab them and fling them off the road.</span></li>
             <li data-k="birds"><canvas width="64" height="64"></canvas><b>Shoo birds</b><span>Pigeons love warm sensors. Tap them to send them off. Gulls take two.</span></li>
-            <li data-k="reboot"><canvas width="64" height="64"></canvas><b>Reboot</b><span>Fog confuses the lidar. Key in the recalibration code with the arrows.</span></li>
+            <li data-k="reboot"><canvas width="64" height="64"></canvas><b>Reboot</b><span>The car needs rebooting. Key in the restart code with the arrows.</span></li>
             <li data-k="vacuum"><canvas width="64" height="64"></canvas><b>Vacuum</b><span>The roof comes off! Sweep the vacuum over the crumbs, popcorn and lost socks.</span></li>
             <li data-k="doors"><canvas width="64" height="64"></canvas><b>Close doors</b><span>Riders left the doors open. Hop on your skateboard and slam them shut.</span></li>
           </ul>
@@ -194,12 +194,14 @@
 
     <!-- ===== pause ===== -->
     <section id="pause" class="screen" hidden>
-      <div class="panel small">
+      <div class="panel wide">
         <header class="panel-h"><span>Paused</span></header>
-        <div class="panel-f col">
-          <button type="button" class="btn primary" id="pz-go">Continue</button>
-          <button type="button" class="btn" id="pz-restart">Restart shift</button>
+        <!-- the How to Play instructions, copied in below -->
+        <div class="panel-b" id="pz-how"></div>
+        <div class="panel-f">
           <button type="button" class="btn" id="pz-quit">Quit to title</button>
+          <button type="button" class="btn" id="pz-restart">Restart shift</button>
+          <button type="button" class="btn primary" id="pz-go">Continue</button>
         </div>
       </div>
     </section>
@@ -253,6 +255,8 @@
     <script src="js/jobs.js"></script>
     <script src="js/game.js"></script>
     <script>
+      // the pause menu shows the How to Play instructions too
+      document.getElementById("pz-how").innerHTML = document.querySelector("#howto .panel-b").innerHTML;
       // the How to Play icons
       document.querySelectorAll(".how-jobs li").forEach((li) => WG.drawIcon(li.querySelector("canvas").getContext("2d"), li.dataset.k, 32, 34, 1));
     </script>

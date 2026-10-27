@@ -1,7 +1,7 @@
 /* Waymo Care · the jobs, played right on the 3D car with the main camera: the camera swoops in, you scrub, drag, fling,
    tap, vacuum or skate in the world, and a small job bar (title, hint, progress, Leave) sits over the scene.
-   dirty → scrub the spots · charge → plug in, then pump the meter · cone → fling the cones · birds → shoo them
-   reboot → key in the code · vacuum → clean the cabin (roof off) · doors → skateboard around and slam the open doors */
+   dirty → scrub the spots · charge → plug in, then pump the meter · cone → fling away the cones boxing the car in
+   birds → shoo them · reboot → key in the code · vacuum → clean the cabin (roof off) · doors → skateboard around and slam the open doors */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -189,7 +189,7 @@
     doors: "All shut!",
   };
 
-  const J = { active: null, SPOT: V3(0.5, 0, -3.9) };
+  const J = { active: null, SPOT: V3(-0.15, 0, -4.1) };
   const JOBS = {};
 
   J.start = function (kind, car, e, onDone) {
@@ -254,6 +254,7 @@
       j.t += dt;
       j.update(dt);
       el.hint.textContent = j.hint();
+      el.hint.classList.toggle("nudge", !!(j.nudge && j.nudge()));
       el.bar.style.transform = "scaleX(" + clamp(j.progress(), 0, 1) + ")";
     } else {
       j.doneT += dt;
@@ -315,7 +316,15 @@
       return 7;
     },
     hint() {
+      if (this.nudge())
+        return TOUCH
+          ? "Can't see the rest? Hold the turn arrows to look round the other side of the car!"
+          : "Can't see the rest? Press Q or E to turn the camera round the car!";
       return TOUCH ? "Rub your finger over the dirty spots to scrub them off!" : "Hold the mouse button and scrub the dirty spots off!";
+    },
+    // nothing scrubbed for five seconds: the rest of the dirt is probably round the other side
+    nudge() {
+      return !this.done && this.t - this.lastClean > 5;
     },
     progress() {
       let s = 0;
@@ -323,7 +332,7 @@
       return 1 - s / this.splats.length;
     },
     cam() {
-      return { p: [-4.4, 4.0, 1.4], l: [0, 1.0, -0.1] };
+      return { p: [-4.5, 4.2, 1.5], l: [0, 1.1, -0.1] };
     },
     init() {
       const P = this.car.parts;
@@ -331,6 +340,7 @@
       // the dirt sits where it landed this time (actors.js lays it out afresh for every wash)
       const pr = this.car.problem,
         spots = (pr.spots || (pr.spots = WG.dirtSpots(12))).map((d) => [d.p.x, d.p.y, d.p.z, d.n.x, d.n.y, d.n.z, d.s, d.k]);
+      this.lastClean = 0;
       this.splats = spots.map(([x, y, z, nx, ny, nz, s, k]) => {
         const mat = lam(DIRT[k], { transparent: true, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
           g = new T.Group();
@@ -385,6 +395,7 @@
         s.g.getWorldPosition(s.w);
         if (s.w.distanceTo(p) > 0.4 + s.size) continue;
         s.dirt -= d * 1.5 + 0.003;
+        this.lastClean = this.t;
         s.mat.opacity = 0.2 + 0.8 * Math.max(0, s.dirt);
         const k = 0.45 + 0.55 * Math.max(0, s.dirt);
         s.g.scale.set(k, 1, k);
@@ -421,9 +432,7 @@
   /* ===================================================================================== */
   /* charge: drag the plug to the port, then pump the meter                                */
   /* ===================================================================================== */
-  // the port on the street-side front fender, on the car's own shell
-  const PORT_HIT = WG.carSurf.side(-1, 0.98, -0.95),
-    PORT = PORT_HIT.p.clone().addScaledVector(PORT_HIT.n, 0.01);
+  const PORT = V3(-0.955, 1.0, -1.62);
   JOBS.charge = {
     par() {
       return 5.5;
@@ -454,12 +463,11 @@
       // the port on the street-side front fender
       const port = own(this, new T.Group(), g);
       port.position.copy(PORT);
-      port.quaternion.setFromUnitVectors(V3(-1, 0, 0), PORT_HIT.n);
       mesh(BOX, lam(0x2b3038), 0, 0, 0, 0.03, 0.2, 0.26, port);
       this.glow = mesh(BOX, lam(0x36d3c4, { emissive: 0x36d3c4, emissiveIntensity: 0.6 }), -0.012, 0, 0, 0.03, 0.08, 0.08, port);
       // the charging cart
       const cart = own(this, new T.Group(), g);
-      cart.position.set(-2.0, 0, 2.2);
+      cart.position.set(-2.1, 0, 2.9);
       mesh(WG.roundBox(0.6, 1.0, 0.5, 0.08, 2), lam(0xf4f6f8), 0, 0.6, 0, 1, 1, 1, cart);
       mesh(BOX, lam(0x36d3c4, { emissive: 0x1a8078 }), -0.31, 0.85, 0, 0.02, 0.22, 0.32, cart);
       mesh(BOX, lam(0x3a3f47), -0.31, 0.5, 0.12, 0.03, 0.1, 0.1, cart);
@@ -470,13 +478,13 @@
         [0.22, 0.18],
       ])
         mesh(SPH, lam(0x24272c), x, 0.08, z, 0.08, 0.08, 0.08, cart);
-      this.outlet = V3(-2.32, 0.5, 2.32);
+      this.outlet = V3(-2.42, 0.5, 3.02);
       // the plug
       const plug = own(this, new T.Group(), g);
       mesh(WG.roundBox(0.28, 0.15, 0.15, 0.05, 2), lam(0x3a3f47), -0.05, 0, 0, 1, 1, 1, plug);
       mesh(BOX, lam(0x36d3c4, { emissive: 0x1a8078 }), 0.1, 0, 0, 0.05, 0.08, 0.08, plug);
       this.plugHit = mesh(SPH, HIT, 0, 0, 0, 0.42, 0.42, 0.42, plug);
-      this.rest = V3(-1.75, 0.8, 1.45);
+      this.rest = V3(-1.9, 0.75, 2.2);
       plug.position.copy(this.rest);
       this.plug = plug;
       this.cable = null;
@@ -593,42 +601,41 @@
   };
 
   /* ===================================================================================== */
-  /* cone: grab the cones and fling them off                                               */
+  /* cone: somebody boxed the car in with cones on the road; grab them and fling them away */
   /* ===================================================================================== */
   JOBS.cone = {
+    // stand clear of the ring, at the front corner on the street side
+    spot: V3(-2.9, 0, -4.3),
     par() {
-      return 1.2 + this.cones.length * 1.2;
+      return 1 + this.cones.length * 1.0;
     },
     hint() {
-      return TOUCH ? "Grab each cone and flick it off the car!" : "Grab each cone and fling it off the car! (Space flicks one)";
+      return TOUCH
+        ? "Someone boxed the car in! Grab each cone and flick it off the road."
+        : "Someone boxed the car in! Grab each cone and fling it off the road. (Space flicks one)";
     },
     progress() {
       return this.cones.filter((c) => c.st === "gone").length / this.cones.length;
     },
     cam() {
-      return { p: [-4.8, 4.6, 1.3], l: [0, 1.55, -0.4] };
+      // high on the street side, to see the whole ring of cones round the car
+      return { p: [-6.6, 7.6, 1.6], l: [-0.6, 0.2, 0] };
     },
     init() {
-      const g = this.car.parts.g;
+      const g = this.car.parts.g,
+        pr = this.car.problem;
       this.car.parts.cone.visible = false;
-      const D = WG.CAR_DOME,
-        S = WG.carSurf,
-        on = (x, z, r) => {
-          const h = S.top(x, z);
-          return [h.p.x, h.p.y, h.p.z, r, Math.atan2(h.n.z, h.n.y) * 0.7];
-        },
-        spots = [on(0, -0.62, 0.12), [D.x, D.top, D.z, 0, 0], on(0.25, 0.85, -0.1)];
-      const n = this.round >= 3 ? 3 : this.round >= 2 ? 2 : Math.random() < 0.4 ? 2 : 1;
-      this.cones = spots.slice(0, n).map(([x, y, z, r, rx]) => {
+      // the same cones you saw from the street, on the road round the car
+      const spots = pr.spots || (pr.spots = WG.coneSpots(pr.n || 3));
+      this.cones = spots.map(([x, z, r]) => {
         const o = WG.makeCone();
-        o.scale.setScalar(1.05);
-        o.position.set(x, y, z);
-        o.rotation.x = rx;
-        o.rotation.z = r;
+        o.scale.setScalar(1.3);
+        o.position.set(x, 0, z);
+        o.rotation.y = r;
         own(this, o, g);
-        const c = { o, home: V3(x, y, z), r, st: "on", samples: [] };
+        const c = { o, home: V3(x, 0, z), r: 0, st: "on", samples: [] };
         o.traverse((m) => m.isMesh && (m.userData.cone = c));
-        mesh(SPH, HIT, 0, 0.45, 0, 0.45, 0.6, 0.45, o).userData.cone = c;
+        mesh(SPH, HIT, 0, 0.45, 0, 0.5, 0.65, 0.5, o).userData.cone = c;
         return c;
       });
       this.hits = [];
@@ -655,6 +662,7 @@
       c.samples.push([performance.now() / 1000, p.clone()]);
       if (c.samples.length > 6) c.samples.shift();
       this.car.parts.g.worldToLocal(p);
+      p.y = Math.max(0, p.y);
       c.o.position.copy(p);
       c.o.rotation.z = clamp((p.x - c.home.x) * 0.4, -0.7, 0.7);
     },
@@ -678,28 +686,26 @@
         A().sfx("bonk");
       }
     },
+    // away from the car: a gentle toss carries on outward
+    out(c, k) {
+      const out = c.o.getWorldPosition(V3(0, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
+      out.y = 0;
+      return out.normalize().multiplyScalar(k);
+    },
     fling(c, v) {
-      if (v.length() < 3) {
-        // a gentle toss: carry on outward from the car
-        const out = c.o.getWorldPosition(V3(0, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 1.2, 0)));
-        out.y = 0;
-        v = out.normalize().multiplyScalar(4);
-      }
+      if (v.length() < 3) v = this.out(c, 5);
       if (v.length() > 16) v.setLength(16);
       v.y = Math.max(v.y, 3.5);
       c.st = "gone";
       launch(c.o, v);
       A().sfx("whoosh");
-      word(["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0], c.o.getWorldPosition(V3(0, 0, 0)), "orange");
+      word(["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0], c.o.getWorldPosition(V3(0, 1, 0)), "orange");
       if (this.cones.every((k) => k.st === "gone")) this.allT = 0.4;
     },
     key(code) {
       if (code !== "Space" && code !== "Enter") return false;
       const c = this.cones.find((k) => k.st === "on");
-      if (c) {
-        const side = this.car.parts.g.localToWorld(V3(-1, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
-        this.fling(c, side.multiplyScalar(rr(4, 7)).add(V3(0, rr(4, 6), 0)));
-      }
+      if (c) this.fling(c, this.out(c, rr(5, 7)).add(V3(0, rr(4, 6), 0)));
       return true;
     },
     update(dt) {
@@ -709,6 +715,12 @@
           c.o.rotation.z += (c.r - c.o.rotation.z) * Math.min(1, dt * 12);
           if (c.o.position.distanceTo(c.home) < 0.01) c.st = "on";
         } else if (c.st === "on") c.o.rotation.z = c.r + Math.sin(this.t * 3 + c.home.z) * 0.04;
+      }
+      // the boxed-in car honks now and then
+      this.honk = (this.honk || 1.5) - dt;
+      if (this.honk <= 0 && !this.done) {
+        this.honk = rr(2.5, 4);
+        A().sfx("carBeep", 0);
       }
       if (this.allT !== undefined && !this.done) {
         this.allT -= dt;
@@ -760,21 +772,17 @@
     },
     init() {
       this.car.parts.birds.visible = false;
-      // on the roof, the lidar, the top of the windscreen and the tail
-      const D = WG.CAR_DOME,
-        spots = [
-          [0.3, 0.75],
-          [-0.35, 0.45],
-          [0.38, -0.3],
-          [-0.3, -0.5],
-          [0.05, -0.72],
-          [-0.38, 1.05],
-          [0.3, 1.25],
-          [-0.42, 0.05],
-        ]
-          .map(([x, z]) => WG.carSurf.top(x, z).p.toArray())
-          .concat([[D.x, D.top, D.z]])
-          .sort(() => Math.random() - 0.5);
+      const spots = [
+        [0.3, 1.895, 1.0],
+        [-0.35, 1.895, 0.2],
+        [0.25, 1.895, -0.6],
+        [-0.4, 1.232, -1.7],
+        [0.35, 1.232, -1.35],
+        [0, 2.37, 0.1],
+        [-0.35, 1.895, 1.25],
+        [0.4, 1.232, -2.0],
+        [-0.25, 1.232, 1.95],
+      ].sort(() => Math.random() - 0.5);
       const n = 4 + Math.min(3, this.round);
       this.free = spots.slice(n);
       this.birds = spots.slice(0, n).map((s, i) => this.mk(s, i === 0 && this.round >= 2));
@@ -791,7 +799,7 @@
       b.hp = gull ? 2 : 1;
       b.st = fromSky ? "land" : "sit";
       b.t = Math.random() * 5;
-      b.obj.scale.setScalar(gull ? 1.7 : 1.3);
+      b.obj.scale.setScalar(gull ? 2.1 : 1.6);
       b.obj.rotation.y = Math.random() * 7;
       if (fromSky) {
         const a = Math.random() * 7;
@@ -968,6 +976,44 @@
   /* ===================================================================================== */
   /* vacuum: the roof comes off, you vacuum the crumbs, popcorn and the odd sock          */
   /* ===================================================================================== */
+  let CUT = null;
+  function cutaway() {
+    if (CUT) return CUT;
+    const M = new W.Merge(),
+      rb = WG.roundBox,
+      put = (geo, col, x, y, z, rx) => M.geo(geo, col, W.mat(x, y, z, 1, 1, 1, 0, rx || 0)),
+      WHITE = "#f8f9fb",
+      TRIM = "#2b3038",
+      SEAT = "#5f6b7d";
+    put(rb(1.94, 0.3, 4.5, 0.12, 2), TRIM, 0, 0.5, 0);
+    put(rb(1.9, 0.8, 1.3, 0.3, 3), WHITE, 0, 0.82, -1.65);
+    put(rb(1.9, 0.8, 0.8, 0.3, 3), WHITE, 0, 0.82, 1.9);
+    for (const s of [-1, 1]) {
+      put(rb(0.14, 0.8, 2.7, 0.06, 2), WHITE, s * 0.88, 0.82, 0.15);
+      put(rb(0.6, 0.22, 0.58, 0.08, 2), SEAT, s * 0.42, 0.8, -0.45);
+      put(rb(0.6, 0.72, 0.16, 0.07, 2), SEAT, s * 0.42, 1.15, -0.12, -0.15);
+    }
+    put(new T.BoxGeometry(1.66, 0.1, 2.7), "#454b55", 0, 0.62, 0.15);
+    put(rb(1.56, 0.22, 0.6, 0.08, 2), SEAT, 0, 0.8, 0.85);
+    put(rb(1.56, 0.72, 0.16, 0.07, 2), SEAT, 0, 1.15, 1.2, 0.15);
+    put(rb(1.62, 0.32, 0.42, 0.1, 2), TRIM, 0, 1.05, -1.08);
+    put(new T.BoxGeometry(0.5, 0.02, 0.18), "#36d3c4", 0.1, 1.22, -1.0);
+    put(new T.BoxGeometry(0.22, 0.24, 0.62), TRIM, 0, 0.78, -0.45);
+    put(new T.TorusGeometry(0.15, 0.03, 8, 20), TRIM, -0.42, 1.22, -0.84, -1.1);
+    for (const [x, z] of [
+      [-0.9, -1.45],
+      [0.9, -1.45],
+      [-0.9, 1.45],
+      [0.9, 1.45],
+    ]) {
+      M.geo(new T.CylinderGeometry(0.4, 0.4, 0.32, 16), "#23262b", W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2));
+      M.geo(new T.CylinderGeometry(0.22, 0.22, 0.34, 12), "#c7ccd3", W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2));
+    }
+    for (const s of [-1, 1]) M.geo(new T.BoxGeometry(0.4, 0.12, 0.06), "#e8433f", W.mat(s * 0.64, 0.98, 2.3, 1, 1, 1));
+    const m = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 40, specular: 0x333333 }));
+    CUT = [m.geometry, m.material];
+    return CUT;
+  }
   const MESS = {
     crumbs(g) {
       const m = lam(0xc9a46a);
@@ -1023,19 +1069,25 @@
       return this.gone / this.items.length;
     },
     cam() {
-      return { p: [-1.7, 5.6, 1.5], l: [0, 0.6, -0.15] };
+      return { p: [-1.9, 6.4, 1.7], l: [0, 0.7, 0.05] };
     },
     init() {
       const P = this.car.parts,
         g = P.g,
-        C = WG.carCutaway();
+        C = cutaway();
       P.body.visible = false;
       P.spin.visible = false;
-      if (this.car.doorParts) for (const d of this.car.doorParts) d.pivot.visible = d.patch.visible = false;
       this.cut = own(this, new T.Mesh(C[0], C[1]), g);
       this.cut.castShadow = this.cut.receiveShadow = true;
-      // where mess can be: the bench, the footwells, the dash shelf
-      const areas = WG.CABIN;
+      // where mess can be: the seats and the footwells
+      const areas = [
+        () => [rr(-0.62, -0.25), 0.92, rr(-0.65, -0.3)],
+        () => [rr(0.25, 0.62), 0.92, rr(-0.65, -0.3)],
+        () => [rr(-0.65, 0.65), 0.92, rr(0.7, 1.0)],
+        () => [rr(-0.65, -0.2), 0.68, rr(-0.95, -0.8)],
+        () => [rr(0.2, 0.65), 0.68, rr(-0.95, -0.8)],
+        () => [rr(-0.7, 0.7), 0.68, rr(0.22, 0.48)],
+      ];
       const kinds = ["crumbs", "popcorn", "wrapper", "receipt", "crumbs", "popcorn", "leaf", "wrapper", "sock", "cup"];
       const n = Math.min(18, 10 + this.round * 2);
       this.items = [];
@@ -1043,7 +1095,7 @@
         let k = kinds[i % kinds.length];
         const a = areas[(Math.random() * areas.length) | 0](),
           o = new T.Group();
-        if (k === "cup" && a[1] > 0.6) k = "receipt";
+        if (k === "cup" && a[1] > 0.8) k = "receipt";
         o.position.set(a[0], a[1], a[2]);
         const hp = MESS[k](o);
         own(this, o, g);
@@ -1058,7 +1110,7 @@
       wand.rotation.set(0.35, 0, 0.4);
       nz.visible = false;
       this.noz = own(this, nz);
-      this.floor = mesh(new T.PlaneGeometry(1.5, 2.8), HIT, 0, 0.47, -0.1, 1, 1, 1, g);
+      this.floor = mesh(new T.PlaneGeometry(1.9, 3.4), HIT, 0, 0.72, 0.15, 1, 1, 1, g);
       this.floor.rotation.x = -Math.PI / 2;
       this.objs.push(this.floor);
       this.hits = [this.cut, this.floor];
@@ -1232,8 +1284,8 @@
       if (!this.done)
         for (const d of this.open) {
           if (d.shut) continue;
-          const a = d.pivot.localToWorld(d.seg[0].clone()),
-            b = d.pivot.localToWorld(d.seg[1].clone());
+          const a = d.pivot.localToWorld(V3(0, 0.8, 0.05)),
+            b = d.pivot.localToWorld(V3(0, 0.8, 0.95));
           const abx = b.x - a.x,
             abz = b.z - a.z,
             t = clamp(((P.pos.x - a.x) * abx + (P.pos.z - a.z) * abz) / (abx * abx + abz * abz), 0, 1),
@@ -1272,7 +1324,7 @@
       for (const d of this.open)
         if (d.shut && d.pivot.visible) {
           d.k = Math.min(1, d.k + dt / 0.14);
-          d.pose(1 - d.k * d.k);
+          d.pivot.rotation.y = d.side * 1.1 * (1 - d.k * d.k);
           if (d.k >= 1) d.pivot.visible = d.patch.visible = false;
         }
       if (!this.done && this.open.every((d) => d.shut)) finish(this);

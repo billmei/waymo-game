@@ -1,7 +1,7 @@
-/* Waymo Care · sound. The music is Slop Skies' own score (music/*.mp3, looped at its own loop points and levels); if
-   the files can't be loaded (say, opened from file://) a small step sequencer stands in: swung eighths driving FM
-   e-piano, vibes, round bass, brass stabs and a brush kit, in the bright, jazzy "plaza" style of a 2006 console sports
-   menu. Sound effects are synthesised one-shot voices on their own bus, and voice lines (js/voice.js) on a third. */
+/* Waymo Care · sound. Everything is synthesised with Web Audio: no files to load.
+   Music is a small step sequencer (swung eighths) driving FM e-piano, vibes, round bass, brass stabs and a brush kit,
+   in the bright, jazzy "plaza" style of a 2006 console sports menu. Sound effects are one-shot voices on their own bus,
+   and the voice lines (js/voice.js) have a third. */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -9,7 +9,6 @@
   let ctx = null,
     master,
     musBus,
-    trBus,
     voxBus,
     sfxBus,
     verb,
@@ -47,10 +46,6 @@
     musBus = ctx.createGain();
     musBus.gain.value = 0.42;
     musBus.connect(master);
-    // the score, dry (it is already mixed)
-    trBus = ctx.createGain();
-    trBus.gain.value = 1;
-    trBus.connect(master);
     voxBus = ctx.createGain();
     voxBus.gain.value = 1.15;
     voxBus.connect(master);
@@ -86,87 +81,16 @@
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
 
     if (ctx.state === "suspended") ctx.resume().catch(() => {});
-    for (const k in TRACKS) loadTrack(k);
     return ctx;
   }
 
-  /* ---------- the score: Slop Skies' cues, with their loop points and levels (dr.js MIX.cues) ---------- */
-  const TRACKS = {
-    title: { file: "isle-title.mp3", db: -6.3, loop: [0.05, 55.7021667] },
-    play: { file: "isle-flight.mp3", db: -8.0, loop: [0.05, 26.1349375] },
-    results: { file: "isle-results.mp3", db: -4.9, then: "title" },
-  };
   const dBg = (d) => Math.pow(10, d / 20);
-  const TR = { buf: {}, load: {}, failed: /^file:/.test(location.protocol), cur: null, want: null, src: null, g: null, rate: 1 };
-  function loadTrack(name) {
-    if (TR.load[name]) return TR.load[name];
-    const tk = TRACKS[name];
-    TR.load[name] = fetch("music/" + tk.file)
-      .then((r) => {
-        if (!r.ok) throw new Error(r.status);
-        return r.arrayBuffer();
-      })
-      .then((a) => new Promise((ok, bad) => ctx.decodeAudioData(a, ok, bad)))
-      .then((b) => (TR.buf[name] = b))
-      .catch(() => {
-        TR.failed = true;
-        return null;
-      });
-    return TR.load[name];
-  }
-  function stopTrack(fade) {
-    if (!TR.src) return;
-    const src = TR.src,
-      g = TR.g;
-    src.onended = null;
-    g.gain.setTargetAtTime(0.0001, ctx.currentTime, fade || 0.2);
-    setTimeout(() => {
-      try {
-        src.stop();
-      } catch (e) {}
-      g.disconnect();
-    }, 1500);
-    TR.src = TR.g = null;
-  }
-  function startTrack(name) {
-    const tk = TRACKS[name],
-      buf = TR.buf[name];
-    const src = ctx.createBufferSource(),
-      g = ctx.createGain();
-    src.buffer = buf;
-    if (tk.loop) {
-      src.loop = true;
-      src.loopStart = tk.loop[0];
-      src.loopEnd = Math.min(tk.loop[1], buf.duration);
-    }
-    src.playbackRate.value = TR.rate;
-    g.gain.value = 0.0001;
-    g.gain.setTargetAtTime(dBg(tk.db) * 0.55, ctx.currentTime + 0.02, 0.15);
-    src.connect(g);
-    g.connect(trBus);
-    src.start();
-    if (tk.then)
-      src.onended = () => {
-        if (TR.src === src) {
-          TR.src = null;
-          music(tk.then);
-        }
-      };
-    TR.src = src;
-    TR.g = g;
-  }
-
   const DUCK = { job: false, vox: false };
   function applyDuck(tau) {
     if (!ctx) return;
     const k = DUCK.vox ? dBg(-9) : 1;
-    for (const [b, lv, dj] of [
-      [musBus, 0.42, 0.48],
-      [trBus, 1, 0.5],
-    ]) {
-      b.gain.cancelScheduledValues(ctx.currentTime);
-      b.gain.setTargetAtTime(lv * k * (DUCK.job ? dj : 1), ctx.currentTime, tau);
-    }
+    musBus.gain.cancelScheduledValues(ctx.currentTime);
+    musBus.gain.setTargetAtTime(0.42 * k * (DUCK.job ? 0.48 : 1), ctx.currentTime, tau);
   }
 
   /* ---------- voices ---------- */
@@ -595,24 +519,6 @@
   function music(name, opts) {
     opts = opts || {};
     if (!init()) return;
-    if (!TR.failed && (!name || TRACKS[name])) {
-      if (TR.want === name && !opts.restart) return;
-      TR.want = name;
-      TR.rate = 1;
-      stopTrack();
-      synth(null);
-      if (!name) return;
-      loadTrack(name).then((b) => {
-        if (TR.want !== name) return;
-        if (b) startTrack(name);
-        else synth(name, opts);
-      });
-      return;
-    }
-    synth(name, opts);
-  }
-  function synth(name, opts) {
-    opts = opts || {};
     if (M.cur === SONGS[name] && !opts.restart) {
       if (opts.transpose !== undefined) M.transpose = opts.transpose;
       return;
@@ -956,8 +862,6 @@
     },
     setTempo(mul) {
       M.tempoMul = mul;
-      TR.rate = mul;
-      if (TR.src) TR.src.playbackRate.setTargetAtTime(mul, ctx.currentTime, 0.4);
     },
     setIntense(on) {
       M.intense = !!on;
@@ -973,10 +877,6 @@
     },
     get ctx() {
       return ctx;
-    },
-    // the score cue that is sounding (null while it loads, or when the synthesised stand-in plays)
-    get track() {
-      return TR.src ? TR.want : null;
     },
     get voxBus() {
       return voxBus;
