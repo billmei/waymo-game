@@ -1,7 +1,7 @@
 /* Waymo Care · voices, in the manner of Slop Skies' radio. Dispatch and the riders say short
    lines (js/lines.js) with a caption. Lines queue by priority, chatter is dropped when someone is already talking,
    stale calls expire, and the music ducks under the words. A line plays voice/<id>.mp3 when voice/index.json lists
-   it (tools/gen_voice.py records them); until then the speaker "babbles" in little pitched syllables, like a Mii. */
+   it (tools/gen_voice.py records them). */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -10,10 +10,31 @@
   const $ = (s) => document.querySelector(s);
 
   // the lower the number, the more it matters; a class with a ttl is dropped if it waits longer than that
-  const PRI = { timeup: 0, final: 0, miss: 1, start: 2, hurry: 2, result: 2, rider: 4, call: 5, perfect: 6, combo: 6, good: 7 },
+  const PRI = {
+      timeup: 0,
+      final: 0,
+      miss: 1,
+      start: 2,
+      hurry: 2,
+      result: 2,
+      rider: 4,
+      call: 5,
+      perfect: 6,
+      combo: 6,
+      good: 7,
+    },
     TTL = { call: 3, rider: 2.5, good: 2, perfect: 2.5, combo: 2.5 };
   const cls = (id) => (id.startsWith("rider.") ? "rider" : id.split(".")[1]);
-  const V = { known: new Set(), buf: {}, bad: {}, q: [], cur: null, used: {}, t: 0, on: true };
+  const V = {
+    known: new Set(),
+    buf: {},
+    bad: {},
+    q: [],
+    cur: null,
+    used: {},
+    t: 0,
+    on: true,
+  };
   // the pause menu's setting: with voices off, nobody talks and no captions show
   try {
     V.on = localStorage.getItem("wc.voice") !== "0";
@@ -29,7 +50,9 @@
   // pick a variant (disp.good → disp.good.1 … .n), never the same one twice running
   function pick(id) {
     if (LINES[id]) return id;
-    const all = Object.keys(LINES).filter((k) => k.startsWith(id + ".") && /\.\d+$/.test(k));
+    const all = Object.keys(LINES).filter(
+      (k) => k.startsWith(id + ".") && /\.\d+$/.test(k),
+    );
     if (!all.length) return null;
     const last = V.used[id],
       pool = all.length > 1 ? all.filter((k) => k !== last) : all,
@@ -49,7 +72,14 @@
     for (let i = V.q.length; i--; ) if (V.q[i].c === c) V.q.splice(i, 1);
     const i = V.q.findIndex((q) => q.p > p),
       L = LINES[k];
-    V.q.splice(i < 0 ? V.q.length : i, 0, { id: k, who: L[0], text: L[1], c, p, at: V.t });
+    V.q.splice(i < 0 ? V.q.length : i, 0, {
+      id: k,
+      who: L[0],
+      text: L[1],
+      c,
+      p,
+      at: V.t,
+    });
     if (V.q.length > 4) V.q.pop();
     if (V.known.has(k)) load(k);
     pump();
@@ -121,7 +151,8 @@
   function show(q) {
     const el = $("#radio");
     if (!el) return;
-    el.querySelector(".r-who").textContent = q.who === "DISPATCH" ? "Dispatch" : "Rider";
+    el.querySelector(".r-who").textContent =
+      q.who === "DISPATCH" ? "Dispatch" : "Rider";
     el.querySelector(".r-txt").textContent = q.text;
     el.className = "show " + (q.who === "DISPATCH" ? "disp" : "rider");
   }
@@ -143,14 +174,23 @@
   function pump() {
     if (V.cur) return;
     // drop what went stale while it waited
-    while (V.q.length && TTL[V.q[0].c] !== undefined && V.t - V.q[0].at > TTL[V.q[0].c]) V.q.shift();
+    while (
+      V.q.length &&
+      TTL[V.q[0].c] !== undefined &&
+      V.t - V.q[0].at > TTL[V.q[0].c]
+    )
+      V.q.shift();
     const q = V.q.shift();
     if (!q) return;
     const ctx = A().init();
     V.cur = q;
     show(q);
     const read = 1.1 + q.text.length * 0.045;
-    if (!ctx || A().muted) {
+    const p =
+      ctx && !A().muted && V.known.has(q.id) && !V.bad[q.id]
+        ? load(q.id)
+        : null;
+    if (!p) {
       q.end = V.t + read;
       return;
     }

@@ -9,11 +9,11 @@
   "use strict";
   const WG = (window.WG = window.WG || {});
   WG.LINES = /*LINES*/ {
-    "disp.start.marina": ["DISPATCH", "Morning, crew! Lovely view of the bridge from the Palace. Keep those robotaxis rolling!"],
-    "disp.start.lombard": ["DISPATCH", "Crookedest street in the world, steepest shift of the day. Up to Coit Tower and back!"],
-    "disp.start.ferry": ["DISPATCH", "Lunch rush downtown! From the Pyramid to the Ferry Building, everybody's on the move."],
+    "disp.start.lombard": ["DISPATCH", "Morning, crew! Steepest shift of the day, from Lombard's crooked bricks to Coit Tower. Keep those robotaxis rolling!"],
+    "disp.start.presidio": ["DISPATCH", "Welcome to the Presidio! Golden Gate Bridge over the trees, the old Army post all round you. Let's roll!"],
+    "disp.start.downtown": ["DISPATCH", "Lunch rush downtown! Between the Pyramid and Salesforce Tower, everybody's on the move."],
     "disp.start.ladies": ["DISPATCH", "Golden hour on Alamo Square! Everybody's taking pictures of the Painted Ladies. Go, go, go!"],
-    "disp.start.beach": ["DISPATCH", "Karl's rolling in over Ocean Beach. Windmills to Sutro Baths, keep those cars running!"],
+    "disp.start.windmills": ["DISPATCH", "Karl's rolling in over the windmills. I can't see a thing out there, so keep those cars running!"],
     "disp.call.dirty": ["DISPATCH", "One of ours took a mud bath. Grab the sponge!"],
     "disp.call.charge": ["DISPATCH", "Battery's running on two percent. Plug it in!"],
     "disp.call.cone": ["DISPATCH", "Somebody boxed a car in with cones. Clear the road!"],
