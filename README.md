@@ -2,7 +2,7 @@
 
 A browser game about being the robotaxi pit crew in [Slop Skies](https://slop.inc/)' toy San Francisco. Robotaxis pull over with problems, and you run over and fix them before the rider loses patience. Every job is played right on the 3D car: the camera swoops in close and you work on the car itself.
 
-The city is the same map as Slop Skies, with the same buildings. Your beat is the street grid of Western Addition, around Alamo Square and the Painted Ladies, with the rest of the city all around.
+The city is the same map as Slop Skies, with the same buildings. Slop Skies squeezes San Francisco to about a third of its size so a plane can cross it in a minute. Because you play at street level, the game enlarges the whole island by `SCALE` (1.6, in `js/world.js`), zooms the camera in close, and lays real streets over its grid: asphalt, double yellow lines and zebra crossings. Your beat is three blocks by two of Western Addition, by Alamo Square and the Painted Ladies, with the rest of the city all around.
 
 | Job | What happened | What you do |
 | --- | --- | --- |
@@ -44,12 +44,17 @@ The game is modelled on [Slop Skies](https://slop.inc/), whose shipped source is
   - trees, boats, sea, sky, clouds, and their shaders and blob shadows
 
   Don't edit `js/isle.js` by hand; run `python3 tools/extract_isle.py` to regenerate it.
-- `js/world.js`: stands the game on that island. It boots the island and reads Western Addition's street grid into a graph for the robotaxis, checking it against the island's own colliders. It answers ground-height and collision questions, and it turns Slop Skies' sky, haze and light into the three shifts: its own `promo` grade for the morning, plus Karl the Fog and Golden Hour.
+- `js/world.js`: stands the game on that island:
+  - boots the island enlarged by `SCALE`, converting between game metres and island units at every call
+  - reads Western Addition's street grid into a graph for the robotaxis, checked against the island's own colliders
+  - paves those streets using the island's terrain shader
+  - answers ground-height and collision questions
+  - turns Slop Skies' sky, haze and light into the three shifts: its own `promo` grade for the morning, plus Karl the Fog and Golden Hour
 - `js/actors.js`: the robotaxi model (with a spinning lidar dome) and the big-headed crew member, both with blob shadows like the island's. It also handles traffic that drives the street graph and pulls over to the curb when something goes wrong (keeping clear of street trees), and the status bubbles.
 - `js/jobs.js`: the seven jobs, played in the 3D scene with the main camera. This covers the dirt you scrub off, the charging cart and cable, the cones you fling, the pigeons, the lidar scan rings, the cutaway cabin for vacuuming, and the skateboard. A small job bar shows the hint and progress.
 - `js/audio.js`: all music and sound effects, synthesised live with Web Audio. There are no audio files. It includes a bossa-nova menu theme, a swing-pop gameplay theme that speeds up for the last 20 seconds, a results theme, and SFX such as the referee whistle, crowd cheers, chimes, sponge squeaks, pigeon coos, lidar beeps, door slams, the vacuum's hum and the skateboard's roll.
 - `js/game.js`: the rules, rounds, scoring and HUD. It also covers:
-  - the camera: an aerial orbit over the city on the title screen, a 3/4 street view in play, and an X-ray silhouette when houses hide the crew member
+  - the camera: an aerial orbit over the city on the title screen, and a close street-level view in play that swings up over the rooftops whenever the island's buildings would block it, plus an X-ray silhouette when houses hide the crew member
   - click-to-walk pathfinding: A* on a 1 m grid over the play area
   - the screens
 - `css/style.css`: the UI.

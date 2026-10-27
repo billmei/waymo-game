@@ -497,12 +497,14 @@
   }
 
   /* ---------- traffic: robotaxis on the island's street graph (world.js W.graph) ---------- */
-  // Slop Skies' streets are 8 m between the block pads: one lane each way, and pulling over half onto the curb
-  const LANE = 1.7,
-    CURBLAT = 3.3,
-    END = 5.6,
-    CRUISE = 9,
-    CAR_SCALE = 0.88;
+  // Slop Skies' streets are 8 island units between the block pads, 12.8 m at the game's scale (world.js SCALE):
+  // a lane each way, room to pull over at the curb, and a 6.4 m half-width at the intersections
+  const LANE = 2.1,
+    CURBLAT = 5.0,
+    END = 7.2,
+    CRUISE = 10,
+    CAR_SCALE = 1.05;
+  WG.CAR_SCALE = CAR_SCALE;
   const locks = {};
   const nodeAt = (k) => W.graph.nodes[k];
   function segOf(a, b) {
@@ -688,7 +690,7 @@
     return this.doorParts;
   };
   Car.prototype.canPull = function () {
-    if (this.state !== "drive" || this.piece !== "line" || this.s < 6.4 || this.s > this.seg.len - END - 15) return false;
+    if (this.state !== "drive" || this.piece !== "line" || this.s < END + 1 || this.s > this.seg.len - END - 15) return false;
     // keep clear of the street trees along the curb where it would stop
     const p = [0, 0];
     for (const ds of [4.8, 7, 9.2]) {
@@ -746,10 +748,10 @@
               along = rx * c.fwd.x + rz * c.fwd.z;
             if (along <= 0 || along > 14) continue;
             const lat = -rx * c.fwd.z + rz * c.fwd.x;
-            if (Math.abs(lat) > 1.25) continue;
+            if (Math.abs(lat) > 1.6) continue;
             const ofw = o.fwd.x * c.fwd.x + o.fwd.z * c.fwd.z;
             if (ofw < -0.3) continue; // oncoming
-            want = Math.min(want, Math.max(0, along - 5.2) * 1.4);
+            want = Math.min(want, Math.max(0, along - 6) * 1.4);
           }
           // and stop for the crew
           if (player) {
@@ -757,8 +759,8 @@
               rz = player.z - c.pos.z,
               along = rx * c.fwd.x + rz * c.fwd.z,
               lat = -rx * c.fwd.z + rz * c.fwd.x;
-            if (along > 0 && along < 9 && Math.abs(lat) < 1.5) {
-              want = Math.min(want, Math.max(0, along - 3.2) * 1.2);
+            if (along > 0 && along < 10 && Math.abs(lat) < 1.9) {
+              want = Math.min(want, Math.max(0, along - 3.8) * 1.2);
               if (c.speed < 0.5) {
                 c.wait += dt;
                 if (c.wait > 1.4 && t - c.beepT > 4) {
@@ -922,7 +924,7 @@
     head.add(capTop);
     S(GEO.cyl, cap, 0, 0.12, -0.38, 0.3, 0.03, 0.2, head);
     S(GEO.sph, white, 0, 0.36, -0.12, 0.08, 0.05, 0.06, head);
-    root.scale.setScalar(o.scale || 1.15);
+    root.scale.setScalar(o.scale || 1.4);
     return { root, body, head, legs, arms, mouth: mo };
   }
   WG.makeMii = makeMii;

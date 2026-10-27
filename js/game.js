@@ -67,7 +67,7 @@
   const scene = new T.Scene();
   const camera = new T.PerspectiveCamera(40, 1, 0.5, 9000);
   W.build(scene, renderer);
-  Traffic.init(scene, 18);
+  Traffic.init(scene, 12);
   // the crew member
   const mii = WG.makeMii();
   scene.add(mii.root);
@@ -840,7 +840,7 @@
     "wheel",
     (e) => {
       if (G.state === "play" && !JOB.active) {
-        zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 22, 64);
+        zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 10, 60);
         e.preventDefault();
       }
     },
@@ -974,32 +974,77 @@
   addEventListener("keydown", wake, true);
 
   /* ---------- camera ---------- */
-  let zoom = TOUCH ? 46 : 38;
-  const CAM = { pitch: 52 };
-  const camPos = new T.Vector3(420 + Math.sin(0.6) * 2300, 640, -620 + Math.cos(0.6) * 2300),
-    camLook = new T.Vector3(420, 60, -620),
+  const S = W.SCALE;
+  let zoom = TOUCH ? 27 : 22;
+  const CAM = { pitch: 46, lift: 0 };
+  const camPos = new T.Vector3((420 + Math.sin(0.6) * 2300) * S, 640 * S, (-620 + Math.cos(0.6) * 2300) * S),
+    camLook = new T.Vector3(420 * S, 60 * S, -620 * S),
     wantPos = new T.Vector3(),
-    wantLook = new T.Vector3();
+    wantLook = new T.Vector3(),
+    _o = new T.Vector3();
+  // is the view from look to pos blocked by the island (a house, a tower, a hill)?
+  function blockedLine(a, b) {
+    const n = Math.ceil(a.distanceTo(b) / 1.2);
+    for (let k = 2; k <= n; k++) {
+      const t = k / n,
+        x = a.x + (b.x - a.x) * t,
+        y = a.y + (b.y - a.y) * t,
+        z = a.z + (b.z - a.z) * t;
+      if (y < W.height(x, z) + 0.6 || W.hitsAt(x, y, z, 0.8)) return true;
+    }
+    return false;
+  }
+  // the lowest elevation (radians, from minA) at which the camera clears the houses, swinging up over the look point
+  function clearAngle(look, pos, minA) {
+    _o.subVectors(pos, look);
+    const L = _o.length(),
+      h = Math.hypot(_o.x, _o.z) || 1e-3,
+      hx = _o.x / h,
+      hz = _o.z / h,
+      p = new T.Vector3();
+    for (let a = minA; a < 1.52; a += 0.06) {
+      p.set(look.x + hx * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + hz * Math.cos(a) * L);
+      if (!blockedLine(look, p)) return a;
+    }
+    return 1.52;
+  }
+  function setElevation(look, pos, a) {
+    _o.subVectors(pos, look);
+    const L = _o.length(),
+      h = Math.hypot(_o.x, _o.z) || 1e-3;
+    pos.set(look.x + (_o.x / h) * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + (_o.z / h) * Math.cos(a) * L);
+  }
+  function clearShot(look, pos) {
+    _o.subVectors(pos, look);
+    const a0 = Math.atan2(_o.y, Math.hypot(_o.x, _o.z));
+    if (blockedLine(look, pos)) setElevation(look, pos, clearAngle(look, pos, a0));
+  }
   function cameraUpdate(dt) {
     let k = 2.2;
     if (G.state === "title" || G.state === "howto" || G.state === "final") {
       // a slow orbit over Slop Skies' San Francisco, around the downtown end of the city
       const a = 0.6 + G.t * 0.025;
-      wantLook.set(420, 60, -620);
-      wantPos.set(420 + Math.sin(a) * 2300, 640, -620 + Math.cos(a) * 2300);
+      wantLook.set(420 * S, 60 * S, -620 * S);
+      wantPos.set((420 + Math.sin(a) * 2300) * S, 640 * S, (-620 + Math.cos(a) * 2300) * S);
       k = 1.2;
     } else if (G.state === "brief" || G.state === "result") {
       const a = G.t * 0.06;
       wantLook.set(P.pos.x, P.pos.y + 2, P.pos.z);
-      wantPos.set(P.pos.x + Math.sin(a) * 60, P.pos.y + 44, P.pos.z + Math.cos(a) * 60);
+      wantPos.set(P.pos.x + Math.sin(a) * 26, P.pos.y + 16, P.pos.z + Math.cos(a) * 26);
+      clearShot(wantLook, wantPos);
       k = 1.5;
     } else if (JOB.active) {
       k = JOB.camera(wantPos, wantLook);
+      clearShot(wantLook, wantPos);
     } else {
-      // a 3/4 view down onto the street; the crew member shows through the houses in front as a silhouette
+      // close behind and above the crew member, looking north up the street. Where the houses would block the view the
+      // camera swings up over the rooftops (and eases back down once it can)
       const pitch = (CAM.pitch * Math.PI) / 180;
-      wantLook.set(P.pos.x, P.pos.y + 1, P.pos.z - 2);
-      wantPos.set(P.pos.x, P.pos.y + 1 + Math.sin(pitch) * zoom, P.pos.z - 2 + Math.cos(pitch) * zoom);
+      wantLook.set(P.pos.x, P.pos.y + 1.6, P.pos.z - 1);
+      wantPos.set(P.pos.x, wantLook.y + Math.sin(pitch) * zoom, wantLook.z + Math.cos(pitch) * zoom);
+      const need = clearAngle(wantLook, wantPos, pitch);
+      CAM.lift = need > CAM.lift ? need : Math.max(need, CAM.lift - dt * 0.35);
+      if (CAM.lift > pitch) setElevation(wantLook, wantPos, CAM.lift);
       k = G.state === "play" ? 6 : 3;
     }
     const f = 1 - Math.exp(-k * dt);
@@ -1009,8 +1054,8 @@
     camera.lookAt(camLook);
     // the aerial views need Slop Skies' long depth range, the street needs a near one
     const far = camPos.y - W.height(camPos.x, camPos.z) > 220,
-      near = far ? 4 : 0.5,
-      farP = far ? 60000 : 9000;
+      near = far ? 4 : 0.3,
+      farP = far ? 60000 * S : 9000;
     if (camera.near !== near) {
       camera.near = near;
       camera.far = farP;
@@ -1079,7 +1124,7 @@
         dz = ddz / d;
       }
     }
-    const want = dx || dz ? 11 : 0;
+    const want = dx || dz ? 12.5 : 0;
     if (drives) JOB.active.drive(dt, ix, iz);
     else P.speed += clamp(want - P.speed, -40 * dt, 30 * dt);
     if (P.speed > 0.05 && !drives) {
@@ -1108,8 +1153,8 @@
       if (Math.abs(rx) > 4 || Math.abs(rz) > 4) continue;
       const along = rx * c.fwd.x + rz * c.fwd.z,
         lat = -rx * c.fwd.z + rz * c.fwd.x,
-        ea = 2.45 - Math.abs(along),
-        el = 1.25 - Math.abs(lat);
+        ea = 2.35 * WG.CAR_SCALE + 0.4 - Math.abs(along),
+        el = 0.98 * WG.CAR_SCALE + 0.35 - Math.abs(lat);
       if (ea > 0 && el > 0) {
         if (el < ea) {
           const s = Math.sign(lat) || 1;
@@ -1147,7 +1192,7 @@
       mii.root.rotation.y = P.yaw;
       return;
     }
-    const sp = P.speed / 11;
+    const sp = P.speed / 12.5;
     P.phase += dt * (4 + 9 * sp);
     const sw = Math.sin(P.phase) * 0.8 * sp;
     mii.legs[0].rotation.x = sw;

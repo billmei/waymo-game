@@ -1301,7 +1301,7 @@
             t = clamp(((P.pos.x - a.x) * abx + (P.pos.z - a.z) * abz) / (abx * abx + abz * abz), 0, 1),
             cx = a.x + abx * t,
             cz = a.z + abz * t;
-          if (Math.hypot(P.pos.x - cx, P.pos.z - cz) < 0.75 && spd > 1.2) {
+          if (Math.hypot(P.pos.x - cx, P.pos.z - cz) < 0.95 * (WG.CAR_SCALE || 1) && spd > 1.2) {
             d.shut = true;
             d.k = 0;
             A().sfx("slam");

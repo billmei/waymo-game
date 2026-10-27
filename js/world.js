@@ -10,14 +10,25 @@
     I = WG.isle;
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
+  /* ---------- scale: Slop Skies squeezes San Francisco to about a third so a plane can cross it in a minute; at street
+     level the game enlarges the whole island by SCALE, so its streets, blocks and hills are street-sized next to the
+     (real-sized) robotaxis and crew. Game positions are in metres; the island's own functions take island units. ---------- */
+  const SCALE = 1.6;
+
   /* ---------- the play area: a patch of Western Addition's street grid (island.js DIST row 10) ---------- */
-  const ZONE = { name: "Western Addition", ang: -8, u: 62, v: 82, i0: 5, i1: 10, j0: -8, j1: -4 };
+  // three blocks by two between Alamo Square and the Painted Ladies (grid units: u by v island units per block)
+  const ZONE = { name: "Western Addition", ang: -8, u: 62, v: 82, i0: 5, i1: 8, j0: -6, j1: -4 };
   const ZA = (ZONE.ang * Math.PI) / 180,
     ZC = Math.cos(ZA),
     ZS = Math.sin(ZA),
-    HALF_ST = 4; // the streets are the 8 m gaps between the block pads
-  const toWorld = (lx, lz) => [lx * ZC - lz * ZS, lx * ZS + lz * ZC];
-  const toLocal = (x, z) => [x * ZC + z * ZS, -x * ZS + z * ZC];
+    HALF_ST = 4; // the streets are the 8-unit gaps between the block pads
+  // grid-local island units <-> game metres
+  const toWorld = (lx, lz) => [(lx * ZC - lz * ZS) * SCALE, (lx * ZS + lz * ZC) * SCALE];
+  const toLocal = (x, z) => [(x * ZC + z * ZS) / SCALE, (-x * ZS + z * ZC) / SCALE];
+  // the island's functions, in game metres
+  const terrainY = (x, z) => I.ISL.terrainY(x / SCALE, z / SCALE) * SCALE;
+  const hitsAt = (x, y, z, r) => I.hitsBuilding(x / SCALE, y / SCALE, z / SCALE, r / SCALE);
+  const zoneAt = (x, z) => I.zoneName(x / SCALE, z / SCALE);
   const AREA = {
     lx0: ZONE.i0 * ZONE.u - 22,
     lx1: ZONE.i1 * ZONE.u + 22,
@@ -26,11 +37,11 @@
   };
   const inArea = (x, z, m) => {
     const [lx, lz] = toLocal(x, z);
-    m = m || 0;
+    m = (m || 0) / SCALE;
     return lx > AREA.lx0 - m && lx < AREA.lx1 + m && lz > AREA.lz0 - m && lz < AREA.lz1 + m;
   };
 
-  const height = (x, z) => I.groundH(x, z);
+  const height = (x, z) => I.groundH(x / SCALE, z / SCALE) * SCALE;
   // a point on a street (the carriageway), as opposed to a block's raised pad
   function onStreet(x, z) {
     const [lx, lz] = toLocal(x, z),
@@ -38,12 +49,12 @@
       dz = Math.abs(lz - Math.round(lz / ZONE.v) * ZONE.v);
     return dx < HALF_ST || dz < HALF_ST;
   }
-  const groundY = (x, z) => height(x, z) + (onStreet(x, z) ? 0 : 0.2);
+  const groundY = (x, z) => height(x, z) + (onStreet(x, z) ? 0 : 0.2 * SCALE);
   // the island's colliders (houses, towers, landmarks, street trees)
-  const hits = (x, z, r) => I.hitsBuilding(x, height(x, z) + 1.2, z, r || 0);
+  const hits = (x, z, r) => hitsAt(x, height(x, z) + 1.2, z, r || 0);
   function isBlocked(x, z, r) {
     if (!inArea(x, z, -(r || 0))) return true;
-    if (height(x, z) < 1.5) return true;
+    if (height(x, z) < 1.5 * SCALE) return true;
     return hits(x, z, r || 0);
   }
 
@@ -56,8 +67,8 @@
     for (let j = j0; j <= j1; j++)
       for (let i = i0; i <= i1; i++) {
         const [x, z] = toWorld(i * u, j * v),
-          g = I.ISL.terrainY(x, z);
-        if (g < 2.5 || I.zoneName(x, z) !== name || I.hitsBuilding(x, g + 1.5, z, 1.5)) continue;
+          g = terrainY(x, z);
+        if (g < 2.5 * SCALE || zoneAt(x, z) !== name || hitsAt(x, g + 1.5, z, 1.5 * SCALE)) continue;
         const n = { id: nodes.length, i, j, x, z, nb: [] };
         nodes.push(n);
         byKey[key(i, j)] = n;
@@ -69,8 +80,8 @@
         const t = k / 16,
           x = a.x + (b.x - a.x) * t,
           z = a.z + (b.z - a.z) * t,
-          g = I.ISL.terrainY(x, z);
-        if (g < 2.5 || I.hitsBuilding(x, g + 1.5, z, 1.0)) return false;
+          g = terrainY(x, z);
+        if (g < 2.5 * SCALE || hitsAt(x, g + 1.5, z, 1.0 * SCALE)) return false;
         if (prev !== null && Math.abs(g - prev) / (Math.hypot(b.x - a.x, b.z - a.z) / 16) > 0.32) return false;
         prev = g;
       }
@@ -117,6 +128,104 @@
     let edges = 0;
     for (const n of out) edges += n.nb.length;
     return { nodes: out, edges: edges / 2 };
+  }
+
+  /* ---------- the street surface: at street level the island's soft grey terrain gets real streets on top: asphalt over
+     the carriageway, a double yellow line, zebra crossings at every corner. Drawn with the island's own terrain shader
+     (mat 2: the same light, grain and haze), following the terrain ---------- */
+  function streets(scene) {
+    const P = [],
+      N = [],
+      C = [],
+      idx = [];
+    const hex = (h) => {
+      const c = new T.Color(h);
+      return [c.r, c.g, c.b];
+    };
+    const ASPHALT = hex("#7b7f86"),
+      YELLOW = hex("#f1c94c"),
+      WHITE = hex("#f6f5ef");
+    const nrm = (x, z) => {
+      const e = 1,
+        dx = (height(x + e, z) - height(x - e, z)) / (2 * e),
+        dz = (height(x, z + e) - height(x, z - e)) / (2 * e),
+        l = Math.hypot(dx, 1, dz);
+      return [-dx / l, 1 / l, -dz / l];
+    };
+    // a terrain-hugging strip from a to b, w wide, nw cells across, lifted by off
+    function strip(ax, az, bx, bz, w, off, col, nw) {
+      const L = Math.hypot(bx - ax, bz - az),
+        nl = Math.max(1, Math.ceil(L / 2)),
+        ux = (bx - ax) / L,
+        uz = (bz - az) / L,
+        px = -uz,
+        pz = ux,
+        base = P.length / 3;
+      for (let i = 0; i <= nl; i++)
+        for (let k = 0; k <= nw; k++) {
+          const t = i / nl,
+            q = (k / nw - 0.5) * w,
+            x = ax + (bx - ax) * t + px * q,
+            z = az + (bz - az) * t + pz * q;
+          P.push(x, height(x, z) + off, z);
+          N.push(...nrm(x, z));
+          C.push(col[0], col[1], col[2], 0);
+        }
+      for (let i = 0; i < nl; i++)
+        for (let k = 0; k < nw; k++) {
+          const a = base + i * (nw + 1) + k,
+            b = a + nw + 1;
+          idx.push(a, b, a + 1, a + 1, b, b + 1);
+        }
+    }
+    const nodes = W.graph.nodes,
+      WIDTH = 2 * HALF_ST * SCALE - 0.3,
+      [ex, ez] = [ZC, ZS],
+      [nx, nz] = [-ZS, ZC];
+    // the intersections: a square of asphalt on the grid's axes
+    for (const n of nodes) strip(n.x - ex * (WIDTH / 2), n.z - ez * (WIDTH / 2), n.x + ex * (WIDTH / 2), n.z + ez * (WIDTH / 2), WIDTH, 0.06, ASPHALT, 6);
+    for (const n of nodes)
+      for (const m of n.nb) {
+        if (m < n.id) continue;
+        const o = nodes[m],
+          L = Math.hypot(o.x - n.x, o.z - n.z),
+          ux = (o.x - n.x) / L,
+          uz = (o.z - n.z) / L,
+          px = -uz,
+          pz = ux,
+          h = WIDTH / 2;
+        strip(n.x + ux * h, n.z + uz * h, o.x - ux * h, o.z - uz * h, WIDTH, 0.06, ASPHALT, 6);
+        // the double yellow line
+        for (const s2 of [-0.16, 0.16]) strip(n.x + ux * (h + 3.6) + px * s2, n.z + uz * (h + 3.6) + pz * s2, o.x - ux * (h + 3.6) + px * s2, o.z - uz * (h + 3.6) + pz * s2, 0.14, 0.09, YELLOW, 1);
+        // zebra crossings at both ends
+        for (const [cx, cz, sg] of [
+          [n.x, n.z, 1],
+          [o.x, o.z, -1],
+        ])
+          for (let q = -h + 0.9; q <= h - 0.9; q += 1.25) {
+            const mx = cx + ux * sg * (h + 1.7) + px * q,
+              mz = cz + uz * sg * (h + 1.7) + pz * q;
+            strip(mx - ux * 1.3, mz - uz * 1.3, mx + ux * 1.3, mz + uz * 1.3, 0.6, 0.1, WHITE, 1);
+          }
+      }
+    void nx;
+    void nz;
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(P, 3));
+    g.setAttribute("normal", new T.Float32BufferAttribute(N, 3));
+    g.setAttribute("aCol", new T.Float32BufferAttribute(C, 4));
+    g.setAttribute("uv", new T.Float32BufferAttribute(new Float32Array((P.length / 3) * 2), 2));
+    g.setIndex(idx);
+    const m = I.mat(2);
+    m.uniforms.uStripe.value = 0;
+    m.polygonOffset = true;
+    m.polygonOffsetFactor = -2;
+    m.polygonOffsetUnits = -2;
+    const mesh = new T.Mesh(g, m);
+    mesh.name = "streets";
+    mesh.frustumCulled = false;
+    scene.add(mesh);
+    return mesh;
   }
 
   /* ---------- merged vertex-coloured geometry (the robotaxi and the job props use it) ---------- */
@@ -234,6 +343,7 @@
   }
 
   const W = {
+    SCALE,
     ZONE,
     AREA,
     LOOKS,
@@ -244,6 +354,7 @@
     onStreet,
     isBlocked,
     hits,
+    hitsAt,
     inArea,
     toWorld,
     toLocal,
@@ -251,10 +362,11 @@
 
   W.build = function (scene, renderer) {
     W.scene = scene;
-    I.boot(scene, renderer);
+    I.boot(scene, renderer, SCALE);
     addGrades();
     I.setGrade("default");
     W.graph = buildGraph();
+    W.streets = streets(scene);
     // the middle of the play area, and where the crew member starts
     const [cx, cz] = toWorld(((ZONE.i0 + ZONE.i1) / 2) * ZONE.u, ((ZONE.j0 + ZONE.j1) / 2) * ZONE.v);
     W.center = new T.Vector3(cx, height(cx, cz), cz);
@@ -307,7 +419,8 @@
     W.hemi.intensity = hk;
     // the island's haze is 1 - exp(-(d·k)²): three's FogExp2 is the same curve, so the toys sit in the same air
     const G = I.LOOK_GRADES[L.grade];
-    W.scene.fog = new T.FogExp2(G.haze, G.hazeK);
+    I.U.uFogD.value = G.hazeK / SCALE;
+    W.scene.fog = new T.FogExp2(G.haze, G.hazeK / SCALE);
     W.puffs.visible = !!L.puffs;
     W.puffMat.opacity = L.puffs ? 0.55 : 0;
     if (WG.CAR_HEAD) WG.CAR_HEAD.emissive.set(name === "dusk" ? 0xfff2b0 : name === "fog" ? 0xbbb38a : 0x333322);
