@@ -9,14 +9,14 @@ Each shift works the streets round a different set of San Francisco landmarks, w
 | 1. **Bridge View** | Marina & Presidio | Palace of Fine Arts, Golden Gate Bridge | Morning | Vacuum, Recharge, Close doors |
 | 2. **Crooked Street** | Russian Hill to Telegraph Hill | Lombard Street, Coit Tower | Sunny | + Shoo birds |
 | 3. **Lunch Rush** | Downtown & Embarcadero | Transamerica Pyramid, Ferry Building, Salesforce Tower | Sunny | + Wash |
-| 4. **Golden Hour** | Alamo Square | Painted Ladies, Sutro Tower | Sunset | + De-cone |
+| 4. **Golden Hour** | Alamo Square | Painted Ladies, Sutro Tower | Sunset | + Remove cones |
 | 5. **Karl the Fog** | Ocean Beach & the Outer Sunset | Murphy and Dutch windmills, Sutro Baths | Fog | + Reboot |
 
 | Job | What happened | What you do |
 | --- | --- | --- |
 | **Wash** | Mud, dust and seagull droppings, in different places every time | Hold and drag the sponge to scrub the car clean (turn the camera to reach the far side; the hint reminds you if nothing's been scrubbed for 5 seconds) |
 | **Recharge** | Flat battery | Drag the plug to the port, then tap when the needle is in the green (three good taps fills it) |
-| **De-cone** | Someone boxed the car in with traffic cones on the road, so it can't drive off | Grab the cones and fling them out of the way |
+| **Remove cones** | Someone boxed the car in with traffic cones on the road, so it can't drive off | Grab the cones and fling them out of the way |
 | **Shoo birds** | Pigeons (and gulls, which take two taps) nesting on the warm sensors | Tap them to send them flying |
 | **Reboot** | The car needs rebooting | Key in the restart code with the arrow keys or the on-screen buttons |
 | **Vacuum** | Crumbs, popcorn, wrappers and a lost sock in the cabin | The roof comes off: hold and sweep the vacuum over the mess |

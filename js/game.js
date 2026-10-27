@@ -416,9 +416,9 @@
   const JOBNAME = {
     dirty: "Wash",
     charge: "Recharge",
-    cone: "De-cone",
+    cone: "Remove cones",
     birds: "Shoo birds",
-    reboot: "Reboot sensors",
+    reboot: "Reboot",
     vacuum: "Vacuum",
     doors: "Close doors",
   };
