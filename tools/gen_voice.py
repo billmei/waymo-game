@@ -49,10 +49,10 @@ def _spk(name, style, openai_voice, elevenlabs_id):
 SPEAKERS = {
     "DISPATCH": _spk(
         "DISPATCH",
-        "A bubbly, kind fleet dispatcher on a two-way radio, like Karl, the friendly radio voice of Slop Skies. "
-        "Bright and playful, a little cheeky, always encouraging and never bossy or shouty, smiling as they talk.",
-        "coral",
-        "bJjxezNCwWpBRZx2u0Bf",  # "Waymo Care - Dispatch" (Voice Design)
+        "A sarcastic, bratty young dispatcher with a high-pitched voice. Snarky, smug and teasing, a little whiny, "
+        "rolling his eyes as he talks, but still cheering the crew on in his own backhanded way.",
+        "echo",
+        "",  # "Waymo Care - Dispatch (bratty)" (Voice Design): set once the voice is saved
     ),
     "TOURIST": _spk(
         "TOURIST",
@@ -146,6 +146,8 @@ def tts_openai(text, spk):
 
 def tts_elevenlabs(text, spk):
     key = os.environ["ELEVENLABS_API_KEY"]
+    if not spk["elevenlabs"]["voice_id"]:
+        sys.exit("No ElevenLabs voice for this speaker yet: set VOICE_<SPEAKER> (or edit SPEAKERS).")
     return post(
         "https://api.elevenlabs.io/v1/text-to-speech/" + spk["elevenlabs"]["voice_id"] + "?output_format=mp3_44100_128",
         {"xi-api-key": key, "Content-Type": "application/json"},
