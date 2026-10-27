@@ -1,4 +1,4 @@
-/* Waymo Care · voices, in the manner of Slop Skies' radio. Dispatch (on a radio-filtered line) and the riders say short
+/* Waymo Care · voices, in the manner of Slop Skies' radio. Dispatch and the riders say short
    lines (js/lines.js) with a caption. Lines queue by priority, chatter is dropped when someone is already talking,
    stale calls expire, and the music ducks under the words. A line plays voice/<id>.mp3 when voice/index.json lists
    it (tools/gen_voice.py records them); until then the speaker "babbles" in little pitched syllables, like a Mii. */
@@ -78,38 +78,11 @@
     return V.buf[id];
   }
 
-  // the dispatcher's radio: band-limited and a touch driven, like Slop's phone bus
-  let radio = null;
-  function radioBus(ctx) {
-    if (radio) return radio;
-    const hp = ctx.createBiquadFilter(),
-      lp = ctx.createBiquadFilter(),
-      sh = ctx.createWaveShaper(),
-      cv = new Float32Array(256);
-    hp.type = "highpass";
-    hp.frequency.value = 320;
-    lp.type = "lowpass";
-    lp.frequency.value = 3300;
-    for (let i = 0; i < 256; i++) {
-      const x = i / 127.5 - 1;
-      cv[i] = Math.tanh(x * 1.8) / Math.tanh(1.8);
-    }
-    sh.curve = cv;
-    hp.connect(lp);
-    lp.connect(sh);
-    sh.connect(A().voxBus);
-    radio = hp;
-    return radio;
-  }
-  function out(ctx, who) {
-    return who === "DISPATCH" ? radioBus(ctx) : A().voxBus;
-  }
-
-  // the placeholder voice: a syllable per couple of letters, pitched by the letters, with a squelch on the radio.
+  // the placeholder voice: a syllable per couple of letters, pitched by the letters.
   // Each character babbles at their own pitch, so even unrecorded lines tell them apart.
   const PITCH = { DISPATCH: 330, TOURIST: 210, INFLUENCER: 300, GRANDMA: 360, FOUNDER: 280, LOCAL: 150, ARTIST: 240, STUDENT: 260 };
   function babble(ctx, who, text) {
-    const dest = out(ctx, who),
+    const dest = A().voxBus,
       base = PITCH[who] || 240 + Math.random() * 160,
       words = text.replace(/[^a-zA-Z' ]/g, "").split(/\s+/).filter(Boolean);
     let t = ctx.currentTime + 0.06;
@@ -141,19 +114,6 @@
         t += d + 0.022;
       }
       t += 0.05;
-    }
-    if (who === "DISPATCH") {
-      // the squelch at the end of a transmission
-      const n = ctx.createBufferSource(),
-        b = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate),
-        d = b.getChannelData(0),
-        g = ctx.createGain();
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      n.buffer = b;
-      g.gain.value = 0.05;
-      n.connect(g);
-      g.connect(dest);
-      n.start(t);
     }
     return t - t0 + 0.1;
   }
@@ -205,7 +165,7 @@
         }
         const s = ctx.createBufferSource();
         s.buffer = b;
-        s.connect(out(ctx, q.who));
+        s.connect(A().voxBus);
         s.start();
         q.src = s;
         q.end = V.t + Math.max(read * 0.8, b.duration + 0.35);
