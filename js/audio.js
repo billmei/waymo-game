@@ -749,6 +749,78 @@
     setTimeout(() => S.cheer(1.2), 500);
   };
   S.combo = (n) => bell(now(), 84 + Math.min(n, 8) * 2, 0.2, 0.08, sfxBus);
+  S.slam = () => {
+    const t = now();
+    tone(110, t, 0.22, { to: 55, v: 0.28, type: "sine" });
+    nz(t, 0.12, { f: 700, q: 0.7, v: 0.16, a: 0.003 });
+    nz(t + 0.02, 0.06, { f: 2600, q: 2, v: 0.05, a: 0.002 });
+  };
+  S.thup = () => {
+    const t = now();
+    tone(500 + Math.random() * 300, t, 0.09, { to: 1500, v: 0.07, type: "triangle" });
+  };
+  S.ollie = () => {
+    const t = now();
+    nz(t, 0.05, { f: 1800, q: 1.5, v: 0.12, a: 0.002 });
+    tone(300, t, 0.06, { to: 160, v: 0.08, type: "triangle" });
+  };
+  S.land = () => {
+    const t = now();
+    nz(t, 0.08, { f: 900, q: 1, v: 0.12, a: 0.003 });
+    tone(140, t, 0.1, { to: 90, v: 0.1 });
+  };
+  S.plug = () => {
+    const t = now();
+    tone(1200, t, 0.05, { v: 0.06, type: "square" });
+    tone(1800, t + 0.06, 0.12, { v: 0.05 });
+  };
+
+  /* ---------- looping machine sounds: the vacuum and the skateboard's roll ---------- */
+  const LOOPS = {};
+  function loop(name, level) {
+    if (!init()) return;
+    let L = LOOPS[name];
+    if (!L) {
+      if (!level) return;
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      g.connect(sfxBus);
+      const src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+      const f = ctx.createBiquadFilter();
+      src.connect(f);
+      f.connect(g);
+      src.start();
+      L = LOOPS[name] = { g, f, src };
+      if (name === "vacuum") {
+        f.type = "bandpass";
+        f.frequency.value = 1400;
+        f.Q.value = 0.6;
+        const o = ctx.createOscillator(),
+          og = ctx.createGain(),
+          lp = ctx.createBiquadFilter();
+        o.type = "sawtooth";
+        o.frequency.value = 118;
+        lp.type = "lowpass";
+        lp.frequency.value = 900;
+        og.gain.value = 0.35;
+        o.connect(lp);
+        lp.connect(og);
+        og.connect(g);
+        o.start();
+        L.o = o;
+      } else {
+        f.type = "lowpass";
+        f.frequency.value = 380;
+        f.Q.value = 0.8;
+      }
+    }
+    const v = muted ? 0 : level || 0;
+    L.g.gain.setTargetAtTime(name === "vacuum" ? v * 0.09 : v * 0.22, ctx.currentTime, 0.05);
+    if (L.o) L.o.frequency.setTargetAtTime(110 + v * 25, ctx.currentTime, 0.1);
+    if (name === "skate") L.f.frequency.setTargetAtTime(220 + v * 500, ctx.currentTime, 0.05);
+  }
 
   function sfx(name) {
     if (!init() || muted) return;
@@ -763,6 +835,7 @@
     init,
     sfx,
     music,
+    loop,
     get muted() {
       return muted;
     },

@@ -92,6 +92,7 @@
     return g;
   }
   WG.makeCone = makeCone;
+  WG.CAR_MAT = MAT;
 
   // every robotaxi shares three merged, vertex-coloured meshes: the car, the spinning lidar head and the headlights
   let CAR = null;
@@ -215,6 +216,8 @@
     cone: { col: "#ff8a1f", label: "Coned" },
     birds: { col: "#8a7fd8", label: "Pigeons" },
     reboot: { col: "#e8508a", label: "Lost" },
+    vacuum: { col: "#e0a21a", label: "Messy inside" },
+    doors: { col: "#1fae9f", label: "Doors open" },
   };
   WG.KIND = KIND;
   function drawIcon(x, kind, cx, cy, s) {
@@ -332,6 +335,75 @@
       x.lineTo(-2, 21);
       x.moveTo(6, 15);
       x.lineTo(6, 21);
+      x.stroke();
+    } else if (kind === "vacuum") {
+      // a canister vacuum with its hose, and some crumbs
+      x.strokeStyle = "#5c6470";
+      x.lineWidth = 5;
+      x.beginPath();
+      x.moveTo(-6, 0);
+      x.bezierCurveTo(-4, -26, 22, -24, 16, 2);
+      x.stroke();
+      x.fillStyle = "#3a3f47";
+      x.fillRect(8, 0, 18, 6);
+      x.fillStyle = "#ffcf3a";
+      x.strokeStyle = "#b8860b";
+      x.lineWidth = 3;
+      x.beginPath();
+      x.ellipse(-12, 6, 15, 11, 0, 0, 7);
+      x.fill();
+      x.stroke();
+      x.fillStyle = "#3a3f47";
+      x.beginPath();
+      x.arc(-20, 16, 4, 0, 7);
+      x.arc(-4, 16, 4, 0, 7);
+      x.fill();
+      x.fillStyle = "#c9a46a";
+      for (const [a, b] of [
+        [12, 16],
+        [20, 14],
+        [16, 20],
+        [24, 19],
+      ]) {
+        x.beginPath();
+        x.arc(a, b, 2.2, 0, 7);
+        x.fill();
+      }
+    } else if (kind === "doors") {
+      // a little car with its door swung open
+      x.fillStyle = "#fff";
+      x.strokeStyle = "#5c6470";
+      x.lineWidth = 3;
+      x.beginPath();
+      x.moveTo(-24, 10);
+      x.lineTo(-22, -2);
+      x.lineTo(-12, -4);
+      x.lineTo(-4, -14);
+      x.lineTo(12, -14);
+      x.lineTo(20, -4);
+      x.lineTo(24, -2);
+      x.lineTo(24, 10);
+      x.closePath();
+      x.fill();
+      x.stroke();
+      x.fillStyle = "#1c2734";
+      x.fillRect(-6, -11, 9, 7);
+      x.fillRect(6, -11, 9, 7);
+      x.fillStyle = "#3a3f47";
+      x.beginPath();
+      x.arc(-13, 11, 5, 0, 7);
+      x.arc(14, 11, 5, 0, 7);
+      x.fill();
+      // the open door
+      x.fillStyle = "#1fae9f";
+      x.strokeStyle = "#0f6f66";
+      x.beginPath();
+      x.moveTo(-8, -4);
+      x.lineTo(-24, -18);
+      x.lineTo(-24, -2);
+      x.lineTo(-8, 8);
+      x.closePath();
+      x.fill();
       x.stroke();
     } else if (kind === "reboot") {
       x.strokeStyle = "#e8508a";
@@ -526,9 +598,48 @@
     P.cone.visible = p && p.type === "cone";
     P.birds.visible = p && p.type === "birds";
     P.sprite.visible = !!p;
+    // doors passengers left open
+    const want = p && p.type === "doors" ? p.doors || [] : [];
+    if (want.length || this.doorParts) {
+      const D = this.ensureDoors();
+      D.forEach((d, i) => {
+        const open = want.includes(i);
+        d.pivot.visible = d.patch.visible = open;
+        d.pivot.rotation.y = open ? d.side * 1.1 : 0;
+      });
+    }
     P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : 0x36d3c4);
     P.ring.material.emissive.set(p && p.type === "charge" ? 0x551010 : 0x0b4a44);
     this.bubbleT = 0;
+  };
+  const DOOR_PANEL = roundBox(0.07, 0.62, 0.98, 0.03, 2),
+    DOOR_GLASS = roundBox(0.05, 0.34, 0.78, 0.03, 2),
+    DOOR_HOLE = new T.MeshLambertMaterial({ color: 0x1c2330 });
+  Car.prototype.ensureDoors = function () {
+    if (this.doorParts) return this.doorParts;
+    // front-left, front-right, rear-left, rear-right; each hinged at its front edge
+    this.doorParts = [
+      [-1, -1.08],
+      [1, -1.08],
+      [-1, 0.02],
+      [1, 0.02],
+    ].map(([side, z0]) => {
+      const pivot = new T.Group();
+      pivot.position.set(side * 0.97, 0, z0);
+      const panel = new T.Mesh(DOOR_PANEL, MAT.body);
+      panel.position.set(0, 0.82, 0.49);
+      panel.castShadow = true;
+      const glass = new T.Mesh(DOOR_GLASS, MAT.glass);
+      glass.position.set(0, 1.3, 0.45);
+      pivot.add(panel, glass);
+      const patch = new T.Mesh(GEO.box, DOOR_HOLE);
+      patch.scale.set(0.02, 0.85, 0.92);
+      patch.position.set(side * 0.958, 1.02, z0 + 0.48);
+      this.parts.g.add(pivot, patch);
+      pivot.visible = patch.visible = false;
+      return { side, z0, pivot, patch };
+    });
+    return this.doorParts;
   };
   Car.prototype.canPull = function () {
     return this.state === "drive" && this.piece === "line" && this.s > 6.4 && this.s < W.P - END - 15;
@@ -650,7 +761,10 @@
         // animation
         const P = c.parts;
         let spin = 7;
-        if (c.problem && c.problem.type === "reboot") spin = Math.sin(t * 3 + c.id) * 14;
+        if (c.problem && c.problem.type === "reboot") {
+          const calm = c.problem.calm || 0;
+          spin = Math.sin(t * 3 + c.id) * 14 * (1 - calm) + 7 * calm;
+        }
         if (c.problem && c.problem.type === "charge") spin = 1.2;
         P.spin.rotation.y += spin * dt;
         let by = 0;
@@ -771,7 +885,7 @@
     head.add(capTop);
     S(GEO.cyl, cap, 0, 0.12, -0.38, 0.3, 0.03, 0.2, head);
     S(GEO.sph, white, 0, 0.36, -0.12, 0.08, 0.05, 0.06, head);
-    root.scale.setScalar(o.scale || 1.35);
+    root.scale.setScalar(o.scale || 1.15);
     return { root, body, head, legs, arms, mouth: mo };
   }
   WG.makeMii = makeMii;

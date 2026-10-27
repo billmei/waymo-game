@@ -6,7 +6,7 @@
     T = THREE,
     W = WG.world,
     A = WG.audio,
-    MG = WG.mini,
+    JOB = WG.jobs,
     Traffic = WG.Traffic,
     KIND = WG.KIND;
   const $ = (s) => document.querySelector(s);
@@ -20,23 +20,23 @@
     {
       name: "Morning Rush",
       look: "day",
-      blurb: "Sunny skies over the city. Riders are waking up, and so are the pigeons… and the mud.",
+      blurb: "Sunny skies over the city. Riders are waking up — and leaving muddy footprints, cones and open doors behind them.",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
       patience: 42,
-      kinds: ["dirty", "charge", "cone"],
+      kinds: ["dirty", "charge", "cone", "doors"],
       key: 0,
     },
     {
       name: "Karl the Fog",
       look: "fog",
-      blurb: "The fog rolls in off the Pacific. Sensors get confused, so robotaxis may need a reboot.",
+      blurb: "The fog rolls in off the Pacific. Sensors get confused and need a reboot, and the night crowd left popcorn everywhere.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
       patience: 38,
-      kinds: ["dirty", "charge", "cone", "reboot"],
+      kinds: ["dirty", "charge", "cone", "reboot", "vacuum"],
       key: 2,
     },
     {
@@ -47,7 +47,7 @@
       every: [3.8, 5.4],
       max: 5,
       patience: 34,
-      kinds: ["dirty", "charge", "cone", "reboot", "birds"],
+      kinds: ["dirty", "charge", "cone", "reboot", "birds", "vacuum", "doors"],
       key: 5,
     },
   ];
@@ -308,7 +308,15 @@
     A.music("title");
     focusFirst("#brief");
   }
-  const JOBNAME = { dirty: "Wash", charge: "Recharge", cone: "De-cone", birds: "Shoo birds", reboot: "Reboot sensors" };
+  const JOBNAME = {
+    dirty: "Wash",
+    charge: "Recharge",
+    cone: "De-cone",
+    birds: "Shoo birds",
+    reboot: "Reboot sensors",
+    vacuum: "Vacuum",
+    doors: "Close doors",
+  };
 
   function startRound() {
     const s = shift();
@@ -339,7 +347,7 @@
     big("Time's up!", "up");
     A.music(null);
     A.sfx("timeup");
-    if (MG.active) MG.cancel();
+    if (JOB.active) JOB.cancel();
     P.path = [];
     P.target = null;
   }
@@ -416,7 +424,12 @@
       }
     }
     const type = s.kinds[(Math.random() * s.kinds.length) | 0];
-    best.setProblem({ type, max: s.patience, left: s.patience });
+    const prob = { type, max: s.patience, left: s.patience };
+    if (type === "doors") {
+      const n = Math.min(4, 2 + G.round + (Math.random() < 0.4 ? 1 : 0) - 1);
+      prob.doors = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.max(2, n));
+    }
+    best.setProblem(prob);
     best.pullOver();
     if (!G.tipped) {
       G.tipped = true;
@@ -478,7 +491,7 @@
   }
 
   function startJob(car) {
-    if (!car.problem || MG.active) return;
+    if (!car.problem || JOB.active) return;
     P.path = [];
     P.target = car;
     G.mini = car;
@@ -487,7 +500,8 @@
     $("#h-tip").hidden = true;
     A.sfx("open");
     A.duck(true);
-    MG.open(car.problem.type, { round: G.round + 1 }, (res) => {
+    holding = null;
+    JOB.start(car.problem.type, car, { scene, camera, P, mii, round: G.round + 1, big, ray: rayAt, pickGround }, (res) => {
       A.duck(false);
       G.mini = null;
       if (car.problem) {
@@ -549,7 +563,7 @@
         WG.drawIcon(e.querySelector("canvas").getContext("2d"), car.problem.type, 32, 34, 1);
         e.querySelector("b").textContent = KIND[car.problem.type].label;
         e.addEventListener("click", () => {
-          if (G.state === "play" && !MG.active) goTo(car);
+          if (G.state === "play" && !JOB.active) goTo(car);
         });
         hud.jobs.appendChild(e);
         jobEls.set(car, e);
@@ -567,7 +581,7 @@
     const w = h2.clientWidth,
       h = h2.clientHeight;
     hx.clearRect(0, 0, w, h);
-    const showArrows = G.state === "play" && !MG.active;
+    const showArrows = G.state === "play" && !JOB.active;
     if (h2.hidden === showArrows) h2.hidden = !showArrows;
     if (!showArrows) return;
     const v = new T.Vector3();
@@ -667,8 +681,11 @@
   const keys = new Set();
   addEventListener("keydown", (e) => {
     A.init();
-    if (MG.active) {
-      if (MG.key(e.code, e)) e.preventDefault();
+    if (JOB.active && G.state === "play") {
+      if (!e.repeat) keys.add(e.code);
+      if (e.code === "Escape") JOB.cancel();
+      else if (JOB.key(e.code)) e.preventDefault();
+      if (/^Arrow/.test(e.code) || e.code === "Space") e.preventDefault();
       return;
     }
     if (e.repeat && !/^(Arrow|Key[WASD])/.test(e.code)) return;
@@ -704,18 +721,26 @@
   addEventListener("blur", () => keys.clear());
 
   const ray = new T.Raycaster();
-  function pick(clientX, clientY) {
+  function rayAt(clientX, clientY) {
     const r = cv.getBoundingClientRect(),
       nx = ((clientX - r.left) / r.width) * 2 - 1,
       ny = -((clientY - r.top) / r.height) * 2 + 1;
     ray.setFromCamera({ x: nx, y: ny }, camera);
+    return ray;
+  }
+  function pickGround(clientX, clientY) {
+    const h = pick(clientX, clientY, true);
+    return h && !h.car ? h : null;
+  }
+  function pick(clientX, clientY, groundOnly) {
+    rayAt(clientX, clientY);
     const o = ray.ray.origin,
       d = ray.ray.direction;
     // a robotaxi with a problem?
     let bestC = null,
       bd = 3.2;
     for (const c of Traffic.cars) {
-      if (!c.problem) continue;
+      if (!c.problem || groundOnly) continue;
       for (const hgt of [1.1, 4.2]) {
         const px = c.pos.x - o.x,
           py = c.pos.y + hgt - o.y,
@@ -758,7 +783,15 @@
   let holding = null;
   cv.addEventListener("pointerdown", (e) => {
     A.init();
-    if (G.state !== "play" || MG.active) return;
+    if (G.state === "play" && JOB.active) {
+      e.preventDefault();
+      try {
+        cv.setPointerCapture(e.pointerId);
+      } catch (_) {}
+      JOB.pointer("down", e);
+      return;
+    }
+    if (G.state !== "play") return;
     const h = pick(e.clientX, e.clientY);
     if (!h) return;
     if (h.car) {
@@ -777,12 +810,14 @@
     } catch (_) {}
   });
   cv.addEventListener("pointermove", (e) => {
+    if (JOB.active) JOB.pointer("move", e);
     if (holding && holding.id === e.pointerId) {
       holding.x = e.clientX;
       holding.y = e.clientY;
     }
   });
   const endHold = (e) => {
+    if (JOB.active) JOB.pointer("up", e);
     if (holding && holding.id === e.pointerId) holding = null;
   };
   cv.addEventListener("pointerup", endHold);
@@ -790,7 +825,7 @@
   cv.addEventListener(
     "wheel",
     (e) => {
-      if (G.state === "play") {
+      if (G.state === "play" && !JOB.active) {
         zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 22, 64);
         e.preventDefault();
       }
@@ -828,8 +863,8 @@
     if (b) setTimeout(() => b.focus({ preventScroll: true }), 50);
   }
   function toTitle() {
+    if (JOB.active) JOB.cancel();
     clearProblems();
-    if (MG.active) MG.cancel();
     setState("title");
     W.setLook("day");
     A.music("title");
@@ -942,14 +977,8 @@
       wantLook.set(P.pos.x, P.pos.y + 2, P.pos.z);
       wantPos.set(P.pos.x + Math.sin(a) * 60, P.pos.y + 44, P.pos.z + Math.cos(a) * 60);
       k = 1.5;
-    } else if (G.mini && MG.active) {
-      const c = G.mini;
-      wantLook.set(c.pos.x, c.pos.y + 1.2, c.pos.z);
-      // from the street side (the car is pulled over to its right), a little behind and above
-      const sx = c.fwd.z,
-        sz = -c.fwd.x;
-      wantPos.set(c.pos.x + sx * 8 - c.fwd.x * 7, c.pos.y + 9, c.pos.z + sz * 8 - c.fwd.z * 7);
-      k = 3;
+    } else if (JOB.active) {
+      k = JOB.camera(wantPos, wantLook);
     } else {
       const pitch = (52 * Math.PI) / 180;
       wantLook.set(P.pos.x, P.pos.y + 1, P.pos.z - 2);
@@ -967,17 +996,18 @@
   function playerUpdate(dt) {
     let ix = 0,
       iz = 0;
-    if (G.state === "play" && !MG.active) {
+    const drives = JOB.active && JOB.active.drives;
+    if (G.state === "play" && (!JOB.active || drives)) {
       if (keys.has("KeyW") || keys.has("ArrowUp")) iz -= 1;
       if (keys.has("KeyS") || keys.has("ArrowDown")) iz += 1;
       if (keys.has("KeyA") || keys.has("ArrowLeft")) ix -= 1;
       if (keys.has("KeyD") || keys.has("ArrowRight")) ix += 1;
-      if (ix || iz) {
+      if ((ix || iz) && !drives) {
         P.path = [];
         P.target = null;
       }
       // hold to steer
-      if (holding) {
+      if (holding && !drives) {
         holding.t -= dt;
         if (holding.t <= 0) {
           holding.t = 0.2;
@@ -990,7 +1020,7 @@
         }
       }
       // chase a moving target
-      if (P.target) {
+      if (P.target && !JOB.active) {
         if (!P.target.problem) P.target = null;
         else {
           const d = Math.hypot(P.target.pos.x - P.pos.x, P.target.pos.z - P.pos.z);
@@ -1012,7 +1042,7 @@
       const l = Math.hypot(ix, iz);
       dx = ix / l;
       dz = iz / l;
-    } else if (P.path.length && G.state === "play" && !MG.active) {
+    } else if (P.path.length && G.state === "play" && !JOB.active) {
       const [wx, wz] = P.path[0],
         ddx = wx - P.pos.x,
         ddz = wz - P.pos.z,
@@ -1024,8 +1054,9 @@
       }
     }
     const want = dx || dz ? 11 : 0;
-    P.speed += clamp(want - P.speed, -40 * dt, 30 * dt);
-    if (P.speed > 0.05) {
+    if (drives) JOB.active.drive(dt, ix, iz);
+    else P.speed += clamp(want - P.speed, -40 * dt, 30 * dt);
+    if (P.speed > 0.05 && !drives) {
       if (dx || dz) P.dir = [dx, dz];
       const [ux, uz] = P.dir || [0, 1],
         step = P.speed * dt,
@@ -1066,9 +1097,15 @@
       }
     }
     P.pos.y = lerp(P.pos.y, W.groundY(P.pos.x, P.pos.z), Math.min(1, dt * 18));
-    // face the car while working
-    if (G.mini && MG.active) {
-      const c = G.mini;
+    // step to the work spot (the street-side front corner, out of the camera's way) and face the car
+    if (G.mini && JOB.active && !drives) {
+      const c = G.mini,
+        spot = c.parts.g.localToWorld(JOB.SPOT.clone()),
+        f = Math.min(1, dt * 6);
+      if (!W.isBlocked(spot.x, spot.z, 0.3)) {
+        P.pos.x += (spot.x - P.pos.x) * f;
+        P.pos.z += (spot.z - P.pos.z) * f;
+      }
       P.yawWant = Math.atan2(-(c.pos.x - P.pos.x), -(c.pos.z - P.pos.z));
       P.work += dt;
     } else P.work = 0;
@@ -1078,6 +1115,12 @@
       P.yaw += d * Math.min(1, dt * 14);
     }
     // animate
+    if (drives) {
+      JOB.active.pose(mii, dt);
+      mii.root.position.copy(P.pos);
+      mii.root.rotation.y = P.yaw;
+      return;
+    }
     const sp = P.speed / 11;
     P.phase += dt * (4 + 9 * sp);
     const sw = Math.sin(P.phase) * 0.8 * sp;
@@ -1120,7 +1163,7 @@
           A.sfx(sec % 2 ? "tick" : "tock");
         }
       }
-      if (G.left <= 0 && !MG.active) {
+      if (G.left <= 0 && !JOB.active) {
         G.left = 0;
         timeUp();
         return;
@@ -1150,7 +1193,7 @@
         if (c.problem.left <= 0) jobMissed(c);
       }
       // the prompt
-      const n = !MG.active && nearProblem();
+      const n = !JOB.active && nearProblem();
       if (n) {
         hud.prompt.hidden = false;
         hud.prompt.innerHTML = TOUCH ? "Tap the car to help!" : "<kbd>Space</kbd> Help this car";
@@ -1174,7 +1217,7 @@
         if (c.beeped === G.t) A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
       playerUpdate(dt);
       playUpdate(dt);
-      MG.update(dt);
+      JOB.update(dt);
     }
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();

@@ -84,8 +84,8 @@
         <header class="panel-h">How to Play</header>
         <div class="panel-b">
           <p class="lead">
-            You are the robotaxi pit crew. When a car near you pulls over with a bubble over its roof, run to it and fix the problem before the
-            rider runs out of patience. You have three shifts of 100 seconds.
+            You are the robotaxi pit crew. When a car near you pulls over with a bubble over its roof, run to it and fix the problem right
+            there on the street before the rider runs out of patience. You have three shifts of 100 seconds.
           </p>
           <ul class="how-jobs">
             <li data-k="dirty"><canvas width="64" height="64"></canvas><b>Wash</b><span>Hold and drag the sponge to scrub off mud and bird droppings.</span></li>
@@ -93,6 +93,8 @@
             <li data-k="cone"><canvas width="64" height="64"></canvas><b>De-cone</b><span>Someone put a cone on the hood again. Grab it and fling it away.</span></li>
             <li data-k="birds"><canvas width="64" height="64"></canvas><b>Shoo birds</b><span>Pigeons love warm sensors. Tap them to send them off. Gulls take two.</span></li>
             <li data-k="reboot"><canvas width="64" height="64"></canvas><b>Reboot</b><span>Fog confuses the lidar. Key in the recalibration code with the arrows.</span></li>
+            <li data-k="vacuum"><canvas width="64" height="64"></canvas><b>Vacuum</b><span>The roof comes off! Sweep the vacuum over the crumbs, popcorn and lost socks.</span></li>
+            <li data-k="doors"><canvas width="64" height="64"></canvas><b>Close doors</b><span>Riders left the doors open. Hop on your skateboard and slam them shut.</span></li>
           </ul>
           <div class="how-ctl">
             <div><b>Move</b><span class="desk">WASD / arrow keys, or click the street</span><span class="tch">Tap (or hold) where you want to go</span></div>
@@ -183,21 +185,33 @@
       </div>
     </section>
 
-    <!-- ===== a job ===== -->
-    <div id="mini" hidden>
-      <div class="mini-card" role="dialog" aria-labelledby="mini-title">
-        <header>
-          <canvas id="mini-icon" width="64" height="64" aria-hidden="true"></canvas>
-          <h2 id="mini-title">Job</h2>
-          <button type="button" id="mini-back" class="btn tiny">Leave <kbd>Esc</kbd></button>
-        </header>
-        <canvas id="mini-cv"></canvas>
-        <footer>
-          <p id="mini-hint"></p>
-          <div class="mini-bar"><i id="mini-bar-i"></i></div>
-        </footer>
+    <!-- ===== a job in progress: a small bar over the 3D scene ===== -->
+    <div id="job" hidden>
+      <div class="job-card">
+        <canvas id="job-icon" width="64" height="64" aria-hidden="true"></canvas>
+        <div class="job-txt">
+          <b id="job-title">Job</b>
+          <span id="job-hint"></span>
+        </div>
+        <div class="job-bar" aria-hidden="true"><i id="job-bar-i"></i></div>
+        <button type="button" id="job-leave" class="btn tiny">Leave <kbd>Esc</kbd></button>
+      </div>
+      <div id="job-meter" hidden>
+        <div class="jm-track"><i class="jm-good"></i><i class="jm-perfect"></i><b id="job-needle"></b></div>
+        <div class="jm-batt"><span><i id="job-batt-i"></i></span><b id="job-batt-t">8%</b></div>
+      </div>
+      <button type="button" id="job-ollie" hidden>Ollie!</button>
+      <div id="job-code" hidden>
+        <div class="code-row" id="job-code-row"></div>
+        <div class="code-pad">
+          <button type="button" data-k="3" aria-label="Left">←</button>
+          <button type="button" data-k="0" aria-label="Up">↑</button>
+          <button type="button" data-k="2" aria-label="Down">↓</button>
+          <button type="button" data-k="1" aria-label="Right">→</button>
+        </div>
       </div>
     </div>
+    <div id="job-words" aria-hidden="true"></div>
 
     <button type="button" id="snd" class="round-btn" aria-label="Sound" aria-pressed="true">
       <svg viewBox="0 0 24 24" class="on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
@@ -214,7 +228,7 @@
     <script src="js/audio.js"></script>
     <script src="js/world.js"></script>
     <script src="js/actors.js"></script>
-    <script src="js/minigames.js"></script>
+    <script src="js/jobs.js"></script>
     <script src="js/game.js"></script>
     <script>
       // the How to Play icons

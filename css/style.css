@@ -841,92 +841,330 @@ body[data-state="play"] #snd {
   top: 30%;
 }
 
-/* ---------- the job card ---------- */
-#mini {
+/* ---------- a job in progress ---------- */
+#job {
   position: fixed;
   inset: 0;
-  z-index: 15;
-  display: grid;
-  place-items: center;
-  padding: 10px;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1), rgba(20, 60, 100, 0.35));
+  z-index: 9;
+  pointer-events: none;
 }
-#mini.in .mini-card {
-  animation: panel-in 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
-}
-#mini.out {
-  animation: fade-out 0.22s ease-in both;
-}
-.mini-card {
-  width: min(860px, 100%, calc((100vh - 140px) * 1.6667 + 10px));
-  width: min(860px, 100%, calc((100dvh - 140px) * 1.6667 + 10px));
-  border: 5px solid #fff;
-  border-radius: 28px;
-  background: linear-gradient(180deg, #fff, var(--panel-2));
-  box-shadow:
-    0 0 0 3px rgba(42, 159, 230, 0.35),
-    0 24px 60px rgba(10, 50, 100, 0.4);
-  overflow: hidden;
-}
-.mini-card header {
-  position: relative;
+.job-card {
+  position: absolute;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: linear-gradient(180deg, #74d6ff 0%, #2ba6ec 60%, #1d8fd6 100%);
+  gap: 12px;
+  width: min(760px, calc(100% - 32px));
+  padding: 8px 10px 8px 8px;
+  border: 4px solid #fff;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(236, 242, 247, 0.95));
+  box-shadow:
+    0 0 0 3px rgba(42, 159, 230, 0.4),
+    0 10px 26px rgba(10, 50, 100, 0.3);
+  pointer-events: auto;
+  animation: job-pop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
-.mini-card header canvas {
-  width: 40px;
-  height: 40px;
+.job-card canvas {
+  width: 52px;
+  height: 52px;
+  flex: none;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 0 0 3px #74d6ff;
 }
-.mini-card h2 {
+.job-txt {
   flex: 1;
-  margin: 0;
-  color: #fff;
-  font: 900 26px/1.1 var(--font);
-  text-shadow: 0 2px 0 rgba(10, 70, 130, 0.4);
+  min-width: 0;
 }
-#mini-cv {
+.job-txt b {
   display: block;
-  width: 100%;
-  aspect-ratio: 800 / 480;
-  touch-action: none;
-  cursor: grab;
+  font: 900 22px/1.1 var(--font);
+  color: var(--blue-d);
 }
-#mini[data-kind="dirty"] #mini-cv {
-  cursor: none;
+.job-txt span {
+  display: block;
+  font: 700 14px/1.3 var(--font);
+  color: var(--ink);
 }
-.mini-card footer {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 16px 12px;
-}
-#mini-hint {
-  flex: 1;
-  margin: 0;
-  font-weight: 800;
-  font-size: 15px;
-}
-.mini-bar {
-  width: 160px;
+.job-bar {
+  width: 130px;
   height: 16px;
+  flex: none;
   border: 3px solid #fff;
   border-radius: 99px;
   background: #dfe6ec;
   box-shadow: 0 0 0 2px var(--line);
   overflow: hidden;
 }
-.mini-bar i {
+.job-bar i {
   display: block;
   height: 100%;
   background: linear-gradient(180deg, #8ff0a0, var(--good));
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.15s;
+}
+body.in-job #h-jobs,
+body.in-job .prompt {
+  display: none;
+}
+body.in-job #gl {
+  cursor: crosshair;
+}
+
+/* the charge meter */
+#job-meter {
+  position: absolute;
+  left: 50%;
+  top: 118px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(560px, calc(100% - 32px));
+  padding: 12px 16px;
+  border: 4px solid #fff;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 0 0 3px rgba(42, 159, 230, 0.35),
+    0 10px 24px rgba(10, 50, 100, 0.25);
+}
+#job-meter.hit {
+  animation: meter-hit 0.3s;
+}
+@keyframes meter-hit {
+  0% {
+    box-shadow:
+      0 0 0 8px rgba(255, 224, 102, 0.9),
+      0 10px 24px rgba(10, 50, 100, 0.25);
+  }
+}
+.jm-track {
+  position: relative;
+  flex: 1;
+  height: 30px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #ff6b5a 0%, #ffd23a 33%, #41c45a 50%, #ffd23a 67%, #ff6b5a 100%);
+}
+.jm-good {
+  position: absolute;
+  left: 37%;
+  width: 26%;
+  top: 0;
+  bottom: 0;
+  border: 3px solid #2f8e45;
+  border-radius: 6px;
+}
+.jm-perfect {
+  position: absolute;
+  left: 45.5%;
+  width: 9%;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.75);
+}
+#job-needle {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 6px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: #2b3038;
+  box-shadow: 0 0 0 2px #fff;
+}
+.jm-batt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.jm-batt span {
+  position: relative;
+  width: 70px;
+  height: 32px;
+  padding: 4px;
+  border: 4px solid #2f8e45;
+  border-radius: 8px;
+  background: #fff;
+}
+.jm-batt span::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 7px;
+  width: 6px;
+  height: 10px;
+  border-radius: 0 3px 3px 0;
+  background: #2f8e45;
+}
+.jm-batt i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transform-origin: left;
+}
+.jm-batt b {
+  min-width: 3.2em;
+  font: 900 20px/1 var(--font);
+  color: #2f8e45;
+}
+
+/* the recalibration code: the code across the top, the arrow pad above the job bar */
+#job-code {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#job-code.shake .code-row {
+  animation: code-shake 0.12s 3;
+}
+@keyframes code-shake {
+  0%,
+  100% {
+    transform: translateX(-50%);
+  }
+  25% {
+    transform: translateX(calc(-50% - 8px));
+  }
+  75% {
+    transform: translateX(calc(-50% + 8px));
+  }
+}
+.code-row {
+  position: absolute;
+  left: 50%;
+  top: 112px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: rgba(20, 32, 46, 0.86);
+  box-shadow: 0 8px 20px rgba(10, 30, 60, 0.35);
+}
+.code-row i {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.8);
+  font: 900 28px/1 var(--font);
+  font-style: normal;
+}
+.code-row i.cur {
+  background: #fff;
+  color: #e8508a;
+  box-shadow: 0 0 0 4px var(--teal);
+}
+.code-row i.ok {
+  background: var(--good);
+  color: #fff;
+}
+.code-pad {
+  position: absolute;
+  left: 50%;
+  bottom: 112px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+.code-pad button {
+  width: 64px;
+  height: 64px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff, #d5dde6);
+  box-shadow:
+    0 0 0 3px #8fa0b3,
+    0 6px 14px rgba(10, 50, 100, 0.3);
+  color: #2b3a4d;
+  font: 900 30px/1 var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.code-pad button.flash {
+  animation: bump 0.2s;
+  box-shadow:
+    0 0 0 3px var(--teal),
+    0 6px 14px rgba(10, 50, 100, 0.3);
+}
+
+#job-ollie {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: 112px;
+  width: 84px;
+  height: 84px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff9ab0, #ff5a7a);
+  box-shadow:
+    0 0 0 3px rgba(255, 90, 122, 0.45),
+    0 8px 18px rgba(10, 50, 100, 0.3);
+  color: #fff;
+  font: 900 18px/1 var(--font);
+  text-shadow: 0 2px 0 rgba(150, 30, 60, 0.45);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+#job-ollie:active {
+  transform: scale(0.92);
+}
+
+/* words that pop out of the world */
+#job-words {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.jword {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font: 900 30px/1 var(--font);
+  color: #fff;
+  -webkit-text-stroke: 6px var(--blue);
+  paint-order: stroke fill;
+  white-space: nowrap;
+  animation: float-up 1.1s ease-out both;
+}
+.jword.gold {
+  color: #ffe066;
+  -webkit-text-stroke-color: #d67a00;
+  font-size: 36px;
+}
+.jword.ok {
+  -webkit-text-stroke-color: #2f9e45;
+}
+.jword.meh {
+  -webkit-text-stroke-color: #8a94a3;
+}
+.jword.orange {
+  -webkit-text-stroke-color: #ff7a1a;
+}
+.jword.purple {
+  -webkit-text-stroke-color: #8a7fd8;
+}
+.jword.pink {
+  font-size: 24px;
+  -webkit-text-stroke-color: #e8508a;
+}
+.jword.teal {
+  -webkit-text-stroke-color: #1fae9f;
+}
+@keyframes job-pop {
+  from {
+    transform: translateX(-50%) translateY(40px) scale(0.7);
+    opacity: 0;
+  }
 }
 
 /* ---------- boot ---------- */
@@ -1087,19 +1325,51 @@ body[data-state="play"] #snd {
     grid-template-columns: 1fr;
     gap: 2px;
   }
-  .mini-card h2 {
-    font-size: 20px;
+  .job-card {
+    bottom: 76px;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    border-radius: 24px;
   }
-  .mini-card footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
+  .job-card canvas {
+    width: 40px;
+    height: 40px;
   }
-  .mini-bar {
+  .job-txt b {
+    font-size: 18px;
+  }
+  .job-txt span {
+    font-size: 12px;
+  }
+  .job-bar {
+    order: 5;
     width: 100%;
   }
-  #mini-hint {
-    font-size: 13px;
+  #job-meter {
+    top: 96px;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+  .jm-batt span {
+    width: 50px;
+  }
+  .code-row {
+    top: 96px;
+  }
+  #job-ollie {
+    bottom: 200px;
+  }
+  .code-pad {
+    bottom: 190px;
+  }
+  .code-row i {
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+  .code-pad button {
+    width: 58px;
+    height: 58px;
   }
   .fn-top {
     gap: 12px;
@@ -1109,6 +1379,26 @@ body[data-state="play"] #snd {
   }
 }
 @media (max-height: 520px) {
+  .hud-time {
+    top: max(10px, env(safe-area-inset-top));
+    bottom: auto;
+  }
+  .job-card {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    flex-wrap: nowrap;
+    width: min(620px, calc(100% - 140px));
+    border-radius: 999px;
+  }
+  .job-txt span {
+    display: none;
+  }
+  .job-bar {
+    order: 0;
+    width: 90px;
+  }
+  #job-meter {
+    top: 64px;
+  }
   .logo-car {
     display: none;
   }
@@ -1119,11 +1409,14 @@ body[data-state="play"] #snd {
   #title {
     gap: 8px;
   }
-  .mini-card header {
-    padding: 3px 10px;
+  .job-card {
+    padding: 4px 8px 4px 4px;
   }
-  .mini-card footer {
-    padding: 4px 12px 6px;
+  .code-row {
+    top: 64px;
+  }
+  .code-pad {
+    bottom: 84px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
