@@ -32,7 +32,13 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-It also deploys as-is to GitHub Pages or any static host.
+It also deploys as-is to any static host.
+
+### GitHub Pages
+
+`.github/workflows/pages.yml` publishes the game to GitHub Pages on every push to `main` (or when run by hand from the Actions tab). It publishes only what the game loads (`index.html`, `css/`, `js/` and `lib/`), so `reference/` and `tools/` stay out of the site.
+
+To turn it on once, go to the repository's **Settings → Pages** and set **Source** to **GitHub Actions**. The game is then served at `https://<owner>.github.io/waymo-game/`.
 
 ## How it's made
 
