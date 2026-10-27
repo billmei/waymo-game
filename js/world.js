@@ -1,8 +1,10 @@
 /* Waymo Care · the world. The city is Slop Skies' own toy San Francisco (js/isle.js, generated from its engine: terrain,
    neighbourhoods, terraces, towers, landmarks, trees, sea, sky and clouds, all with its shaders). The game is played on
-   the streets of its districts: each shift works a patch of one district's grid (Downtown's Financial District, the
-   Outer Sunset, the Mission). This file boots the island, reads the district's street grid into a graph for the robotaxis, answers ground and collision
-   questions from the island's own colliders, and turns Slop's look into our three shifts (sun, Karl the Fog, dusk). */
+   streets round its landmarks: each shift works a patch of one district's grid (the Marina by the Palace of Fine Arts,
+   Russian Hill to Telegraph Hill, the Financial District down to the Ferry Building, Alamo Square, Ocean Beach). This file
+   boots the island, reads the district's street grid into a graph for the robotaxis, answers ground and collision
+   questions from the island's own colliders, lets the camera see through the houses in its way, and turns Slop's look
+   into our shifts (morning, sun, Karl the Fog, dusk). */
 (function () {
   "use strict";
   const WG = (window.WG = window.WG || {});
@@ -16,16 +18,96 @@
   const SCALE = 1.6;
 
   /* ---------- the play areas: each shift works a patch of one district's street grid (island.js DIST rows: name,
-     grid angle, u by v island units per block). i0..i1, j0..j1 are the street lines that bound the patch ---------- */
+     grid angle, u by v island units per block) round its landmarks. i0..i1, j0..j1 are the street lines that bound the
+     patch; names are the districts whose streets it keeps; pad widens the walkable ground past the streets (island units
+     west, east, north, south of the grid) to take in a landmark; slope is the steepest street the robotaxis will climb;
+     avoid keeps streets off a landmark (island x, z, radius); marks are the island's landmarks the shift shows off (the
+     crew starts by the first, facing it) ---------- */
   const ZONES = {
-    // three blocks by two of the Financial District's towers, below Transamerica
-    downtown: { name: "Financial District", label: "Downtown", ang: -8, u: 62, v: 82, i0: 19, i1: 22, j0: -10, j1: -8 },
-    // the Outer Sunset's long avenues, where Karl rolls in off the ocean
-    sunset: { name: "Sunset", label: "Outer Sunset", ang: 0, u: 60, v: 132, i0: -23, i1: -20, j0: 0, j1: 2 },
-    // the Mission's flats below Dolores Park
-    mission: { name: "Mission", label: "Mission", ang: -5, u: 68, v: 106, i0: 8, i1: 11, j0: 1, j1: 3 },
+    // the Marina's lawns round the Palace of Fine Arts and its lagoon, the Golden Gate Bridge over the Presidio
+    marina: {
+      name: "Marina",
+      label: "Marina & Presidio",
+      names: ["Marina", "Crissy Field"],
+      ang: -8,
+      u: 60,
+      v: 82,
+      i0: -7,
+      i1: -2,
+      j0: -18,
+      j1: -15,
+      pad: [50, 0, 0, 0],
+      avoid: [[-608, -1345, 48]],
+      marks: ["Palace of Fine Arts", "Golden Gate Bridge"],
+    },
+    // from the top of Lombard's crooked bricks on Russian Hill, down through North Beach and up to Coit Tower
+    lombard: {
+      name: "Russian Hill",
+      label: "Lombard to Coit Tower",
+      names: ["Russian Hill", "North Beach", "Telegraph Hill", "Fisherman's Wharf"],
+      ang: -8,
+      u: 56,
+      v: 76,
+      i0: 10,
+      i1: 20,
+      j0: -16,
+      j1: -14,
+      slope: 0.75,
+      avoid: [
+        [375, -1226, 32],
+        [425, -1222, 32],
+        [475, -1218, 32],
+      ],
+      marks: ["Lombard Street", "Coit Tower"],
+    },
+    // the Financial District's towers down to the Embarcadero and the Ferry Building, Salesforce Tower on the corner
+    ferry: {
+      name: "Financial District",
+      label: "Downtown & Ferry Building",
+      names: ["Financial District", "Embarcadero"],
+      ang: -8,
+      u: 62,
+      v: 82,
+      i0: 19,
+      i1: 24,
+      j0: -8,
+      j1: -4,
+      pad: [0, 0, 0, 30],
+      marks: ["Transamerica Pyramid", "Ferry Building", "Salesforce Tower"],
+    },
+    // the streets round Alamo Square and the Painted Ladies, Sutro Tower on the ridge to the west
+    ladies: {
+      name: "Western Addition",
+      label: "Painted Ladies & Sutro Tower",
+      names: ["Western Addition", "Haight-Ashbury", "Castro"],
+      ang: -8,
+      u: 62,
+      v: 82,
+      i0: 3,
+      i1: 8,
+      j0: -7,
+      j1: -2,
+      marks: ["Alamo Square", "Painted Ladies", "Sutro Tower"],
+    },
+    // the Great Highway along Ocean Beach, from the Outer Sunset past both windmills up to the ruins of Sutro Baths
+    beach: {
+      name: "Ocean Beach",
+      label: "Outer Sunset & Sutro Baths",
+      names: ["Ocean Beach", "Sunset", "Golden Gate Park", "Richmond", "Lands End"],
+      ang: 0,
+      u: 60,
+      v: 132,
+      i0: -31,
+      i1: -27,
+      j0: -7,
+      j1: -1,
+      pad: [70, 0, 0, 0],
+      marks: ["Murphy Windmill", "Dutch Windmill", "Lands End ruins"],
+    },
   };
-  let ZONE = ZONES.downtown,
+  // the island's names for its landmarks, as the game shows them
+  const MARK_NAMES = { "Lands End ruins": "Sutro Baths" };
+  let ZONE = ZONES.marina,
     ZA = 0,
     ZC = 1,
     ZS = 0;
@@ -43,10 +125,11 @@
     ZA = (z.ang * Math.PI) / 180;
     ZC = Math.cos(ZA);
     ZS = Math.sin(ZA);
-    AREA.lx0 = z.i0 * z.u - 22;
-    AREA.lx1 = z.i1 * z.u + 22;
-    AREA.lz0 = z.j0 * z.v - 22;
-    AREA.lz1 = z.j1 * z.v + 22;
+    const pad = z.pad || [0, 0, 0, 0];
+    AREA.lx0 = z.i0 * z.u - 22 - pad[0];
+    AREA.lx1 = z.i1 * z.u + 22 + pad[1];
+    AREA.lz0 = z.j0 * z.v - 22 - pad[2];
+    AREA.lz1 = z.j1 * z.v + 22 + pad[3];
   }
   useZone(ZONE);
   const inArea = (x, z, m) => {
@@ -63,9 +146,33 @@
       dz = Math.abs(lz - Math.round(lz / ZONE.v) * ZONE.v);
     return dx < HALF_ST || dz < HALF_ST;
   }
-  const groundY = (x, z) => height(x, z) + (onStreet(x, z) ? 0 : 0.2 * SCALE);
   // the island's colliders (houses, towers, landmarks, street trees)
   const hits = (x, z, r) => hitsAt(x, height(x, z) + 1.2, z, r || 0);
+  // the blocks of a gridded district stand on raised pads; parks, lawns and the beach don't
+  const PADS = new Map();
+  function onPad(x, z) {
+    if (onStreet(x, z)) return false;
+    const [lx, lz] = toLocal(x, z),
+      i = Math.floor(lx / ZONE.u),
+      j = Math.floor(lz / ZONE.v),
+      k = i + "," + j;
+    let p = PADS.get(k);
+    if (p === undefined) {
+      const [cx, cz] = toWorld((i + 0.5) * ZONE.u, (j + 0.5) * ZONE.v),
+        row = I.ISL.DIST.find((d) => d[1] === zoneAt(cx, cz));
+      p = false;
+      // a block with a grid and something built on it
+      if (row && row[6])
+        for (let a = -2; a <= 2 && !p; a++)
+          for (let b = -2; b <= 2 && !p; b++) {
+            const [sx, sz] = toWorld((i + 0.5 + a * 0.18) * ZONE.u, (j + 0.5 + b * 0.18) * ZONE.v);
+            p = hits(sx, sz, 0);
+          }
+      PADS.set(k, p);
+    }
+    return p;
+  }
+  const groundY = (x, z) => height(x, z) + (onPad(x, z) ? 0.2 * SCALE : 0);
   function isBlocked(x, z, r) {
     if (!inArea(x, z, -(r || 0))) return true;
     if (height(x, z) < 1.5 * SCALE) return true;
@@ -73,8 +180,11 @@
   }
 
   /* ---------- the street graph ---------- */
+  // ground the zone keeps clear of streets (island units: x, z, radius), so a landmark like Lombard's bricks stays on show
+  const avoids = (x, z) => (ZONE.avoid || []).some(([ax, az, r]) => Math.hypot(x / SCALE - ax, z / SCALE - az) < r);
   function buildGraph() {
-    const { u, v, i0, i1, j0, j1, name } = ZONE,
+    const { u, v, i0, i1, j0, j1 } = ZONE,
+      names = ZONE.names || [ZONE.name],
       key = (i, j) => i + "," + j,
       byKey = {},
       nodes = [];
@@ -82,7 +192,7 @@
       for (let i = i0; i <= i1; i++) {
         const [x, z] = toWorld(i * u, j * v),
           g = terrainY(x, z);
-        if (g < 2.5 * SCALE || zoneAt(x, z) !== name || hitsAt(x, g + 1.5, z, 1.5 * SCALE)) continue;
+        if (g < 2.5 * SCALE || !names.includes(zoneAt(x, z)) || avoids(x, z) || hitsAt(x, g + 1.5, z, 1.5 * SCALE)) continue;
         const n = { id: nodes.length, i, j, x, z, nb: [] };
         nodes.push(n);
         byKey[key(i, j)] = n;
@@ -95,8 +205,8 @@
           x = a.x + (b.x - a.x) * t,
           z = a.z + (b.z - a.z) * t,
           g = terrainY(x, z);
-        if (g < 2.5 * SCALE || hitsAt(x, g + 1.5, z, 1.0 * SCALE)) return false;
-        if (prev !== null && Math.abs(g - prev) / (Math.hypot(b.x - a.x, b.z - a.z) / 16) > 0.32) return false;
+        if (g < 2.5 * SCALE || avoids(x, z) || hitsAt(x, g + 1.5, z, 1.0 * SCALE)) return false;
+        if (prev !== null && Math.abs(g - prev) / (Math.hypot(b.x - a.x, b.z - a.z) / 16) > (ZONE.slope || 0.32)) return false;
         prev = g;
       }
       return true;
@@ -285,8 +395,10 @@
     return new T.Matrix4().compose(_p.set(x, y, z), _q, _s.set(sx, sy, sz));
   }
 
-  /* ---------- the looks: Slop's own grade for the morning, and two more in its format ---------- */
+  /* ---------- the looks: Slop's own grade for the day (and a low eastern sun on it for the morning), and two more in its
+     format ---------- */
   const LOOKS = {
+    morning: { grade: "promo", sun: [15, 112], fogK: 1, light: ["#ffe2bd", 0.74, "#d9ebff", "#8f7f5f", 0.62], puffs: 0, karl: 0 },
     day: { grade: "promo", sun: [26, 222], fogK: 1, light: ["#fff1d6", 0.78, "#d7ecff", "#8f7f5f", 0.6], puffs: 0, karl: 0 },
     fog: { grade: "karl", sun: [40, 200], fogK: 1, light: ["#eef3f7", 0.42, "#e6eef4", "#8d8f86", 0.78], puffs: 1, karl: 1 },
     dusk: { grade: "golden", sun: [9, 262], fogK: 1, light: ["#ffb27a", 0.72, "#9a8ad0", "#6b5040", 0.52], puffs: 0, karl: 0 },
@@ -311,7 +423,7 @@
       seaShalHi: "#b9cdd3",
       foam: "#f2f6f7",
       haze: "#dfe5e8",
-      hazeK: 1 / 85,
+      hazeK: 1 / 150,
       hazeW: "#eef0ec",
       glow: "#c8c8c0",
       cloudTop: "#ffffff",
@@ -340,6 +452,49 @@
       cloudTop: "#ffd9b8",
       cloudUnder: "#9a7fb0",
     };
+  }
+
+  /* ---------- seeing through the houses: rather than swing the camera up over the rooftops, the island's buildings,
+     landmarks and trees go see-through in a corridor from the camera to whatever it follows (the crew member, or the car
+     in a job). The corridor is a vertical slice on the ground (so a house fades up to its roof, not as a hole), takes in
+     what rises to within a few metres of the line of sight (so the streets, roads and low walls under it stay solid) and
+     stops just short of the follow point. With
+     multisampling the faded part is drawn at partial coverage (alpha to coverage), otherwise with a fine ordered dither
+     ---------- */
+  const SEE = { p: new T.Vector3(), k: new T.Vector4(0, 6.5, 0.35, 0), on: 0 };
+  const SEE_GLSL = `
+  if(uSeeK.x>0.001){
+    vec2 sd=uSeeP.xz-uCam.xz;float sl=max(length(sd),1e-3);vec2 su=sd/sl;
+    vec2 q=vW.xz-uCam.xz;float st=dot(q,su),sr=abs(q.x*su.y-q.y*su.x);
+    float yl=mix(uCam.y,uSeeP.y+1.2,clamp(st/sl,0.0,1.0));     // the line of sight's height over this point
+    float sw=(1.0-smoothstep(uSeeK.y*0.55,uSeeK.y,sr))*(1.0-smoothstep(sl-2.2,sl-0.7,st))*smoothstep(-1.0,0.5,st)
+      *smoothstep(uSeeP.y+0.5,uSeeP.y+1.2,vW.y)*smoothstep(yl-4.5,yl-2.5,vW.y)*uSeeK.x;
+    a*=1.0-sw*(1.0-uSeeK.z);
+#ifdef SEE_DITHER
+    vec2 b1=floor(gl_FragCoord.xy*0.5),b2=floor(gl_FragCoord.xy);   // a 4x4 Bayer threshold
+    float th=fract(dot(b1,vec2(0.5,b1.y*0.75)))*0.25+fract(dot(b2,vec2(0.5,b2.y*0.75)))+0.03;
+    if(a<th)discard;a=1.0;
+#endif
+  }
+  gl_FragColor=vec4(c,a);`;
+  function seeThrough(renderer) {
+    const gl = renderer.getContext(),
+      msaa = (gl.getParameter(gl.SAMPLES) || 0) > 1;
+    for (const k of ["objects", "homes", "homesFar"]) {
+      const mesh = I.ISLAND.meshes[k],
+        m = mesh && mesh.material;
+      if (!m || !m.fragmentShader) continue;
+      const fs = m.fragmentShader,
+        out = "gl_FragColor=vec4(c,a);",
+        at = fs.lastIndexOf(out);
+      if (at < 0) continue;
+      m.fragmentShader = "uniform vec3 uSeeP; uniform vec4 uSeeK;\n" + fs.slice(0, at) + SEE_GLSL + fs.slice(at + out.length);
+      m.uniforms.uSeeP = { value: SEE.p };
+      m.uniforms.uSeeK = { value: SEE.k };
+      if (msaa) m.alphaToCoverage = true;
+      else m.defines = Object.assign(m.defines || {}, { SEE_DITHER: 1 });
+      m.needsUpdate = true;
+    }
   }
 
   /* ---------- Karl's ground fog, gulls ---------- */
@@ -377,9 +532,10 @@
   W.build = function (scene, renderer) {
     W.scene = scene;
     I.boot(scene, renderer, SCALE);
+    seeThrough(renderer);
     addGrades();
     I.setGrade("default");
-    W.setArea("downtown");
+    W.setArea("marina");
 
     // light for the game's own toys (robotaxis, the crew), from Slop's sun
     W.hemi = new T.HemisphereLight(0xd7ecff, 0x8f7f5f, 0.6);
@@ -401,11 +557,28 @@
     W.setLook("day");
   };
 
+  // how far a landmark's grounds reach (metres): along 16 bearings, the last collider before a clear gap of 8 m
+  function footprint(x, z) {
+    let R = 14;
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      let last = 0;
+      for (let d = 0, gap = 0; d < 160 && gap < 8; d += 2)
+        if (hits(x + Math.cos(a) * d, z + Math.sin(a) * d, 0)) {
+          last = d;
+          gap = 0;
+        } else gap += 2;
+      R = Math.max(R, last);
+    }
+    return R;
+  }
+
   // move the play area to another district: its street graph, paving, middle and the crew's start
   W.setArea = function (key) {
-    const z = ZONES[key] || ZONES.downtown;
+    const z = ZONES[key] || ZONES.marina;
     if (W.zone === z && W.graph) return false;
     useZone(z);
+    PADS.clear();
     W.zone = z;
     W.zoneKey = key;
     W.graph = buildGraph();
@@ -416,9 +589,20 @@
     W.streets = streets(W.scene);
     const [cx, cz] = toWorld(((z.i0 + z.i1) / 2) * z.u, ((z.j0 + z.j1) / 2) * z.v);
     W.center = new T.Vector3(cx, height(cx, cz), cz);
+    // the shift's landmarks, in game metres: where they stand, their foot and their height
+    W.marks = (z.marks || [])
+      .map((n) => I.MARKS.find((m) => m.name === n))
+      .filter(Boolean)
+      .map((m) => ({ name: MARK_NAMES[m.name] || m.name, x: m.x * SCALE, z: m.z * SCALE, y: m.y * SCALE, h: m.h * SCALE }));
+    // the crew starts on a street corner just outside the first landmark's grounds, facing it, so its foot is in the frame
+    const m0 = W.marks[0] || { x: cx, z: cz, h: 0 },
+      D = clamp(footprint(m0.x, m0.z) + 8, 30, 60),
+      off = (n) => Math.abs(Math.hypot(n.x - m0.x, n.z - m0.z) - D);
     let st = W.graph.nodes[0];
-    for (const n of W.graph.nodes) if (Math.hypot(n.x - cx, n.z - cz) < Math.hypot(st.x - cx, st.z - cz)) st = n;
-    W.start = { x: st.x, z: st.z };
+    for (const n of W.graph.nodes) if (off(n) < off(st)) st = n;
+    W.start = { x: st.x, z: st.z, yaw: Math.atan2(st.x - m0.x, st.z - m0.z) };
+    // a bigger patch of streets takes a bigger fleet
+    W.fleet = clamp(Math.round(W.graph.edges * 0.45), 12, 20);
     if (W.puffs)
       for (const s of W.puffs.children) {
         s.position.x = cx + (Math.random() - 0.5) * 300;
@@ -439,7 +623,7 @@
     I.U.uSun.value.set(d[0], d[1], d[2]);
     W.sunDir = new T.Vector3(d[0], d[1], d[2]);
     // a golden key for the dusk shift: the island relights its baked buildings by the ratio of the two rigs
-    const sunC = name === "dusk" ? [1.0, 0.7, 0.46] : name === "fog" ? [0.78, 0.8, 0.84] : I.LIGHT.sun,
+    const sunC = name === "dusk" ? [1.0, 0.7, 0.46] : name === "fog" ? [0.78, 0.8, 0.84] : name === "morning" ? [1.0, 0.88, 0.72] : I.LIGHT.sun,
       sky = name === "dusk" ? [0.56, 0.54, 0.7] : name === "fog" ? [0.62, 0.66, 0.72] : I.LIGHT.sky;
     I.U.uLSun.value.set(sunC[0], sunC[1], sunC[2]);
     I.U.uLSky.value.set(sky[0], sky[1], sky[2]);
@@ -459,7 +643,14 @@
     if (WG.CAR_HEAD) WG.CAR_HEAD.emissive.set(name === "dusk" ? 0xfff2b0 : name === "fog" ? 0xbbb38a : 0x333322);
   };
 
+  // what the camera follows, so the houses in the way go see-through (null: nothing, as in the aerial views)
+  W.see = function (p) {
+    SEE.on = p ? 1 : 0;
+    if (p) SEE.p.copy(p);
+  };
+
   W.update = function (t, dt, focus, camera, vw, vh) {
+    SEE.k.x += (SEE.on - SEE.k.x) * Math.min(1, dt * 5);
     if (W.puffs.visible)
       for (const s of W.puffs.children) {
         s.position.x += s.userData.v * dt;

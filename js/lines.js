@@ -5,16 +5,18 @@
   "use strict";
   const WG = (window.WG = window.WG || {});
   WG.LINES = /*LINES*/ {
-    "disp.start.downtown": ["DISPATCH", "Morning, crew! Downtown's rush hour is on. Keep those robotaxis rolling!"],
-    "disp.start.sunset": ["DISPATCH", "Karl's rolling in over the Sunset. Keep those cars running!"],
-    "disp.start.mission": ["DISPATCH", "Golden hour in the Mission! Everybody needs something. Go, go, go!"],
+    "disp.start.marina": ["DISPATCH", "Morning, crew! Lovely view of the bridge from the Palace. Keep those robotaxis rolling!"],
+    "disp.start.lombard": ["DISPATCH", "Crookedest street in the world, steepest shift of the day. Up to Coit Tower and back!"],
+    "disp.start.ferry": ["DISPATCH", "Lunch rush downtown! From the Pyramid to the Ferry Building, everybody's on the move."],
+    "disp.start.ladies": ["DISPATCH", "Golden hour on Alamo Square! Everybody's taking pictures of the Painted Ladies. Go, go, go!"],
+    "disp.start.beach": ["DISPATCH", "Karl's rolling in over Ocean Beach. Windmills to Sutro Baths, keep those cars running!"],
     "disp.call.dirty": ["DISPATCH", "One of ours took a mud bath. Grab the sponge!"],
     "disp.call.charge": ["DISPATCH", "Battery's running on fumes. Plug it in!"],
     "disp.call.cone": ["DISPATCH", "Somebody boxed a car in with cones. Clear the road!"],
     "disp.call.birds": ["DISPATCH", "Pigeons on the lidar! Shoo them off!"],
     "disp.call.reboot": ["DISPATCH", "A car needs a reboot. Get over there!"],
     "disp.call.vacuum": ["DISPATCH", "Popcorn everywhere in that cabin. Vacuum time!"],
-    "disp.call.doors": ["DISPATCH", "Riders left the doors open. Board's in the trunk!"],
+    "disp.call.doors": ["DISPATCH", "Riders left the doors open. Go bump them shut!"],
     "disp.good.1": ["DISPATCH", "Nice work!"],
     "disp.good.2": ["DISPATCH", "Spotless!"],
     "disp.good.3": ["DISPATCH", "Back on the road!"],

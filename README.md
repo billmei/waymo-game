@@ -2,7 +2,15 @@
 
 A browser game about being the robotaxi pit crew in toy San Francisco. Robotaxis pull over with problems, and you run over and fix them before the rider loses patience. Every job is played right on the 3D car: the camera swoops in close and you work on the car itself.
 
-Each shift works three blocks by two of a different district: Downtown's Financial District among the towers, the Outer Sunset's long avenues, and the Mission.
+Each shift works the streets round a different set of San Francisco landmarks, which stand inside the play area for you to run around (and get a tour in the shift's briefing, with name tags over them in play):
+
+| Shift | Where | Landmarks | Light | Jobs |
+| --- | --- | --- | --- | --- |
+| 1. **Bridge View** | Marina & Presidio | Palace of Fine Arts, Golden Gate Bridge | Morning | Vacuum, Recharge, Close doors |
+| 2. **Crooked Street** | Russian Hill to Telegraph Hill | Lombard Street, Coit Tower | Sunny | + Shoo birds |
+| 3. **Lunch Rush** | Downtown & Embarcadero | Transamerica Pyramid, Ferry Building, Salesforce Tower | Sunny | + Wash |
+| 4. **Golden Hour** | Alamo Square | Painted Ladies, Sutro Tower | Sunset | + De-cone |
+| 5. **Karl the Fog** | Ocean Beach & the Outer Sunset | Murphy and Dutch windmills, Sutro Baths | Fog | + Reboot |
 
 | Job | What happened | What you do |
 | --- | --- | --- |
@@ -12,9 +20,9 @@ Each shift works three blocks by two of a different district: Downtown's Financi
 | **Shoo birds** | Pigeons (and gulls, which take two taps) nesting on the warm sensors | Tap them to send them flying |
 | **Reboot** | The car needs rebooting | Key in the restart code with the arrow keys or the on-screen buttons |
 | **Vacuum** | Crumbs, popcorn, wrappers and a lost sock in the cabin | The roof comes off: hold and sweep the vacuum over the mess |
-| **Close doors** | Riders walked off and left the doors open | Hop on your skateboard and ride into each open door to slam it shut (Space to ollie) |
+| **Close doors** | Riders walked off and left the doors open | Run round the car and bump each open door shut |
 
-You play three 100-second shifts: **Morning Rush** Downtown (sunny, with washes, charging, cones and open doors), **Karl the Fog** in the Outer Sunset (foggy, adding sensor reboots and vacuuming) and **Golden Hour** in the Mission (sunset, with every job type). Jobs are dealt from a shuffled deck, so each shift gives you about the same number of every job it has, in a random order. Fast jobs and calm riders score more, jobs done in a row multiply your points up to x2, and the day ends with a Bronze, Silver, Gold or Platinum medal. Your best score is kept in the browser's `localStorage`. There is no online leaderboard.
+You play five 100-second shifts, each adding one job type to the last. Jobs are dealt from a shuffled deck, so each shift gives you about the same number of every job it has, in a random order. Fast jobs and calm riders score more, jobs done in a row multiply your points up to x2, and the day ends with a Bronze, Silver, Gold or Platinum medal. Your best score is kept in the browser's `localStorage`. There is no online leaderboard.
 
 ## Controls
 
@@ -22,7 +30,7 @@ You play three 100-second shifts: **Morning Rush** Downtown (sunny, with washes,
 - **Skate:** hold <kbd>Shift</kbd> to ride your skateboard and go faster. On touch screens, tap the skateboard button.
 - **Look around:** <kbd>Q</kbd> / <kbd>E</kbd>, drag with the right mouse button, drag with two fingers, or hold the turn arrows. This also works during jobs, to see the other side of the car.
 - **Help a car:** click or tap it (or its bubble, or its entry in the job list), or press <kbd>Space</kbd> or <kbd>Enter</kbd> when you're next to it.
-- **Jobs:** mouse or touch, directly on the 3D car. Charging, cones, birds and the reboot also work from the keyboard (<kbd>Space</kbd> / arrows). When skating, steer with WASD / arrows or hold the mouse, and press <kbd>Space</kbd> to ollie. <kbd>Esc</kbd> leaves a job.
+- **Jobs:** mouse or touch, directly on the 3D car. Charging, cones, birds and the reboot also work from the keyboard (<kbd>Space</kbd> / arrows). When closing doors, run with WASD / arrows or hold the mouse. <kbd>Esc</kbd> leaves a job.
 - **Pause:** <kbd>Esc</kbd>, <kbd>P</kbd> or the pause button. The pause menu shows these instructions again. Mouse wheel zooms.
 
 ## Running it
@@ -52,16 +60,17 @@ To turn it on once, go to the repository's **Settings → Pages** and set **Sour
   Don't edit `js/isle.js` by hand; run `python3 tools/extract_isle.py` to regenerate it.
 - `js/world.js`: stands the game on that island:
   - boots the island enlarged by `SCALE`, converting between game metres and island units at every call
-  - reads each shift's district street grid into a graph for the robotaxis, checked against the island's own colliders
+  - reads each shift's district street grid into a graph for the robotaxis, checked against the island's own colliders (each play area is defined in `ZONES`: the grid lines, the districts it keeps, extra walkable ground round a landmark, the steepest street, ground kept clear of streets, and the landmarks it features)
   - paves those streets using the island's terrain shader
   - answers ground-height and collision questions
-  - haze and light into the three shifts: its own `promo` grade for the morning, plus Karl the Fog and Golden Hour
+  - lets the camera see through the houses: the island's building, landmark and tree shaders are patched so whatever stands between the camera and the crew member (or the car in a job) goes semi-transparent
+  - haze and light into the shifts: its own `promo` grade for the day (with a low eastern sun for the morning), plus Karl the Fog and Golden Hour
 - `js/actors.js`: the robotaxi model (with a spinning lidar dome) and the big-headed crew member, both with blob shadows like the island's. It lays out the dirt afresh for every wash (rays cast onto the body from all round the car) and the ring of cones on the road for every boxed-in car. It also handles traffic that drives the street graph and pulls over to the curb when something goes wrong (keeping clear of street trees), and the status bubbles.
-- `js/jobs.js`: the seven jobs, played in the 3D scene with the main camera. This covers the dirt you scrub off, the charging cart and cable, the cones you fling off the road, the pigeons, the lidar scan rings, the cutaway cabin for vacuuming, and the skateboard. A small job bar shows the hint and progress.
+- `js/jobs.js`: the seven jobs, played in the 3D scene with the main camera. This covers the dirt you scrub off, the charging cart and cable, the cones you fling off the road, the pigeons, the lidar scan rings, the cutaway cabin for vacuuming, and the run round the car to bump the doors shut. A small job bar shows the hint and progress.
 - `js/audio.js`: all music and sound effects, synthesised live with Web Audio. There are no music files. It includes a bossa-nova menu theme, a swing-pop gameplay theme that speeds up for the last 20 seconds, a results theme, and SFX such as the referee whistle, crowd cheers, chimes, sponge squeaks, pigeon coos, lidar beeps, door slams, the vacuum's hum and the skateboard's roll.
 - `js/lines.js` and `js/voice.js`: the talking, done like a radio. Dispatch (on a radio-filtered line) calls in jobs, cheers you on and sums up each shift, and riders comment when you arrive. Lines show as captions, queue by priority (chatter is dropped while someone is talking), and duck the music. A line plays `voice/<id>.mp3` when `voice/index.json` lists it; until it's recorded, the speaker babbles in little pitched syllables.
 - `js/game.js`: the rules, rounds, scoring and HUD. It also covers:
-  - the camera: an aerial orbit over the city on the title screen, and a close street-level view in play that swings up over the rooftops whenever the island's buildings would block it, plus an X-ray silhouette when houses hide the crew member
+  - the camera: an aerial orbit over the city on the title screen, a tour of the shift's landmarks in the briefing, and a street-level view in play that starts facing the shift's landmark, turns houses in its way see-through (and only swings up over a hill), plus an X-ray silhouette when something else hides the crew member
   - click-to-walk pathfinding: A* on a 1 m grid over the play area
   - the screens
 - `css/style.css`: the UI.
