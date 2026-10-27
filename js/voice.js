@@ -13,7 +13,11 @@
   const PRI = { timeup: 0, final: 0, miss: 1, start: 2, hurry: 2, result: 2, rider: 4, call: 5, perfect: 6, combo: 6, good: 7 },
     TTL = { call: 3, rider: 2.5, good: 2, perfect: 2.5, combo: 2.5 };
   const cls = (id) => (id.startsWith("rider.") ? "rider" : id.split(".")[1]);
-  const V = { known: new Set(), buf: {}, bad: {}, q: [], cur: null, used: {}, t: 0 };
+  const V = { known: new Set(), buf: {}, bad: {}, q: [], cur: null, used: {}, t: 0, on: true };
+  // the pause menu's setting: with voices off, nobody talks and no captions show
+  try {
+    V.on = localStorage.getItem("wc.voice") !== "0";
+  } catch (e) {}
 
   fetch("voice/index.json")
     .then((r) => (r.ok ? r.json() : null))
@@ -35,6 +39,7 @@
   }
 
   function say(id) {
+    if (!V.on) return;
     const k = pick(id);
     if (!k) return;
     const c = cls(k),
@@ -216,5 +221,26 @@
     pump();
   }
 
-  WG.voice = { say, interrupt, stop, update, LINES };
+  function setOn(on) {
+    V.on = !!on;
+    try {
+      localStorage.setItem("wc.voice", V.on ? "1" : "0");
+    } catch (e) {}
+    if (!V.on) {
+      stop();
+      V.q.length = 0;
+    }
+  }
+
+  WG.voice = {
+    say,
+    interrupt,
+    stop,
+    update,
+    setOn,
+    get on() {
+      return V.on;
+    },
+    LINES,
+  };
 })();

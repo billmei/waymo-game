@@ -1542,6 +1542,61 @@ body[data-state="pause"] #radio {
     bottom: auto;
   }
 }
+/* the pause menu's settings: two pill switches under the title */
+.pz-set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 14px 20px 0;
+}
+.tgl {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 18px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: rgba(42, 159, 230, 0.09);
+  box-shadow: 0 0 0 2px rgba(42, 159, 230, 0.25);
+  color: var(--blue-d);
+  font: 900 16px/1.2 var(--font);
+  cursor: pointer;
+}
+.tgl:hover,
+.tgl:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--blue);
+}
+.tgl i {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--line);
+  box-shadow: inset 0 2px 3px rgba(10, 50, 100, 0.2);
+  transition: background 0.18s;
+}
+.tgl i::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(10, 50, 100, 0.35);
+  transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.tgl[aria-checked="true"] i {
+  background: var(--good);
+}
+.tgl[aria-checked="true"] i::after {
+  transform: translateX(20px);
+}
+
 /* the pause menu on phones: compact buttons, Continue first, so the instructions get the room */
 @media (max-width: 640px) {
   #pause .panel-f {
@@ -1554,5 +1609,25 @@ body[data-state="pause"] #radio {
     min-width: 0;
     padding: 10px 18px;
     font-size: 17px;
+  }
+  .pz-set {
+    gap: 8px;
+    padding: 10px 12px 0;
+  }
+  .tgl {
+    gap: 8px;
+    padding: 5px 6px 5px 12px;
+    font-size: 14px;
+  }
+  .tgl i {
+    width: 40px;
+    height: 24px;
+  }
+  .tgl i::after {
+    width: 18px;
+    height: 18px;
+  }
+  .tgl[aria-checked="true"] i::after {
+    transform: translateX(16px);
   }
 }
