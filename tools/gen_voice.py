@@ -52,7 +52,7 @@ SPEAKERS = {
         "A sarcastic, bratty young dispatcher with a high-pitched voice. Snarky, smug and teasing, a little whiny, "
         "rolling his eyes as he talks, but still cheering the crew on in his own backhanded way.",
         "echo",
-        "njX9gv1g1XDQKbuzpjys",  # "Waymo Care - Dispatch (bratty)" (Voice Design)
+        "7tQje3Gta0gww84jO2Ku",  # "Waymo Care - Dispatch (bratty, clean)" (Voice Design)
     ),
     "TOURIST": _spk(
         "TOURIST",

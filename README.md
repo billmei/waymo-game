@@ -83,7 +83,7 @@ Every line is recorded with ElevenLabs (the `eleven_v4` model), one voice per ch
 
 | Speaker | Personality | ElevenLabs voice |
 | --- | --- | --- |
-| Dispatch | Sarcastic, bratty, high-pitched; cheers you on in a backhanded way | "Waymo Care - Dispatch (bratty)" (Voice Design) |
+| Dispatch | Sarcastic, bratty, high-pitched; cheers you on in a backhanded way | "Waymo Care - Dispatch (bratty, clean)" (Voice Design) |
 | Tourist | Wide-eyed dad from Ohio, loud, easily amazed, lovably indignant | "Waymo Care - Tourist" (Voice Design) |
 | Influencer | Californian vocal fry, every smudge is a crisis | "Waymo Care - Influencer" (Voice Design) |
 | Grandma | Sweet, a little confused, calls you dear | Matilda (pre-made), with `[elderly voice]` |
