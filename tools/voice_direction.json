@@ -1,9 +1,9 @@
 {
- "disp.start.marina": "[bored] Morning, crew! [sarcastic] Lovely view of the bridge from the Palace. Keep those robotaxis rolling!",
- "disp.start.lombard": "[smug] Crookedest street in the world, steepest shift of the day. [mischievously] Up to Coit Tower and back!",
- "disp.start.ferry": "[sighs] Lunch rush downtown! [sarcastic] From the Pyramid to the Ferry Building, everybody's on the move.",
+ "disp.start.lombard": "[bored] Morning, crew! [sarcastic] Steepest shift of the day, from Lombard's crooked bricks to Coit Tower. [smug] Keep those robotaxis rolling!",
+ "disp.start.presidio": "[sarcastic] Welcome to the Presidio! Golden Gate Bridge over the trees, the old Army post all round you. [bored] Let's roll!",
+ "disp.start.downtown": "[sighs] Lunch rush downtown! [sarcastic] Between the Pyramid and Salesforce Tower, everybody's on the move.",
  "disp.start.ladies": "[sarcastic] Golden hour on Alamo Square! Everybody's taking pictures of the Painted Ladies. [whiny] Go, go, go!",
- "disp.start.beach": "[mischievously] Karl's rolling in over Ocean Beach. [bored] Windmills to Sutro Baths, keep those cars running!",
+ "disp.start.windmills": "[mischievously] Karl's rolling in over the windmills. [whiny] I can't see a thing out there, so keep those cars running!",
  "disp.call.dirty": "[snickers] One of ours took a mud bath. [bossy] Grab the sponge!",
  "disp.call.charge": "[sarcastic] Battery's running on two percent. [impatient] Plug it in!",
  "disp.call.cone": "[smug] Somebody boxed a car in with cones. [bored] Clear the road!",
