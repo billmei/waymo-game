@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Slop Skies</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="The ad blocker for the sky. Fly over a toy San Francisco and shoot the banners off five startup ad planes. Play free in your browser."
+    />
+    <meta name="application-name" content="Slop Skies" />
+    <meta name="apple-mobile-web-app-title" content="Slop Skies" />
+    <!-- phones (the handheld: a coarse pointer and a short side under 600 px, as GB.want) take the shell's face colour from the first byte
+     (r10); everything else keeps the sky. The first matching theme-color wins, so the phone one comes first -->
+    <meta
+      name="theme-color"
+      content="#F3F4F6"
+      media="(pointer: coarse) and (max-width: 599.98px), (pointer: coarse) and (max-height: 599.98px)"
+    />
+    <meta name="theme-color" content="#52A6D4" />
+    <link rel="canonical" href="https://slop.inc/" />
+    <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="assets/8845c1b17855fc43/icon/icon-192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/8845c1b17855fc43/icon/icon-32.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="assets/8845c1b17855fc43/social/apple-touch-icon.png"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://slop.inc/" />
+    <meta property="og:site_name" content="Slop Skies" />
+    <meta property="og:title" content="Slop Skies" />
+    <meta
+      property="og:description"
+      content="The ad blocker for the sky. Fly over a toy San Francisco and shoot the banners off five startup ad planes. Play free in your browser."
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta
+      property="og:image"
+      content="https://slop.inc/assets/8845c1b17855fc43/social/down-round.jpg"
+    />
+    <meta
+      property="og:image:secure_url"
+      content="https://slop.inc/assets/8845c1b17855fc43/social/down-round.jpg"
+    />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The glossy Slop Skies wordmark over a toy San Francisco seen from the bay: downtown and the Bay Bridge, the twin peaks, the Golden Gate Bridge and Marin in a bright blue sea under puffy clouds."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Slop Skies" />
+    <meta
+      name="twitter:description"
+      content="The ad blocker for the sky. Fly over a toy San Francisco and shoot the banners off five startup ad planes. Play free in your browser."
+    />
+    <meta
+      name="twitter:image"
+      content="https://slop.inc/assets/8845c1b17855fc43/social/down-round.jpg"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="The glossy Slop Skies wordmark over a toy San Francisco seen from the bay: downtown and the Bay Bridge, the twin peaks, the Golden Gate Bridge and Marin in a bright blue sea under puffy clouds."
+    />
+    <meta name="color-scheme" content="light" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <style>
+      /* critical path: the page's preloader paints before site.8845c1b17855fc43.css arrives. Style bible 11.2: no spinner in the stage; the page around it
+   may show the 2009 preloader once a load passes 1.0 s (8-px dots on a 34-px ring, #D0D0D0 with one #9A9A9A dot stepping every 80 ms) */
+      body.is-layout-pending {
+        margin: 0;
+        background: linear-gradient(
+            180deg,
+            #52a6d4 0,
+            #ddeef6 62%,
+            #f4fafd 100%
+          )
+          fixed;
+        overflow: hidden;
+      }
+
+      body.is-layout-pending #field,
+      body.is-layout-pending #ph-bar,
+      body.is-layout-pending #gb,
+      body.is-layout-pending #gb-head {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #startup {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(
+          180deg,
+          #52a6d4 0,
+          #ddeef6 62%,
+          #f4fafd 100%
+        );
+        color: #6e6e6e;
+        text-align: center;
+        font:
+          500 13px/18px "Isle Body",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      #startup[hidden] {
+        display: none;
+      }
+
+      #startup .su-box {
+        opacity: 0;
+        animation: su-in 0.2s linear 1s forwards;
+      }
+
+      #startup .su-ring {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        margin: 0 auto 14px;
+      }
+
+      #startup .su-ring i {
+        position: absolute;
+        left: 13px;
+        top: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d0d0d0;
+        transform-origin: 4px 17px;
+        animation: su-dot 0.64s steps(1) infinite;
+      }
+
+      #startup .su-ring i:nth-child(2) {
+        transform: rotate(45deg);
+        animation-delay: 0.08s;
+      }
+
+      #startup .su-ring i:nth-child(3) {
+        transform: rotate(90deg);
+        animation-delay: 0.16s;
+      }
+
+      #startup .su-ring i:nth-child(4) {
+        transform: rotate(135deg);
+        animation-delay: 0.24s;
+      }
+
+      #startup .su-ring i:nth-child(5) {
+        transform: rotate(180deg);
+        animation-delay: 0.32s;
+      }
+
+      #startup .su-ring i:nth-child(6) {
+        transform: rotate(225deg);
+        animation-delay: 0.4s;
+      }
+
+      #startup .su-ring i:nth-child(7) {
+        transform: rotate(270deg);
+        animation-delay: 0.48s;
+      }
+
+      #startup .su-ring i:nth-child(8) {
+        transform: rotate(315deg);
+        animation-delay: 0.56s;
+      }
+
+      #startup p {
+        margin: 0 0 6px;
+        min-height: 18px;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 40, 90, 0.35);
+      }
+
+      #startup progress {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+      }
+
+      #startup a {
+        display: inline-block;
+        padding: 6px 12px;
+        color: #0f76ad;
+        font-size: 12px;
+      }
+
+      @keyframes su-dot {
+        0%,
+        12.4% {
+          background: #9a9a9a;
+        }
+
+        12.5%,
+        100% {
+          background: #d0d0d0;
+        }
+      }
+
+      @keyframes su-in {
+        to {
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #startup .su-ring i {
+          animation: none;
+        }
+      }
+
+      /* r10 (client, real iPhone, 10 Oct: "the top is blue and the bottom is white"): a phone opens in the handheld, so its first paint is
+   already the shell's colours (handheld.8845c1b17855fc43.css --sh-face at the top, --sh-foot at the bottom, the shell's own face gradient), never the sky:
+   a browser that reads the page's top or bottom colour while the page loads keeps the shell's colours after it */
+      @media (pointer: coarse) and (max-width: 599.98px),
+        (pointer: coarse) and (max-height: 599.98px) {
+        html {
+          background: #d8dde4;
+        }
+
+        body.is-layout-pending #field,
+        body.is-layout-pending #sky {
+          display: none !important;
+        }
+
+        /* the handheld replaces them (body.gb #field, #sky); laid out, the 1280-px stage widened the phone's first viewport */
+        body.is-layout-pending,
+        #startup {
+          background: #f3f4f6
+            linear-gradient(
+              180deg,
+              #f3f4f6 0%,
+              #eef0f3 30%,
+              #e3e7ec 66%,
+              #d8dde4 100%
+            );
+        }
+
+        #startup p {
+          color: #7d848c;
+          text-shadow: none;
+        }
+      }
+    </style>
+    <script src="startup.8845c1b17855fc43.js"></script>
+    <link rel="stylesheet" href="site.8845c1b17855fc43.css" />
+    <link rel="stylesheet" href="handheld.8845c1b17855fc43.css" />
+  </head>
+  <body class="is-boot is-layout-pending">
+    <div id="startup" role="status" aria-live="polite">
+      <div class="su-box">
+        <div class="su-ring" aria-hidden="true">
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
+        <p id="startup-status">Loading San Francisco…</p>
+        <progress
+          id="startup-progress"
+          max="1"
+          value="0"
+          aria-label="Game loading"
+        ></progress>
+        <a href="">Reload</a>
+        <noscript>
+          <p>Turn on JavaScript to play Slop Skies.</p>
+        </noscript>
+      </div>
+    </div>
+    <div id="sky" aria-hidden="true">
+      <i class="cl cl1"></i>
+      <i class="cl cl2"></i>
+      <i class="cl cl3"></i>
+      <i class="cl cl4"></i>
+      <i class="cl cl5"></i>
+      <i class="cl cl6"></i>
+    </div>
+    <div id="field" inert>
+      <div id="page">
+        <!-- ===== the stage: the game picture and every screen the site draws, in a 1280×720 frame scaled to the window ===== -->
+        <main id="stage" aria-label="Game">
+          <div id="dr-screen"></div>
+          <div id="ui">
+            <!-- boot: the "Fly safe" card (once per session; its key press also starts the sound), then the pre-flight check while loading -->
+            <section id="fs" class="boot-card fs" hidden aria-labelledby="fs-t">
+              <svg class="fs-pic" viewBox="0 0 260 170" aria-hidden="true">
+                <g
+                  class="fs-desk"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M130 30c0-14 10-20 22-24"
+                    stroke="#fff"
+                    stroke-width="4"
+                  />
+                  <rect
+                    x="94"
+                    y="30"
+                    width="72"
+                    height="122"
+                    rx="36"
+                    fill="#000"
+                    stroke="#fff"
+                    stroke-width="6"
+                  />
+                  <path
+                    d="M130 30v46M94 76h72"
+                    stroke="#fff"
+                    stroke-width="5"
+                  />
+                  <rect
+                    x="125"
+                    y="44"
+                    width="10"
+                    height="20"
+                    rx="5"
+                    fill="#fff"
+                  />
+                  <path
+                    d="M28 132C80 118 182 84 236 56"
+                    stroke="#09CAE9"
+                    stroke-width="16"
+                  />
+                  <rect
+                    x="108"
+                    y="88"
+                    width="46"
+                    height="30"
+                    rx="7"
+                    transform="rotate(-20 131 103)"
+                    fill="#000"
+                    stroke="#fff"
+                    stroke-width="5"
+                  />
+                  <path d="M121 108l20-7" stroke="#fff" stroke-width="5" />
+                </g>
+                <g
+                  class="fs-touch"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <g transform="rotate(-10 130 90)">
+                    <rect
+                      x="56"
+                      y="52"
+                      width="148"
+                      height="76"
+                      rx="14"
+                      fill="#000"
+                      stroke="#fff"
+                      stroke-width="6"
+                    />
+                    <rect
+                      x="72"
+                      y="64"
+                      width="116"
+                      height="52"
+                      rx="4"
+                      stroke="#fff"
+                      stroke-width="3"
+                      opacity=".6"
+                    />
+                    <path
+                      d="M110 92c0-4 4-6 10-6h24c6 0 10 2 12 5-2 3-6 5-12 5h-24c-6 0-10-1-10-4z"
+                      fill="#09CAE9"
+                      stroke="none"
+                    />
+                  </g>
+                  <path
+                    d="M34 140C86 126 178 98 230 70"
+                    stroke="#09CAE9"
+                    stroke-width="12"
+                    opacity=".9"
+                  />
+                </g>
+              </svg>
+              <p class="fs-t" id="fs-t">
+                <span class="fs-desk"
+                  >Fasten your seatbelt. Hold on to your mouse.</span
+                >
+                <span class="fs-touch fs-ph"
+                  >Fasten your seatbelt. Hold on to your phone.</span
+                >
+                <span class="fs-touch fs-tab"
+                  >Fasten your seatbelt. Hold on to your tablet.</span
+                >
+              </p>
+              <p class="fs-k">
+                <span class="fs-desk">Press any key or click to continue.</span>
+                <span class="fs-touch">Tap the screen to continue.</span>
+              </p>
+            </section>
+            <section
+              id="pf"
+              class="boot-card pf"
+              hidden
+              aria-label="Loading"
+              aria-live="polite"
+            >
+              <div class="pf-mark" aria-hidden="true"></div>
+              <div class="pf-spin" aria-hidden="true">
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+                <i></i>
+              </div>
+              <p class="pf-m" id="pf-m">
+                Loading <b id="pf-n">0</b>
+                %
+              </p>
+            </section>
+            <!-- the pages (sport rooms): pages.8845c1b17855fc43.js fills them; since round 2 they open only as the tabs of the handheld's sheet on phones -->
+            <div id="rooms">
+              <section
+                class="room"
+                id="hangar"
+                data-tab="aircraft"
+                hidden
+                aria-labelledby="hangar-h"
+              ></section>
+              <section
+                class="room"
+                id="targets"
+                data-tab="map"
+                hidden
+                aria-labelledby="targets-h"
+              ></section>
+              <section
+                class="room"
+                id="records"
+                data-tab="record"
+                hidden
+                aria-labelledby="records-h"
+              ></section>
+              <section
+                class="room"
+                id="howto"
+                data-tab="how"
+                hidden
+                aria-labelledby="howto-h"
+              >
+                <div class="room-b">
+                  <div id="m-c1">
+                    <div class="c1-b"></div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="room"
+                id="about"
+                data-tab="menu"
+                hidden
+                aria-labelledby="about-h"
+              ></section>
+            </div>
+            <!-- notice card: the earlier editions -->
+            <div
+              class="notice"
+              id="notice"
+              hidden
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="nt-q"
+            >
+              <div class="nt-card">
+                <span class="nt-pic" aria-hidden="true">
+                  <canvas></canvas>
+                </span>
+                <p class="nt-q" id="nt-q"></p>
+                <p class="nt-p" id="nt-p"></p>
+                <div class="nt-b">
+                  <button type="button" class="lolli nt-btn" id="nt-no">
+                    <u class="lo-i" aria-hidden="true">
+                      <svg viewBox="-.5 -.5 1 1">
+                        <path
+                          d="M-.216.033A.3.3 0 1 1 .08.38"
+                          fill="none"
+                          stroke="#fff"
+                          stroke-width=".16"
+                          stroke-linecap="round"
+                        />
+                        <path d="M-.42.12H-.1L-.26-.26z" fill="#fff" />
+                      </svg>
+                    </u>
+                    <kbd class="lo-k">Esc</kbd>
+                    <span class="lo-t">Back</span>
+                  </button>
+                  <a class="btn-next nt-btn ok" id="nt-ok" href="/">
+                    OK <kbd>Enter</kbd>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <!-- the Top 10 name entry, as a sport-room panel over the results (leaderboard-ui.8845c1b17855fc43.js) -->
+            <div id="dock">
+              <div
+                class="lb-entry"
+                id="lb-entry"
+                data-hook="leaderboard-entry"
+                hidden
+              ></div>
+            </div>
+            <!-- press links: the 2009 site's "you are leaving" card -->
+            <div
+              id="leave"
+              class="leave"
+              hidden
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="leave-q"
+            >
+              <div class="leave-box">
+                <span class="logo">
+                  <span class="lk">
+                    <small>FOG CITY ACES</small>
+                    <b>SLOP SKIES</b>
+                  </span>
+                </span>
+                <p id="leave-p">You are leaving Slop Skies.</p>
+                <b class="leave-q" id="leave-q">Would you like to continue?</b>
+                <div class="leave-b">
+                  <button type="button" id="leave-no">
+                    <span>No</span>
+                  </button>
+                  <a
+                    class="btn-next"
+                    id="leave-yes"
+                    href="/"
+                    target="_blank"
+                    rel="noopener"
+                    >Yes</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <div id="flow"></div>
+        <!-- ===== under the stage: one small line (client note 10 Oct: the name, Made by and the sound button; the version, the music
+       credit, the banner note and the earlier editions are on the About page) ===== -->
+        <footer id="foot">
+          <div class="ft-box">
+            <p class="ft-c">
+              <span class="ft-t">Slop Skies</span>
+              <span class="ft-by">
+                Made by
+                <a href="https://jewk.es" target="_blank" rel="noopener"
+                  >Donald</a
+                >
+              </span>
+              <button type="button" class="ft-snd" id="snd" aria-pressed="true">
+                Sound On
+              </button>
+            </p>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <!-- phones and tablets: the pages behind five tabs (the handheld's SELECT sheet uses the same tabs) -->
+    <nav id="ph-bar" role="tablist" aria-label="Pages" inert>
+      <button type="button" role="tab" data-tab="how" aria-selected="false">
+        <span>How to Fly</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        data-tab="aircraft"
+        aria-selected="false"
+      >
+        <span>Hangar</span>
+      </button>
+      <button type="button" role="tab" data-tab="map" aria-selected="true">
+        <span>Targets</span>
+      </button>
+      <button type="button" role="tab" data-tab="record" aria-selected="false">
+        <span>Records</span>
+      </button>
+      <button type="button" role="tab" data-tab="menu" aria-selected="false">
+        <span>About</span>
+      </button>
+    </nav>
+    <script src="three.min.8845c1b17855fc43.js"></script>
+    <script src="dr.8845c1b17855fc43.js"></script>
+    <script src="handheld.8845c1b17855fc43.js"></script>
+    <script src="site.8845c1b17855fc43.js"></script>
+    <script src="pages.8845c1b17855fc43.js"></script>
+    <script src="leaderboard.8845c1b17855fc43.js"></script>
+    <script src="leaderboard-ui.8845c1b17855fc43.js"></script>
+    <script
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw=="
+      data-cf-beacon='{"version":"2024.11.0","token":"c194162b078e4507b7e1a7c1819228f8","r":1,"spa":2}'
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

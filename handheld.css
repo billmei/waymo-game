@@ -1,0 +1,1453 @@
+/* SLOP SKIES Â· isle edition â€” the handheld (phones). Built by handheld.8845c1b17855fc43.js; only active with body.gb (shorter side < 600 px).
+   The Game Boy layout in the moulded gloss of the 2006 handhelds and motion remotes (style bible Â§15, dossier 06), round 3 (client CP24:
+   "gameboy interface could use some work"; the Y2K bubbly gloss of the reference site; "study the aesthetics â€¦ implement intelligently"):
+   - one material, glossy Fog White piano plastic with the client's sky blue as the only accent. The face has real tonal range (white at
+     the top, a cool pale grey at the foot) so a window reflection reads across the control deck: one broad band and one crisp streak;
+   - composition: a lockup row under the hinge (the wordmark sized to the shell, the four player lamps on the shell's axis, SPECIAL); the
+     stick left; the right thumb's keys as one stepped group (TGT/BRK in a shared well over the A/B jacket); the âˆ’ TILT + row with the
+     speaker under it on the same axis (the remote's order);
+   - one radius family: the screen window 14 / glass 10 / picture 3, stadiums for the hinge, the SPECIAL slot, the well and the jacket,
+     circles for every key; one print colour pair and one caption size;
+   - the screen window as a black glass panel with its own gloss (outside the picture only) in a stepped recess; a hinge cylinder in three
+     knuckles with crisp highlight lines; the two-tier wordmark printed flat; SPECIAL as a disc slot that turns into an aqua bubble when
+     a special is ready;
+   - a stick with an octagonal gate (its floor in shade) and a concave cap whose dark gap and shadow travel with it; a clear sky-blue A
+     dome and a glossy white B key on a raised sky-jelly jacket; 1/2-style flat caps; âˆ’ TILT + in ring wells; a graded dot speaker.
+   All drawn in CSS/SVG. Safe areas go through --gb-sat/-sar/-sab/-sal (env() by default) so a test can stand in for a notch.
+   Print face (bible Â§12/Â§15.3, seam S7): Jost 400/500 is listed first and takes over once the site self-hosts it. Until then
+   'Isle Print' = Montserrat Regular (SIL OFL 1.1, v8.000, no Reserved Font Name), a light geometric face close to the thin grey
+   hardware print, as a Latin subset made by tools/print_font.py; licence in assets/8845c1b17855fc43/fonts/LICENSES/OFL-Montserrat.txt. One weight
+   ships (400): a 500 request falls back to it without faux bold. */
+@font-face {
+    font-family: 'Isle Print';
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: url(assets/8845c1b17855fc43/fonts/isle-print-400.woff2) format('woff2')
+}
+
+:root {
+    --gb-sat: env(safe-area-inset-top,0px);
+    --gb-sar: env(safe-area-inset-right,0px);
+    --gb-sab: env(safe-area-inset-bottom,0px);
+    --gb-sal: env(safe-area-inset-left,0px);
+    --gb-hh: 60px;
+    /* "Fog White" shell with the client's sky blue (style bible Â§15.2); the print a step darker than round 1 so the captions read crisp */
+    --sh-face: #F3F4F6;
+    --sh-foot: #D8DDE4;
+    --sh-face-lo: #E3E6EA;
+    --sh-hi: #FFFFFF;
+    --sh-shade: #C9CED4;
+    --sh-seam: #5A5C60;
+    --sh-well: #DCE0E5;
+    --sh-print: #959CA3;
+    --sh-print-2: #7D848C;
+    --sh-cap: #F8F9FA;
+    --sh-cap-lo: #D9DDE1;
+    --sh-cap-skirt: #C3C8CD;
+    --sh-cap-edge: #C6CCD2;
+    --sh-sky: #19B3EC;
+    --sh-sky-lo: #0F8CC0;
+    --sh-glow: rgba(25,179,236,.5);
+    --sh-clear-1: rgba(222,243,252,.92);
+    --sh-clear-2: #9FD9F2;
+    --sh-clear-rim: #5FA9C9;
+    --sh-jacket: rgba(25,179,236,.14);
+    --sh-led-off: #2B2A2C;
+    --sh-led-on: #3BAFFF;
+    --sh-led-glow: rgba(59,175,255,.55);
+    --sh-led-core: #E4F5FF;
+    --sh-power: #5BEA4B;
+    --sh-power-busy: #FFB020;
+    --sh-hole: #55585C;
+    --sh-lcd: #0B0C0E;
+    /* a key's hole: the hairline gap, the shade crescent on its upper edge and the light lip under it (the remote's ring wells) */
+    --sh-gap: rgba(64,74,86,.22);
+    --sh-crescent: rgba(64,74,86,.34);
+    --sh-lip: rgba(255,255,255,.95);
+    --gb-font: 'Jost','Isle Print',ui-sans-serif,system-ui,sans-serif
+}
+
+/* S7: Jost once the site self-hosts it; Montserrat (shipped here as Isle Print) until then */
+#gb[hidden],#gb-head[hidden] {
+    display: none!important
+}
+
+/* full bleed (client, real iPhone, 8 Oct: no borders, nothing dark at the top or bottom): the page, the status-bar band and the shell are
+   all the shell's colours, edge to edge, and the phone's own corners are the shell's corners.
+   r10 (client, real iPhone, 10 Oct: "the top is blue and the bottom is white â€¦ everything the same color as the Game Boy interface"): each
+   edge takes the shell's own colour there. Top: the face (--sh-face: theme-color here and in index.html's first paint, the startup
+   screen's top, .gb-body's solid colour). Bottom: the foot (--sh-foot, the face gradient's last stop): the page canvas, which is what shows
+   under Safari's bottom bar and is the page colour the browser reads, and .gb-edge's solid colour. The body paints nothing of its own any
+   more: at min-height 100vh (the large viewport on iOS) it reached under the bar in the face's near-white, below the grey foot */
+html.gb-doc {
+    background: var(--sh-foot)!important
+}
+
+html.gb-doc body {
+    background: transparent!important
+}
+
+/* r10: the site's sky clouds (#sky, fixed, white) stayed behind the shell and showed white wherever the page showed round it (under the bar) */
+body.gb #sky {
+    display: none!important
+}
+
+/* nothing in the shell or the sheet selects, calls out or flashes under a thumb; the name entry's input stays typeable */
+html.gb-doc,html.gb-doc :not(input):not(textarea) {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent
+}
+
+html.gb-doc input,html.gb-doc textarea {
+    user-select: text;
+    -webkit-user-select: text;
+    -webkit-touch-callout: default
+}
+
+#gb {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 50;
+    background: var(--sh-face);
+    overflow: hidden;
+    font-family: var(--gb-font);
+    font-weight: 400;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+    color: var(--sh-print);
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent
+}
+
+#gb * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box
+}
+
+#gb .gb-c,#gb .gb-ctl {
+    touch-action: none
+}
+
+/* the body: piano-gloss white with real tonal range, so the gloss can show: the face falls from the status-bar white at the top to a cool
+   pale grey at the foot, with a faint sky reflection low down (the Y2K aqua). Over the control deck (from the hinge down; the whole face
+   sideways, --gb-deck from handheld.8845c1b17855fc43.js) lies the reflection of a window: one broad soft band and a thin crisp streak beside it, on a
+   diagonal so they cross the open shell between the keys. No outline (full bleed) */
+#gb .gb-body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+    border-radius: 0;
+    padding: calc(8px + var(--gb-sat)) calc(6px + var(--gb-sar)) calc(8px + var(--gb-sab)) calc(6px + var(--gb-sal));
+    background: radial-gradient(130% 40% at 14% -6%,rgba(255,255,255,.95) 0,rgba(255,255,255,0) 60%), radial-gradient(120% 30% at 60% 106%,rgba(25,179,236,.10) 0,rgba(25,179,236,0) 72%), linear-gradient(180deg,var(--sh-face) 0%,#EEF0F3 30%,#E3E7EC 66%,var(--sh-foot) 100%);
+    background-color: var(--sh-face)
+}
+
+/* r10: the top edge's solid colour for a browser that tints its status-bar band from the fixed element there */
+/* r10: the bottom edge's solid colour (the foot) for a browser that tints its bottom bar from the fixed element there: the face's own
+   layers (background: inherit, same box), clipped to the bottom padding, under the window reflection, so it cannot be seen */
+#gb .gb-edge {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: inherit;
+    background-color: var(--sh-foot);
+    clip-path: inset(calc(100% - 8px - var(--gb-sab)) 0 0 0)
+}
+
+#gb .gb-body::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--gb-deck,0px);
+    bottom: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(121deg,rgba(255,255,255,0) 14%,rgba(255,255,255,.5) 21%,rgba(255,255,255,.92) 27%,rgba(255,255,255,.72) 33%,rgba(255,255,255,0) 43%), linear-gradient(121deg,rgba(255,255,255,0) 47.5%,rgba(255,255,255,.95) 48.6%,rgba(255,255,255,.6) 50.2%,rgba(255,255,255,0) 51.4%), linear-gradient(121deg,rgba(255,255,255,0) 62%,rgba(255,255,255,.32) 70%,rgba(255,255,255,0) 80%)
+}
+
+/* the screen window: a stepped recess in the shell (a shade line above, a light lip below), then a black glass panel (radius 10) with its
+   own diagonal gloss in the frame only (the picture covers the middle; no glare on the picture), then the picture (radius 3) */
+.gb-bezel {
+    flex: none;
+    position: relative;
+    align-self: center;
+    margin-top: var(--gb-bx,0px);
+    padding: 6px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(152deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.07) 24%,rgba(255,255,255,0) 38%),linear-gradient(180deg,#202328 0%,#0D0E11 46%,#15171B 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.05), 0 0 0 1px #24272C,0 -1.5px 0 1px rgba(110,120,132,.4),0 1.5px 0 1px rgba(255,255,255,1),0 0 0 3.5px rgba(222,226,231,.7),0 0 0 4px rgba(176,184,192,.25)
+}
+
+.gb-lcd {
+    position: relative;
+    width: var(--lw);
+    height: var(--lh);
+    background: #000;
+    overflow: hidden;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6)
+}
+
+.gb-lcd #dr-screen {
+    position: absolute!important;
+    inset: 0!important;
+    width: 100%!important;
+    height: 100%!important;
+    left: 0!important;
+    top: 0!important
+}
+
+/* the boot screen: the island sky (bible Â§2 day tokens) with two soft clouds, the glossy two-tier wordmark on a thin translucent band
+   (client CP24: "some transparency to the banner â€¦ too much vertical space"), a slim bar and one line of print */
+.gb-boot {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: radial-gradient(22% 9% at 20% 20%,rgba(255,255,255,.7) 0,rgba(255,255,255,0) 100%),radial-gradient(16% 7% at 31% 17%,rgba(255,255,255,.6) 0,rgba(255,255,255,0) 100%),radial-gradient(20% 8% at 82% 78%,rgba(255,255,255,.6) 0,rgba(255,255,255,0) 100%), linear-gradient(180deg,#1A57E8 0%,#2F86F0 34%,#68C6F8 68%,#B8F1FF 100%)
+}
+
+.gb-boot-band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 6px 0 5px;
+    background: linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.2));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(255,255,255,.45);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px)
+}
+
+.gb-boot-t {
+    display: block;
+    line-height: 0
+}
+
+.gb-boot-mark {
+    display: block;
+    height: calc(var(--lh,240px) * .25);
+    width: auto;
+    filter: drop-shadow(0 2px 3px rgba(10,50,110,.25))
+}
+
+.gb-bar {
+    display: block;
+    width: 34%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,.55);
+    box-shadow: inset 0 1px 1.5px rgba(10,60,120,.3),0 1px 0 rgba(255,255,255,.4);
+    overflow: hidden
+}
+
+.gb-bar u {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 3px;
+    background: linear-gradient(180deg,#FFFFFF,#D8F3FF);
+    box-shadow: 0 0 4px rgba(255,255,255,.8);
+    transition: width .2s
+}
+
+.gb-boot-m {
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: .2em;
+    padding-left: .2em;
+    color: rgba(255,255,255,.92);
+    text-shadow: 0 1px 2px rgba(10,50,110,.35)
+}
+
+#gb.gb-up .gb-boot {
+    display: none
+}
+
+/* round and clock in the screen's top-left corner while flying (the engine's 'lite' HUD leaves them out) */
+.gb-osd {
+    position: absolute;
+    left: 8px;
+    top: 7px;
+    z-index: 4;
+    color: #fff;
+    font-family: 'Isle Numerals',var(--gb-font);
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    white-space: pre;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px rgba(0,24,48,.6),0 0 1px rgba(0,24,48,.5);
+    pointer-events: none
+}
+
+.gb-osd[hidden] {
+    display: none
+}
+
+/* TILT's messages: a white bubble in the lower part of the screen, above the HUD's radio caption box */
+.gb-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 21%;
+    z-index: 8;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 5px 12px 4px;
+    border-radius: 13px;
+    background: rgba(255,255,255,.94);
+    color: #56606B;
+    font-size: 10.5px;
+    line-height: 14px;
+    letter-spacing: .05em;
+    text-align: center;
+    box-shadow: 0 0 0 1px rgba(25,179,236,.45),0 3px 10px rgba(10,40,70,.28);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%,6px);
+    transition: opacity .2s,transform .2s
+}
+
+.gb-toast.in {
+    opacity: 1;
+    transform: translate(-50%,0)
+}
+
+.gb-toast[hidden] {
+    display: none
+}
+
+/* the hinge cylinder under the screen: three knuckles (14 / 72 / 14 %) parted by dark hairline gaps, each with a crisp highlight line high
+   on the curve and a soft shade under it, a contact shadow on the shell below; the power lamp in the right knuckle (amber while the
+   island builds, green when ready). 14 px tall (11 on short phones) */
+.gb-hinge {
+    flex: none;
+    position: relative;
+    height: 14px;
+    margin: 12px 2px 0;
+    display: flex;
+    gap: 1.5px;
+    border-radius: 7px;
+    background: linear-gradient(180deg,#8A9199,#5E656D)
+}
+
+#gb.gb-short .gb-hinge {
+    height: 11px;
+    margin-top: 10px
+}
+
+/* round 4, the tall screen (handheld.8845c1b17855fc43.js portraitC: 'tall' and '1:1'): a slimmer hinge (9 + 11 px, handheld.8845c1b17855fc43.js CHH) */
+#gb.gb-compact .gb-hinge {
+    height: 11px;
+    margin-top: 9px
+}
+
+.gb-hinge i {
+    display: block;
+    height: 100%;
+    border-radius: 7px;
+    background: linear-gradient(180deg,#E4E8EC 0%,#FFFFFF 16%,#FFFFFF 30%,#F0F2F5 44%,#DCE1E6 74%,#C2C8CF 100%);
+    box-shadow: inset 0 0 0 .5px rgba(60,70,80,.16)
+}
+
+.gb-hinge i:nth-child(1),.gb-hinge i:nth-child(3) {
+    flex: 0 0 14%
+}
+
+.gb-hinge i:nth-child(2) {
+    flex: 1 1 auto
+}
+
+.gb-hinge::after {
+    content: '';
+    position: absolute;
+    left: 2%;
+    right: 2%;
+    top: 100%;
+    height: 6px;
+    border-radius: 0 0 50% 50%;
+    background: linear-gradient(rgba(40,52,64,.13),rgba(40,52,64,0));
+    pointer-events: none
+}
+
+.gb-pwr {
+    position: absolute;
+    right: calc(7% - 2px);
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-top: -2px;
+    border-radius: 50%;
+    background: var(--sh-power-busy);
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.2),0 0 4px 1px rgba(255,176,32,.65)
+}
+
+#gb.gb-ready .gb-pwr {
+    background: var(--sh-power);
+    box-shadow: 0 0 0 .5px rgba(0,0,0,.15),0 0 4px 1px rgba(91,234,75,.6)
+}
+
+/* the printed lockup: the two-tier wordmark printed flat (grey "Slop", sky-blue "Skies"), FOG CITY ACES in the shell print under it;
+   SPECIAL as the console's disc slot: a recessed stadium with a dark slit that lights sky blue and breathes when a special is ready
+   (steady while active) */
+.gb-logo {
+    flex: none;
+    position: relative;
+    height: var(--gb-lk,52px);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px 0 8px
+}
+
+#gb.gb-land .gb-logo {
+    margin-top: 0
+}
+
+.gb-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0
+}
+
+.gb-word {
+    display: block;
+    line-height: 0
+}
+
+.gb-mark {
+    display: block;
+    height: var(--gb-mh,40px);
+    width: auto
+}
+
+.gb-sub {
+    display: block;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: .16em;
+    padding-left: 1px;
+    color: var(--sh-print)
+}
+
+/* style audit S23: the bible's 9 px print (was 7.5 px) */
+.gb-special {
+    position: relative;
+    flex: none;
+    margin-left: auto;
+    width: 108px;
+    height: 44px;
+    border: 0;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 400;
+    text-align: center;
+    color: var(--sh-print);
+    touch-action: none;
+    cursor: default;
+    background: linear-gradient(180deg,#E2E6EA 0%,#ECEFF2 60%,#F1F3F5 100%);
+    box-shadow: inset 0 1.5px 3px rgba(30,40,50,.2),inset 0 0 0 1px rgba(30,40,50,.07),0 -.5px 0 rgba(90,100,112,.18),0 1px 0 var(--sh-lip)
+}
+
+.gb-special b {
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: .2em;
+    padding-left: .2em;
+    color: var(--sh-print-2)
+}
+
+.gb-slit {
+    display: block;
+    width: 62px;
+    height: 3px;
+    margin: 5px 0 5px;
+    border-radius: 2px;
+    background: #2A2D32;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.9);
+    transition: background .2s
+}
+
+.gb-special span {
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: .12em;
+    padding-left: .12em
+}
+
+/* FIND ? BOX / READY: status text at 10 px (style audit S23, layout audit L-16; was 7.5 px) */
+.gb-special::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 24px;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 0 0 1.5px rgba(25,179,236,.7),0 0 10px 2px rgba(25,179,236,.28)
+}
+
+.gb-special.ready,.gb-special.active {
+    background: linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.34) 40%,rgba(255,255,255,.06) 49%,rgba(255,255,255,0) 50.5%), linear-gradient(180deg,#8FDDF9 0%,#4CC2F1 55%,#22A9E6 100%);
+    box-shadow: inset 0 0 0 1px rgba(12,112,164,.38),inset 0 -3px 6px rgba(200,242,255,.75),0 1px 0 #fff,0 3px 9px rgba(20,140,200,.32)
+}
+
+.gb-special.ready {
+    cursor: pointer
+}
+
+.gb-special.ready .gb-slit {
+    animation: gb-slit 2s ease-in-out infinite
+}
+
+.gb-special.ready::after {
+    animation: gb-slot 2s ease-in-out infinite
+}
+
+.gb-special.ready b,.gb-special.active b {
+    color: #0A6299;
+    text-shadow: 0 1px 0 rgba(255,255,255,.55)
+}
+
+.gb-special.ready span,.gb-special.active span {
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(8,80,128,.55)
+}
+
+.gb-special.ready .gb-slit,.gb-special.active .gb-slit {
+    background: linear-gradient(90deg,#BFEFFF 0%,#FFFFFF 50%,#BFEFFF 100%);
+    box-shadow: 0 0 4px 1px rgba(255,255,255,.9),0 0 9px 2px rgba(200,244,255,.8)
+}
+
+.gb-special.ready:active {
+    transform: translateY(1px)
+}
+
+.gb-special.active::after {
+    opacity: .8;
+    animation: none
+}
+
+.gb-special:disabled {
+    opacity: 1
+}
+
+.gb-special:focus-visible {
+    outline: none;
+    box-shadow: inset 0 1.5px 3px rgba(30,40,50,.2),0 0 0 2px var(--sh-sky)
+}
+
+@keyframes gb-slot {
+    0%,100% {
+        opacity: .25
+    }
+
+    50% {
+        opacity: 1
+    }
+}
+
+@keyframes gb-slit {
+    0%,100% {
+        opacity: .55
+    }
+
+    50% {
+        opacity: 1
+    }
+}
+
+/* the controls (positions, sizes and label offsets come from handheld.8845c1b17855fc43.js) */
+.gb-ctl {
+    flex: 1 1 auto;
+    position: relative;
+    min-height: 0
+}
+
+.gb-c {
+    position: absolute;
+    box-sizing: border-box
+}
+
+/* stick: a glossy boss with an octagonal gate opening (SVG: dark inside, a shaded upper lip and a light lower lip); a broad concave cap,
+   58 % of the housing, stands in it on a short shaft: a convex rim lit from above round a dished centre lit from below, and its shadow
+   falls into the gate; pressed, it sinks a little */
+.gb-stick {
+    border-radius: 50%;
+    box-shadow: 0 6px 10px -4px rgba(30,40,50,.2),0 1px 2px rgba(30,40,50,.08)
+}
+
+.gb-house {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible
+}
+
+.gb-nub {
+    position: absolute;
+    left: 23%;
+    top: 23%;
+    width: 54%;
+    height: 54%;
+    border-radius: 50%;
+    margin-top: -1.5px;
+    transition: margin .04s;
+    background: radial-gradient(circle at 50% 22%,#FFFFFF 0%,#F5F7F9 40%,#E4E8EC 76%,#C9CFD6 100%);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1.5px 2px rgba(100,110,122,.28),0 0 0 1px rgba(48,56,64,.36),0 2px 0 1px rgba(60,68,76,.2),0 5px 9px rgba(20,30,40,.3)
+}
+
+.gb-nub u {
+    position: absolute;
+    inset: 15%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 78%,#FAFBFC 0%,#EFF2F4 46%,#E0E4E8 100%);
+    box-shadow: inset 0 2px 3px rgba(30,40,50,.16),inset 0 -1px 0 rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.85)
+}
+
+.gb-stick.on .gb-nub {
+    margin-top: -.5px;
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1.5px 2px rgba(100,110,122,.28),0 0 0 1px rgba(48,56,64,.36),0 1px 0 1px rgba(60,68,76,.2),0 3px 6px rgba(20,30,40,.3)
+}
+
+/* keys: low raised caps, each in its own hole: a 1-px top light, a short skirt (2 px; B 2.5), a soft contact shadow and the hole's
+   hairline gap; pressed = down by the skirt */
+.gb-btn,.gb-sm,.gb-key {
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: transform .04s
+}
+
+.gb-btn b {
+    display: block;
+    line-height: 1;
+    font-weight: 400
+}
+
+/* A, the hero: a clear sky-blue dome. The jacket shows through it, deepening towards the rim (refraction), with a sharp highlight top-left,
+   light gathered in its lower edge, a thin grey A under the dome and a hole round it (gap, shade crescent, lip) */
+.gb-a {
+    color: rgba(74,112,136,.82);
+    background: radial-gradient(ellipse 28% 15% at 36% 21%,rgba(255,255,255,1) 0,rgba(255,255,255,.7) 45%,rgba(255,255,255,0) 100%), radial-gradient(ellipse 56% 20% at 50% 89%,rgba(232,249,255,.95) 0,rgba(232,249,255,0) 100%), radial-gradient(circle at 50% 44%,rgba(226,246,255,.62) 0%,rgba(178,228,250,.55) 50%,rgba(86,182,228,.66) 84%,rgba(34,128,182,.82) 100%);
+    box-shadow: inset 0 0 0 1px rgba(16,96,146,.42),inset 0 -3px 5px rgba(255,255,255,.4),inset 0 4px 7px rgba(16,88,140,.2), 0 0 0 1.5px rgba(255,255,255,.7),0 -1px 0 1.5px var(--sh-gap),0 2px 4px rgba(16,66,104,.22)
+}
+
+.gb-a b {
+    transform: translateY(3%);
+    text-shadow: 0 1px 0 rgba(255,255,255,.75)
+}
+
+.gb-a.on {
+    transform: translateY(1.5px);
+    filter: brightness(.97);
+    box-shadow: inset 0 0 0 1px rgba(16,96,146,.42),inset 0 -2px 4px rgba(255,255,255,.4),inset 0 4px 7px rgba(16,88,140,.24), 0 0 0 1.5px rgba(255,255,255,.7),0 -1px 0 1.5px var(--sh-gap),0 1px 1px rgba(16,66,104,.2)
+}
+
+/* B: an opaque white convex key (the handheld's face keys) in its hole */
+.gb-b {
+    color: var(--sh-print-2);
+    background: radial-gradient(ellipse 60% 34% at 50% 23%,rgba(255,255,255,1) 0,rgba(255,255,255,.9) 52%,rgba(255,255,255,0) 74%), radial-gradient(circle at 50% 38%,#FBFCFD 0%,#F1F3F6 52%,#E2E6EA 86%,#D6DBE0 100%);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1.5px 2px rgba(120,130,142,.22),0 0 0 .75px rgba(70,80,92,.16),0 2.5px 0 #C9CFD5,0 4px 6px rgba(30,40,50,.15)
+}
+
+.gb-b.on {
+    transform: translateY(2px);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1.5px 2px rgba(120,130,142,.22),0 0 0 .75px rgba(70,80,92,.16),0 .5px 0 #C9CFD5,0 1px 2px rgba(30,40,50,.15)
+}
+
+/* TGT / BRK (1 / 2 style flat tops with printed glyphs), âˆ’ / + and TILT: low white caps in round holes. The hole shows as a hairline gap,
+   a shade crescent above the cap and a light lip below it */
+.gb-sm,.gb-key,.gb-tilt {
+    color: var(--sh-print-2);
+    background: radial-gradient(ellipse 60% 34% at 50% 23%,rgba(255,255,255,1) 0,rgba(255,255,255,.88) 52%,rgba(255,255,255,0) 74%), radial-gradient(circle at 50% 40%,#FCFCFD 0%,#F2F4F6 56%,#E3E7EB 90%,#DADFE4 100%);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1px 1px rgba(130,140,152,.24),0 2px 0 #CED4DA,0 3px 4px rgba(30,40,50,.12)
+}
+
+.gb-sm::before,.gb-key::before,.gb-tilt::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg,var(--sh-crescent) 0%,rgba(64,74,86,.1) 46%,rgba(64,74,86,0) 70%);
+    box-shadow: inset 0 0 0 .5px var(--sh-gap),0 1px 0 var(--sh-lip)
+}
+
+.gb-sm.on,.gb-key.on,.gb-tilt.down {
+    transform: translateY(1.5px);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1px 1.5px rgba(130,140,152,.22),0 .5px 0 #CED4DA,0 1px 2px rgba(30,40,50,.12)
+}
+
+.gb-sm.on::before,.gb-key.on::before,.gb-tilt.down::before {
+    transform: translateY(-1.5px)
+}
+
+.gb-gl {
+    display: block;
+    width: 42%;
+    height: 42%;
+    color: var(--sh-print-2)
+}
+
+.gb-w {
+    display: none;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: .1em;
+    padding-left: .1em
+}
+
+.gb-key i {
+    display: block;
+    width: 34%;
+    aspect-ratio: 1;
+    background: linear-gradient(var(--sh-print-2),var(--sh-print-2)) center/100% 1.6px no-repeat
+}
+
+.gb-start i {
+    background: linear-gradient(var(--sh-print-2),var(--sh-print-2)) center/100% 1.6px no-repeat,linear-gradient(var(--sh-print-2),var(--sh-print-2)) center/1.6px 100% no-repeat
+}
+
+/* TILT: the centre key with our sky-blue paper plane; lit sky blue while tilt steers, pulsing while it waits for the motion sensor */
+.gb-tilt {
+    position: absolute;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--sh-sky);
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .04s
+}
+
+.gb-tilt-g {
+    display: block;
+    width: 47%;
+    height: 47%;
+    transform: translate(-3%,3%)
+}
+
+.gb-tilt.on {
+    color: #fff;
+    background: radial-gradient(ellipse 60% 32% at 50% 22%,rgba(255,255,255,.8) 0,rgba(255,255,255,.5) 50%,rgba(255,255,255,0) 74%),radial-gradient(circle at 50% 40%,#8EDBFA 0%,#3CC0F0 52%,#1A9DD6 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 2px rgba(10,80,130,.25),0 2px 0 #1789BD,0 3px 4px rgba(10,60,100,.2),0 0 10px 2px var(--sh-glow)
+}
+
+.gb-tilt.on.down {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 2px rgba(10,80,130,.25),0 .5px 0 #1789BD,0 1px 2px rgba(10,60,100,.2),0 0 10px 2px var(--sh-glow)
+}
+
+.gb-tilt.wait::before {
+    animation: gb-wait 1s ease-in-out infinite
+}
+
+.gb-tilt:focus-visible {
+    outline: none
+}
+
+.gb-tilt:focus-visible::before {
+    box-shadow: 0 0 0 2px var(--sh-sky)
+}
+
+@keyframes gb-wait {
+    0%,100% {
+        box-shadow: 0 0 0 1.5px rgba(25,179,236,.2)
+    }
+
+    50% {
+        box-shadow: 0 0 0 2px var(--sh-sky),0 0 10px 2px var(--sh-glow)
+    }
+}
+
+/* the sky-blue jacket under A/B, raised like the remote's silicone jacket and bubbly like the reference's glossy pills: a translucent sky
+   jelly, deeper at its lower rim, with a gloss cap over its upper half (crisp lower edge), a bright inner rim and a soft drop shadow.
+   The bible's faint moulded ribs were tried and dropped: at phone size they read as a dashed outline */
+.gb-abw {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    background: linear-gradient(180deg,rgba(255,255,255,.66) 0%,rgba(255,255,255,.3) 38%,rgba(255,255,255,.08) 49%,rgba(255,255,255,0) 50.5%), linear-gradient(180deg,rgba(168,222,246,.78) 0%,rgba(118,201,240,.8) 62%,rgba(80,182,232,.84) 100%);
+    box-shadow: inset 0 0 0 1px rgba(18,118,170,.3),inset 0 1.5px 0 1px rgba(255,255,255,.55),inset 0 -4px 7px rgba(214,244,255,.8), 0 1px 0 rgba(255,255,255,.95),0 3px 7px rgba(18,96,146,.2)
+}
+
+/* the shallow well TGT and BRK share (portrait): a neutral recess in the shell, parallel to the jacket; none sideways (shoulders) */
+.gb-tbw {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    background: linear-gradient(180deg,#DFE3E8 0%,#E9ECF0 55%,#EEF1F4 100%);
+    box-shadow: inset 0 1.5px 3px rgba(30,40,52,.17),inset 0 0 0 .5px rgba(30,40,52,.08),0 1px 0 var(--sh-lip),0 -.5px 0 rgba(80,96,112,.14)
+}
+
+#gb.gb-land .gb-tbw {
+    display: none
+}
+
+/* printed captions: grey caps in the shell print (bible Â§15.3: 9-10 px), tracked a little wider for a crisp printed read; the left
+   padding balances the tracking */
+.gb-lab {
+    position: absolute;
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: 9.5px;
+    line-height: 12px;
+    letter-spacing: .1em;
+    padding-left: .1em;
+    color: var(--sh-print)
+}
+
+/* four player lamps: dark square windows with 1-4 printed dots; they blink in turn while the island builds, then lamp 1 stays lit */
+.gb-leds {
+    position: absolute;
+    display: flex;
+    gap: calc(var(--gb-lp,26px) - 7px);
+    padding-top: 6px;
+    pointer-events: none
+}
+
+.gb-leds i {
+    position: relative;
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 1.5px;
+    background: linear-gradient(180deg,#232427,#3A3B3F);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.6),0 0 0 .5px rgba(60,70,80,.25),0 1px 0 var(--sh-lip)
+}
+
+.gb-leds i::before {
+    content: '';
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    height: 2px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle at 1px 1px,#9EA4AB .8px,transparent 1.05px) 0 0/3px 2px repeat-x
+}
+
+.gb-leds i:nth-child(1)::before {
+    width: 2px
+}
+
+.gb-leds i:nth-child(2)::before {
+    width: 5px
+}
+
+.gb-leds i:nth-child(3)::before {
+    width: 8px
+}
+
+.gb-leds i:nth-child(4)::before {
+    width: 11px
+}
+
+#gb.gb-ready .gb-leds i:first-child {
+    background: radial-gradient(circle,var(--sh-led-core) 0 22%,var(--sh-led-on) 62%,#1E9BE6 100%);
+    box-shadow: 0 0 6px 2px var(--sh-led-glow),0 1px 0 var(--sh-lip)
+}
+
+#gb:not(.gb-ready) .gb-leds i {
+    animation: gb-pair .48s steps(1,end) infinite
+}
+
+#gb:not(.gb-ready) .gb-leds i:nth-child(2) {
+    animation-delay: .12s
+}
+
+#gb:not(.gb-ready) .gb-leds i:nth-child(3) {
+    animation-delay: .24s
+}
+
+#gb:not(.gb-ready) .gb-leds i:nth-child(4) {
+    animation-delay: .36s
+}
+
+@keyframes gb-pair {
+    0% {
+        background: var(--sh-led-on);
+        box-shadow: 0 0 6px 2px var(--sh-led-glow)
+    }
+
+    25%,100% {
+        background: var(--sh-led-off);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.95)
+    }
+}
+
+/* speaker: the remote's graded grille on its side (6 x 3, or 6 x 2 when the height is short), centred under the âˆ’ TILT + captions
+   (handheld.8845c1b17855fc43.js places it); sideways: two 3 x 2 lid speakers instead */
+.gb-spk {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    display: block;
+    pointer-events: none
+}
+
+.gb-spk-g,.gb-lid-g {
+    display: block
+}
+
+.gb-lid {
+    position: absolute;
+    display: none;
+    pointer-events: none
+}
+
+/* sideways: a GBA-style shell, the 16:9 screen centred with the lockup printed under it, stick + âˆ’ TILT + on the left wing, A/B on the
+   right, a 3 x 2 lid speaker at the top of each wing, BRAKE / TARGET as slim shoulder keys on the top edges; no hinge */
+#gb.gb-land .gb-body {
+    padding: calc(4px + var(--gb-sat)) calc(10px + var(--gb-sar)) calc(4px + var(--gb-sab)) calc(10px + var(--gb-sal))
+}
+
+#gb.gb-land .gb-hinge,#gb.gb-land .gb-spk,#gb.gb-land .gb-l-tgt,#gb.gb-land .gb-l-brk {
+    display: none
+}
+
+#gb.gb-land .gb-lid {
+    display: block
+}
+
+#gb.gb-land .gb-ctl {
+    position: absolute;
+    inset: calc(4px + var(--gb-sat)) calc(10px + var(--gb-sar)) calc(4px + var(--gb-sab)) calc(10px + var(--gb-sal))
+}
+
+#gb.gb-land .gb-bezel {
+    position: absolute;
+    left: calc(50% + (var(--gb-sal) - var(--gb-sar)) / 2);
+    top: calc(4px + var(--gb-sat) + var(--gb-bt,0px));
+    transform: translateX(-50%);
+    margin: 0;
+    z-index: 1
+}
+
+#gb.gb-land .gb-logo {
+    position: absolute;
+    height: 44px;
+    padding: 0 0 0 4px;
+    z-index: 2
+}
+
+#gb.gb-land .gb-mark {
+    height: 30px
+}
+
+#gb.gb-land.gb-lowroom .gb-brand {
+    display: none
+}
+
+#gb.gb-land .gb-sm {
+    border-radius: 8px 8px 20px 20px;
+    background: linear-gradient(90deg,#E6E9EC 0%,#FAFBFC 22%,#FFFFFF 50%,#F4F6F8 78%,#E1E5E9 100%);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1px 1.5px rgba(140,150,160,.2),0 0 0 .5px rgba(70,80,92,.14),0 2px 0 #D0D6DC,0 3px 5px rgba(30,40,50,.13)
+}
+
+#gb.gb-land .gb-sm::before,#gb.gb-land .gb-gl {
+    display: none
+}
+
+#gb.gb-land .gb-w {
+    display: block
+}
+
+#gb.gb-land .gb-sm.on {
+    transform: translateY(1.5px);
+    box-shadow: inset 0 1px 0 #fff,inset 0 -1px 1.5px rgba(140,150,160,.2),0 0 0 .5px rgba(70,80,92,.14),0 .5px 0 #D0D6DC,0 1px 2px rgba(30,40,50,.13)
+}
+
+/* the sheet: the compact site under the screen (portrait) or over everything (sideways); never during flight */
+html.gb-doc,html.gb-doc body {
+    overflow: hidden!important;
+    height: 100%;
+    overscroll-behavior: none
+}
+
+body.gb {
+    padding-bottom: 0!important
+}
+
+body.gb #field {
+    display: none!important
+}
+
+body.gb #win,body.gb #loader {
+    display: none!important
+}
+
+body.gb.gb-sheet #field {
+    display: block!important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(var(--gb-st,0px) + var(--gb-hh));
+    bottom: 0;
+    z-index: 60;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 var(--gb-sar) calc(64px + var(--gb-sab)) var(--gb-sal);
+    box-shadow: 0 -1px 0 var(--sh-shade)
+}
+
+/* the sheet scrolls only up and down (overflow-x is clipped, not scrollable), and it is never see-through: if the page gives #field
+   no background of its own (zero-specificity fallback, so the site's own colour always wins), the shell's face colour stands in, so no
+   key of the handheld shows between the page's cards */
+:where(body.gb.gb-sheet) :where(#field) {
+    background-color: var(--sh-face)
+}
+
+body.gb:not(.gb-sheet) #ph-bar {
+    display: none!important
+}
+
+body.gb #ph-bar {
+    z-index: 62;
+    padding-left: calc(8px + var(--gb-sal));
+    padding-right: calc(8px + var(--gb-sar))
+}
+
+/* the sheet's header: a light bar with a white pill, BACK TO GAME */
+#gb-head {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--gb-st,0px);
+    height: var(--gb-hh);
+    z-index: 61;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 calc(16px + var(--gb-sar)) 0 calc(8px + var(--gb-sal));
+    background: linear-gradient(180deg,#FFFFFF,#E9EDF1);
+    box-shadow: 0 1px 0 var(--sh-shade);
+    font-family: var(--gb-font);
+    font-weight: 500;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent
+}
+
+.gb-close {
+    position: relative;
+    height: 44px;
+    min-width: 164px;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 18px 0 14px;
+    border-radius: 22px;
+    font: inherit;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: .12em;
+    color: var(--sh-print-2);
+    background: linear-gradient(180deg,#FFFFFF,#F2F4F7);
+    box-shadow: 0 0 0 1px var(--sh-shade),0 2px 0 var(--sh-cap-skirt),0 4px 8px rgba(30,42,54,.12);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent
+}
+
+.gb-close:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 1px var(--sh-shade),0 0 0 var(--sh-cap-skirt),0 2px 4px rgba(30,42,54,.12)
+}
+
+.gb-close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--sh-sky),0 2px 0 var(--sh-cap-skirt)
+}
+
+.gb-close u {
+    flex: none;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-right: 8px solid var(--sh-sky);
+    border-left: 0
+}
+
+.gb-head-t {
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: .16em;
+    color: var(--sh-print-2)
+}
+
+/* keyboard up while typing in the sheet (handheld.8845c1b17855fc43.js kbSync): the shell keeps its size, the sheet fills the visible part */
+body.gb-kb #gb-head {
+    top: var(--gb-kt,0px)
+}
+
+body.gb-kb.gb-sheet #field {
+    top: calc(var(--gb-kt,0px) + var(--gb-hh));
+    bottom: auto;
+    height: calc(var(--gb-kh,100%) - var(--gb-hh));
+    padding-bottom: 16px
+}
+
+body.gb-kb #ph-bar {
+    display: none!important
+}
+
+/* HOW TO: the handheld drawn with its controls numbered (the touch card's place) */
+.gb-how {
+    display: none
+}
+
+body.gb #m-c1 .c1,body.gb #m-c1 .tc {
+    display: none!important
+}
+
+body.gb #m-c1 .gb-how {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    font-family: var(--gb-font);
+    font-weight: 500;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    color: #56606B
+}
+
+.gb-how-d {
+    display: block;
+    width: 160px;
+    height: 252px;
+    font-family: var(--gb-font)
+}
+
+.gb-how-k {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 6px 16px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0;
+    padding: 0;
+    list-style: none
+}
+
+.gb-how-k li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 18px;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: .06em;
+    white-space: nowrap
+}
+
+.gb-how-k b {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    color: #1C7FB2;
+    font-size: 9.5px;
+    box-shadow: 0 0 0 1.4px var(--sh-sky)
+}
+
+.gb-how-k em {
+    margin-left: auto;
+    font-style: normal;
+    color: var(--sh-print-2)
+}
+
+.gb-how-p {
+    align-self: stretch;
+    margin: 0;
+    font-size: 11px;
+    line-height: 15px;
+    letter-spacing: .02em;
+    color: var(--sh-print-2)
+}
+
+/* spacing on the sheet (client CP23: "a little bit cramped â€¦ the spacing is kind of inconsistent"). One scale (8/16): the header row is
+   8 + 44 + 8; SOUND and VOICE are one size (64x50) on the same right edge; the MAP chips sit centred in their column. These name the
+   compact site's elements; the site lane owns their look. */
+body.gb #topbar {
+    right: calc(16px + var(--gb-sar))!important;
+    top: 12px!important;
+    height: 50px
+}
+
+body.gb .tb-snd {
+    width: 64px;
+    height: 50px;
+    gap: 8px
+}
+
+body.gb #m-logo {
+    padding-right: 88px;
+    min-height: 58px
+}
+
+body.gb #m-control {
+    padding: 8px;
+    gap: 8px
+}
+
+body.gb #voice {
+    width: 64px;
+    gap: 8px
+}
+
+body.gb .map-b {
+    column-gap: 16px
+}
+
+body.gb .ads {
+    align-items: center
+}
+
+body.gb #foot {
+    padding: 16px;
+    gap: 8px 16px
+}
+
+/* the footer (client note 10 Oct): one line in the panel, Slop Skies Â· Made by Jewk.es Â· Sound On; the link's tap area is 44 tall */
+body.gb #foot .ft-c {
+    flex-wrap: nowrap;
+    line-height: 16px;
+    white-space: nowrap
+}
+
+body.gb #foot .ft-by a {
+    position: relative;
+    display: inline-block;
+    line-height: 16px;
+    vertical-align: top
+}
+
+body.gb #foot .ft-by a::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    top: -14px;
+    bottom: -14px
+}
+
+body.gb #foot .badges {
+    gap: 8px
+}
+
+/* â€¦and it ends the sheet flush on the tab bar */
+body.gb.gb-sheet:not(.gb-kb) #field {
+    padding-bottom: calc(52px + var(--gb-sab))
+}
+
+body.gb.gb-sheet #stage {
+    padding-bottom: 0
+}
+
+/* CP24 verify: the Top 10 name entry (#dock, moved here by handheld.8845c1b17855fc43.js) sits in the handheld's own screen, over the picture: the end of a run
+   never opens the site's menu sheet (no tab menu over the results, no second prompt beside the Flight Record), sideways too. Sized for the
+   4:3 portrait screen (~360 x 270 CSS px) and the 16:9 one; a touch shell prints no keycap hints (A saves, B deletes, as the line says). */
+#gb .gb-lcd #dock {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    place-items: center;
+    margin: 0;
+    padding: 6px;
+    pointer-events: none;
+    background: none;
+    animation: none
+}
+
+body.lb-on #gb .gb-lcd #dock {
+    display: grid;
+    pointer-events: auto;
+    background: rgba(42,58,160,.45)
+}
+
+#gb .gb-lcd .lb-entry {
+    width: 100%;
+    max-width: 470px;
+    max-height: 100%;
+    overflow: hidden;
+    padding: 9px 10px 8px;
+    border-radius: 12px;
+    box-shadow: 0 0 0 2px #fff,0 6px 16px rgba(0,0,60,.4)
+}
+
+#gb .gb-lcd .lbe-slots {
+    gap: 4px 8px
+}
+
+#gb .gb-lcd .lbe-slots>b {
+    font-size: 15px
+}
+
+#gb .gb-lcd .lbe-cells {
+    gap: 3px
+}
+
+#gb .gb-lcd .lbe-cells i {
+    width: 21px;
+    height: 27px;
+    border-radius: 5px;
+    font-size: 16px
+}
+
+#gb .gb-lcd #lbe-est {
+    font-size: 11px
+}
+
+#gb .gb-lcd .lbe-keys {
+    margin-top: 7px;
+    gap: 3px
+}
+
+#gb .gb-lcd .lbe-keys div {
+    gap: 3px
+}
+
+#gb .gb-lcd .lbe-keys button {
+    height: 25px;
+    border-radius: 5px;
+    font-size: 12.5px;
+    box-shadow: 0 1.5px 0 #8FA3C8
+}
+
+#gb .gb-lcd .lbe-act {
+    margin-top: 7px;
+    gap: 8px
+}
+
+#gb .gb-lcd .lbe-btn {
+    height: 30px;
+    padding: 0 14px;
+    font-size: 15px;
+    box-shadow: 0 0 0 2px var(--bar-rim)
+}
+
+#gb .gb-lcd .lbe-btn.lbe-go {
+    box-shadow: 0 0 0 2px var(--next-rim)
+}
+
+#gb .gb-lcd .lbe-btn kbd {
+    display: none
+}
+
+#gb.gb-compact .gb-lcd .lbe-keys button {
+    height: 38px;
+    font-size: 15px
+}
+
+/* layout audit L-17: the tall screen has the room for 38 px keys and 44 px buttons (25 / 30 px before); the 16:9 sideways screen keeps the small ones */
+#gb.gb-compact .gb-lcd .lbe-btn {
+    height: 44px
+}
+
+#gb .gb-lcd .lbe-src {
+    font-size: 10.5px
+}
+
+#gb .gb-lcd .lbe-msg {
+    margin-top: 5px;
+    min-height: 0;
+    font-size: 11.5px
+}
+
+#gb .gb-lcd .lbe-ok {
+    gap: 8px
+}
+
+#gb .gb-lcd .lbe-ok b {
+    font-size: 16px
+}
+
+#gb .gb-lcd .lbe-ok .lbe-nm {
+    font-size: 19px
+}
+
+#gb .gb-lcd .lbe-ok span {
+    font-size: 11px
+}
+
+#gb .gb-lcd .lbe-mini {
+    margin-top: 6px;
+    gap: 3px
+}
+
+#gb .gb-lcd .lbe-mini li {
+    grid-template-columns: 36px 1fr 70px 50px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 12px
+}
+
+#gb .gb-lcd .lbe-mini li i {
+    font-size: 12.5px
+}
+
+#gb .gb-lcd .lbe-mini li span:nth-child(3) {
+    font-size: 10.5px
+}
