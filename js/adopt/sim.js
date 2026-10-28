@@ -494,7 +494,7 @@
     }
     if (task === "toHang") {
       s.task = "hang";
-      s.hangT = 120;
+      s.hangT = 25;
       return;
     }
     if (task === "toSchool") {
@@ -530,7 +530,7 @@
     const s = car.sim,
       r = s.ride;
     s.ride = null;
-    s.task = s.at === Sim.HOME ? "garage" : "idle";
+    s.task = s.at === Sim.HOME && car.needs.charge < 40 ? "garage" : "idle";
     if (!r) return;
     const e = Sim.eff(S, car),
       rd = r.rider ? D.RIDERS[r.rider] : null,
@@ -546,7 +546,7 @@
     if (S.today) S.today.rides[car.id] = (S.today.rides[car.id] || 0) + 1;
     Sim.xp(S, 10);
     // the cabin after the rider
-    let mess = 4 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
+    let mess = 2.8 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
     if (car.dashpet && car.dashpet.id === "succulent") mess *= 0.6;
     car.needs.cozy = clamp(car.needs.cozy - mess, AWAY ? Math.min(car.needs.cozy, 25) : 0, 100);
     s.emote = { k: "◎", at: absMin(S) };
@@ -585,15 +585,15 @@
   Sim.demand = function (S, hood, h) {
     const H = D.HOODS[hood],
       t = H.tags;
-    let d = 0.08;
-    if (H.rank !== null) d += 0.06;
-    if (COMMUTE.includes(hood) && h >= 7 && h < 10) d += 0.4;
-    if (t.includes("downtown") && h >= 11 && h < 14) d += 0.25;
-    if (t.includes("tourist") && h >= 10 && h < 18) d += 0.22;
-    if ((t.includes("park") || t.includes("beach")) && Sim.weekend(S) && h >= 9 && h < 18) d += 0.2;
-    if (t.includes("nightlife") && h >= 20) d += 0.35;
-    if (h < 7 || h >= 22) d *= 0.6;
-    if (!Sim.open(S, hood)) d *= 0.45;
+    let d = 0.25;
+    if (H.rank !== null) d += 0.15;
+    if (COMMUTE.includes(hood) && h >= 7 && h < 10) d += 0.5;
+    if (t.includes("downtown") && h >= 11 && h < 14) d += 0.35;
+    if (t.includes("tourist") && h >= 10 && h < 18) d += 0.32;
+    if ((t.includes("park") || t.includes("beach")) && Sim.weekend(S) && h >= 9 && h < 18) d += 0.3;
+    if (t.includes("nightlife") && h >= 20) d += 0.45;
+    if (h < 7 || h >= 22) d *= 0.7;
+    if (!Sim.open(S, hood)) d *= 0.65;
     return d;
   };
   function spawnRequests(S) {
@@ -606,7 +606,7 @@
         weights = G.names.map((n) => [(Sim.demand(S, n, h) + 0.25) / (1 + Math.hypot(G.hoods[n].x - H.x, G.hoods[n].z - H.z) / 900), n]);
       const d = Sim.demand(S, hood, h);
       let n = Math.floor(d) + (R(S) < d % 1 ? 1 : 0);
-      n = Math.min(n, 3 - S.req.filter((r) => r.from === hood).length);
+      n = Math.min(n, 4 - S.req.filter((r) => r.from === hood).length);
       for (let k = 0; k < n; k++) {
         let to = hood;
         for (let tries = 0; to === hood && tries < 6; tries++) to = St.wpick(S, weights);
@@ -626,7 +626,7 @@
   // the charge a trip of so many units costs this car (roughly: it doesn't know the hills ahead)
   function tripCost(S, car, units) {
     const e = Sim.eff(S, car);
-    let rate = 9.5 * (1 - Math.min(0.6, e.range * 0.02));
+    let rate = 7.5 * (1 - Math.min(0.6, e.range * 0.02));
     if (has(car, "speed_demon") && !plus(car)) rate *= 1.2;
     return ((units / speedOf(S, car)) / 60) * rate;
   }
@@ -638,11 +638,11 @@
     for (const r of S.req) {
       if (r.taken) continue;
       const pick = Sim.routeLen(here, r.from);
-      if (pick > 1100) continue;
+      if (pick > 2400) continue;
       if (sulky && r.km > 3) continue;
       const units = pick + r.units;
       if (car.needs.charge - tripCost(S, car, units) < 15) continue;
-      const sc = (10 + 2 * r.km) / (units / 80 + 8);
+      const sc = (10 + 2 * r.km) / ((pick * 1.8 + r.units) / 80 + 6);
       if (sc > bs) {
         bs = sc;
         best = r;
@@ -702,19 +702,19 @@
       se = 0,
       cl = 0;
     if (moving) {
-      let c = tags.includes("hills") ? 12 : 8;
+      let c = tags.includes("hills") ? 9.5 : 6.5;
       if (tags.includes("hills") && has(car, "hill_hater") && !plus(car)) c *= 1.6;
       if (has(car, "speed_demon") && !plus(car)) c *= 1.2;
       c *= 1 - Math.min(0.6, e.range * 0.02);
       ch -= c;
-      sh -= tags.includes("beach") ? 6 : 3;
-      if (S.clock.weather === "drizzle") sh -= 5;
-      if (tags.includes("downtown")) cz -= 6 * (has(car, "foodie") ? 1.5 : 1) * (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
-      se -= tags.includes("park") ? 5 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1) : 2;
-      cl -= fogHere && !fogSafe ? 8 : 2;
+      sh -= tags.includes("beach") ? 5 : 2.5;
+      if (S.clock.weather === "drizzle") sh -= 4;
+      if (tags.includes("downtown")) cz -= 4.5 * (has(car, "foodie") ? 1.5 : 1) * (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
+      se -= tags.includes("park") ? 4 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1) : 1.6;
+      cl -= fogHere && !fogSafe ? 6.5 : 1.6;
       if (fogHere && has(car, "fog_lover") && plus(car)) cl += 4;
     } else if (atHome) {
-      ch += charging ? 15 : -1;
+      ch += charging ? 28 : -1;
       cl += 5;
     } else if (s.task !== "tow") ch -= 0.5;
     if (has(car, "neat_freak") && plus(car)) sh *= 0.5;
@@ -773,6 +773,7 @@
     const prevH = Math.floor(c.minute / 60);
     c.minute++;
     if (Math.floor(c.minute / 60) !== prevH && c.minute < 1440) hourly(S, away);
+    else if (c.minute % 20 === 0 && c.minute < 1440) spawnRequests(S);
     // the charger bays go to the cars at home that need them most
     const home = S.cars.filter((car) => !car.sim.from && car.sim.at === Sim.HOME).sort((a, b) => a.needs.charge - b.needs.charge);
     const charging = new Set(home.filter((car) => car.needs.charge < 100).slice(0, S.garage.bays));
@@ -826,24 +827,25 @@
         if (s.task === "care" && ++s.careT > 240) s.task = "idle";
         return;
       case "hang":
+        if (s.wait >= 10 && s.wait % 2 === 0 && findRide(S, car)) return;
         if (--s.hangT <= 0) s.task = "idle";
         return;
       case "garage":
         if (car.training) return;
-        if (s.wait % 3 === 0) {
+        if (s.wait % 2 === 0) {
           const freeBay = S.garage.bays > S.cars.filter((c2) => c2 !== car && Sim.atHome(c2) && c2.needs.charge < 100).length;
-          if (n.charge >= (freeBay ? 85 : 55) && findRide(S, car)) return;
+          if (n.charge >= (freeBay ? 70 : 50) && findRide(S, car)) return;
         }
         return;
       case "idle":
       default:
         if (car.training) return;
-        if (n.charge < 25) {
+        if (n.charge < 22) {
           goTo(S, car, Sim.HOME, "home");
           return;
         }
-        if (s.wait % 3 === 0 && findRide(S, car)) return;
-        if (s.wait > 100) goTo(S, car, Sim.HOME, "home");
+        if ((s.wait === 1 || s.wait % 2 === 0) && findRide(S, car)) return;
+        if (s.wait > 80 && n.charge < 55) goTo(S, car, Sim.HOME, "home");
     }
   }
   function finishRideHalf(S, car, r) {
@@ -916,6 +918,7 @@
     c.weather = rollWeather(S);
     S.req = [];
     newToday(S);
+    spawnRequests(S);
     if (S.quests.karl && S.quests.karl.by < absMin(S)) S.quests.karl = null;
     if (!away) Sim.emit(S, { type: "morning", icon: c.weather === "fog" ? "🌫️" : "☀️", text: "Day " + c.day + ". " + (c.weather === "fog" ? "Karl the Fog is out on the west side." : c.weather === "drizzle" ? "A grey drizzle. The cars will need a wash." : "Clear skies over the city.") });
     return entry;
@@ -1681,7 +1684,9 @@
     lot.cars.splice(idx, 1);
     car.name = String(name).trim();
     car.born = Sim.today();
+    car.needs.charge = Math.max(85, car.needs.charge);
     car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+    if (!S.req.length && !S.clock.night) spawnRequests(S);
     if (!S.album.wraps.includes(car.wrap)) S.album.wraps.push(car.wrap);
     S.adopted++;
     syncUnlocks(S);
@@ -2108,6 +2113,7 @@
     if (!S.clock.weather) S.clock.weather = "clear";
     syncUnlocks(S);
     Sim.realTick(S);
+    if (!S.req.length && !S.clock.night) spawnRequests(S);
   };
 
   WG.adoptSim = Sim;
