@@ -26,6 +26,41 @@ Every play area is about 300 to 600 m across. `node tools/map_levels.js` draws a
 
 You play five 100-second shifts, each adding one job type to the last. Jobs are dealt from a shuffled deck, so each shift gives you about the same number of every job it has, in a random order. Fast jobs and calm riders score more, jobs done in a row multiply your points up to x2, and the day ends with a Bronze, Silver, Gold or Platinum medal. Your best score is kept in the browser's `localStorage`. There is no online leaderboard.
 
+## Adopt-a-Waymo
+
+A second, relaxed mode in the spirit of Neopets: from the title screen, **Adopt-a-Waymo 🐾** lets you adopt robotaxis as pets and watch over them on a bird's-eye map of all of San Francisco. Nothing ever dies or fails for good; a neglected car just sulks until you make it up to it.
+
+- **Cars as pets.** Each car has a name (and, at 2 hearts, a nickname), a plate, a paint wrap, a lidar ring in its signature colour, two traits (Hill Hater, Fog Lover, Night Owl, …), likes, five stats that only go up (Range, Handling, Comfort, Smarts, Charm) and up to 10 hearts of bond. It grows from Rookie to Regular, Veteran and Legend, with a title from where it spent its time and how well it was looked after.
+- **Needs.** Charge, Shine, Cozy, Senses and Clarity drop as it drives (faster on hills, at the beach, in parks, downtown and in Karl the Fog), shown by funny labels ("Snack Graveyard", "Pigeon Hotel"); Mood follows them. Look after them with items from the shops anywhere, or call the car to a **Care Spot** (the five arcade play areas) and do the job by hand: the camera swoops down from the map and you play the real job on the car.
+- **The city.** The neighbourhoods are joined by roads drawn over the island. Cars drive between them on their own, picking up riders (the game's cast of seven) for Fares (◎), and come home to the garage at midnight, when Dispatch writes the day's diary. An in-game day is about 13½ minutes; 1×, 2× and 4× speed and pause work any time.
+- **Lands.** Fifteen neighbourhoods are lands that unlock with your Crew Rank, each with a shop (restocked every in-game hour, with haggling), a daily freebie on the real calendar (the Lombard Zigzag Spin, the Giant Sourdough Bowl, the Fog Horn Toss, …) and something more: fishing off Pier 39, the bank, the Startup Index, an auction house, the weekly Car Show, the Dashpet Paddock, the Twin Peaks Driving Academy (training in real time), the Sutro Tower riddle, the Hill Climb Derby, Karl the Fog's quests and the Rider Rally.
+- **Collecting.** A landmark stamp album with postcard photos of the city, rider cards, wraps, dashpets (tiny companions on the roof, with perks), accessories in six slots, a playlist club and trophies. Seasonal events (Halloween, Día de los Muertos, Fleet Week, Lunar New Year, Pride, Bay to Breakers, Outside Lands) bring limited items and a short storyline.
+- **The arcade.** Every job can be played on its own from the Arcade panel for a few Fares a day, and a run of the five shifts pays into the garage once a day.
+
+Saves go in `localStorage["wc.adopt.v1"]` (with a last-known-good copy in `wc.adopt.bak`), every 10 seconds and when the tab goes away; postcard photos go in IndexedDB (`wc-adopt`). While you're away the fleet carries on at a sixth of the speed for up to a day, needs never dropping below 25 (or the clock stops, if you turn that off in the menu).
+
+**Controls on the map:** drag to pan, wheel or pinch to zoom, <kbd>Q</kbd> / <kbd>E</kbd> or right-drag to turn, <kbd>WASD</kbd> or the arrows to pan. Tap a car's name tag (or its card at the bottom) to follow it, and again for its profile; drag a name tag onto a neighbourhood to send the car there. Tap a neighbourhood's label for its land. <kbd>Space</kbd> pauses, <kbd>1</kbd>–<kbd>3</kbd> set the speed, <kbd>Esc</kbd> closes a panel or opens the menu.
+
+**For testing:** `?mode=adopt` starts in the mode, `?fast=10` runs time ten times faster, `?seed=123` seeds a new save, `?reset=1` wipes the save. In the console, `WG.adopt.debug` has `skipHours(n)`, `setNeed(carId, need, v)`, `give(itemId, n)`, `fares(n)`, `rank(n)`, `event(id)`, `newDay()` and `adopt(name)`.
+
+### How it's made
+
+The mode lives in `js/adopt/` and `css/adopt.css`, loaded after `js/game.js`, which hands it the `adopt` (the map) and `adoptCare` (a hands-on job) states, the camera and the input in those states, and calls its `update` each frame.
+
+- `js/adopt/data.js`: all the content, as tables keyed by string ids: neighbourhoods and the roads between them, needs and their labels, traits, stats and stages, items, wraps, dashpets, shops, dailies and their prize tables, random events, riders and their cards, stamps, seasons, Car Show themes, garage upgrades and the diary's writing. New content needs no new code.
+- `js/adopt/state.js`: the save (load, save, migrate, the backup), the time-away catch-up, the seeded RNG (mulberry32, its state kept in the save so a debug run repeats) and the postcards' IndexedDB.
+- `js/adopt/sim.js`: the simulation, with no three.js and no DOM, so it runs in Node too: the clock, needs and mood, demand and rides routed over the neighbourhood graph (Dijkstra), traits, naps and tows, nights at home, random events, rider friendships and requests, stamps, training, growing up, shops, dailies, the arcade's pay, the Car Show, the Derby, the Startup Index and the auctions.
+- `js/adopt/map.js`: the bird's-eye map: the roads (ribbons that ride over the rooftops), the toy-sized cars (each in its wrap, decals, accessories and dashpet, with a bubble for its most urgent need), NPC toys, Karl's clouds, the labels and name tags, the map camera, and the postcard photos.
+- `js/adopt/care.js`: the swoop from the map down to a Care Spot, the job (`js/jobs.js`, on a robotaxi dressed as the pet) and the swoop back up.
+- `js/adopt/ui.js`: the panels: the top bar, the car strip, the profile card (with a shareable PNG), each land's panel, the inventory, album, arcade, garage, Adoption Lot, diary, inbox, the minigames and the tutorial.
+- `js/adopt/main.js`: `WG.adopt`, which ties them together.
+
+`tools/adopt_sim.js` runs the simulation in Node for a number of in-game days with a simple player (who does the dailies, plays the arcade and keeps the needs topped up), and prints the Fares earned each day, how often the needs dip below 20, and when the Crew Rank milestones arrive; `--lazy` plays without looking after the needs. `tools/playtest/adopt.js` is a Playwright smoke test of the mode (screenshots of the map, the panels and a hands-on care run, then a check that the arcade still starts).
+
+```sh
+node tools/adopt_sim.js 30 --seed 7
+```
+
 ## Controls
 
 - **Move:** WASD or the arrow keys (relative to the camera), or click or tap the street. Hold to keep steering.

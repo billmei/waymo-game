@@ -400,6 +400,8 @@
     day: { grade: "promo", sun: [26, 222], fogK: 1, light: ["#fff1d6", 0.78, "#d7ecff", "#8f7f5f", 0.6], puffs: 0, karl: 0 },
     fog: { grade: "karl", sun: [40, 200], fogK: 1, light: ["#eef3f7", 0.42, "#e6eef4", "#8d8f86", 0.78], puffs: 1, karl: 1 },
     dusk: { grade: "golden", sun: [9, 262], fogK: 1, light: ["#ffb27a", 0.72, "#9a8ad0", "#6b5040", 0.52], puffs: 0, karl: 0 },
+    // Adopt-a-Waymo's evenings: moonlight, a deep blue sky and the street lights' warm haze
+    night: { grade: "night", sun: [16, 300], fogK: 1, light: ["#a9bcff", 0.38, "#4a5a96", "#262a3a", 0.46], puffs: 0, karl: 0 },
   };
   function addGrades() {
     const G = I.LOOK_GRADES;
@@ -449,6 +451,29 @@
       glow: "#ffb060",
       cloudTop: "#ffd9b8",
       cloudUnder: "#9a7fb0",
+    };
+    G.night = {
+      sky: [
+        [0, "#33406e"],
+        [0.03, "#2a3765"],
+        [0.07, "#222e5a"],
+        [0.12, "#1b264e"],
+        [0.18, "#151f43"],
+        [0.26, "#101838"],
+        [0.4, "#0a1028"],
+      ],
+      seaNear: "#0f2446",
+      seaMid: "#132a50",
+      seaFar: "#1d3460",
+      seaShal: "#21406a",
+      seaShalHi: "#3a5a86",
+      foam: "#b8c8e0",
+      haze: "#2a3560",
+      hazeK: 1 / 9000,
+      hazeW: "#ffcf8a",
+      glow: "#ffd9a0",
+      cloudTop: "#6a76a0",
+      cloudUnder: "#2a3258",
     };
   }
 
@@ -621,8 +646,9 @@
     I.U.uSun.value.set(d[0], d[1], d[2]);
     W.sunDir = new T.Vector3(d[0], d[1], d[2]);
     // a golden key for the dusk shift: the island relights its baked buildings by the ratio of the two rigs
-    const sunC = name === "dusk" ? [1.0, 0.7, 0.46] : name === "fog" ? [0.78, 0.8, 0.84] : name === "morning" ? [1.0, 0.88, 0.72] : I.LIGHT.sun,
-      sky = name === "dusk" ? [0.56, 0.54, 0.7] : name === "fog" ? [0.62, 0.66, 0.72] : I.LIGHT.sky;
+    const sunC =
+        name === "dusk" ? [1.0, 0.7, 0.46] : name === "fog" ? [0.78, 0.8, 0.84] : name === "morning" ? [1.0, 0.88, 0.72] : name === "night" ? [0.4, 0.48, 0.82] : I.LIGHT.sun,
+      sky = name === "dusk" ? [0.56, 0.54, 0.7] : name === "fog" ? [0.62, 0.66, 0.72] : name === "night" ? [0.22, 0.27, 0.46] : I.LIGHT.sky;
     I.U.uLSun.value.set(sunC[0], sunC[1], sunC[2]);
     I.U.uLSky.value.set(sky[0], sky[1], sky[2]);
     I.U.uRelight.value = name === "day" ? 0 : 1;
@@ -638,7 +664,7 @@
     W.scene.fog = new T.FogExp2(G.haze, G.hazeK / SCALE);
     W.puffs.visible = !!L.puffs;
     W.puffMat.opacity = L.puffs ? 0.55 : 0;
-    if (WG.CAR_HEAD) WG.CAR_HEAD.emissive.set(name === "dusk" ? 0xfff2b0 : name === "fog" ? 0xbbb38a : 0x333322);
+    if (WG.CAR_HEAD) WG.CAR_HEAD.emissive.set(name === "dusk" || name === "night" ? 0xfff2b0 : name === "fog" ? 0xbbb38a : 0x333322);
   };
 
   // what the camera follows, so the houses in the way go see-through (null: nothing, as in the aerial views)

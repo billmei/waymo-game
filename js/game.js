@@ -321,7 +321,9 @@
 
   /* ---------- game state ---------- */
   const G = {
-    state: "boot", // boot | title | howto | brief | ready | play | timeup | result | final | pause
+    // boot | title | howto | brief | ready | play | timeup | result | final | pause, and Adopt-a-Waymo's adopt (the
+    // bird's-eye map) and adoptCare (a hands-on job at a Care Spot), both run by js/adopt/main.js
+    state: "boot",
     round: 0,
     t: 0,
     left: 0,
@@ -345,7 +347,12 @@
   } catch (e) {}
   const shift = () => SHIFTS[G.round];
   const active = () => Traffic.cars.filter((c) => c.problem);
+  // Adopt-a-Waymo's states; a hands-on job there plays like a job in a shift
+  const adopting = () => G.state === "adopt" || G.state === "adoptCare";
+  const onStreet = () => G.state === "play" || (G.state === "adoptCare" && !!JOB.active);
 
+  // show a state's screen. The list is the arcade's screens: any other state (the Adopt states) just hides them all,
+  // and Adopt-a-Waymo shows its own DOM by watching body[data-state]
   function setState(s) {
     G.state = s;
     G.stateT = 0;
@@ -508,6 +515,8 @@
     const nextM = MEDALS.slice().reverse().find((m) => G.score < m.at);
     $("#fn-next").textContent = nextM ? fmt(nextM.at - G.score) + " more points for " + nextM.name : "You are a legend of the fleet!";
     setState("final");
+    // a run of the arcade pays into the Adopt-a-Waymo garage, once a day
+    if (WG.adopt) WG.adopt.arcadeRun(G.score);
     W.setLook("dusk");
     setTimeout(() => G.state === "final" && VOX.say("disp.final." + (medal ? medal.name.toLowerCase() : "none")), 1400);
     A.music("results");
@@ -618,7 +627,8 @@
     bumpHud();
   }
 
-  function startJob(car) {
+  // opt (Adopt-a-Waymo's hands-on care): { round, done(res) } in place of the shift's scoring
+  function startJob(car, opt) {
     if (!car.problem || JOB.active) return;
     P.path = [];
     P.target = car;
@@ -630,15 +640,16 @@
     A.duck(true);
     holding = null;
     CAM.jobYaw = CAM.jobPitch = 0;
-    VOX.say("rider." + car.problem.type);
-    JOB.start(car.problem.type, car, { scene, camera, P, mii, round: G.round + 1, big, ray: rayAt, pickGround }, (res) => {
+    if (!opt) VOX.say("rider." + car.problem.type);
+    JOB.start(car.problem.type, car, { scene, camera, P, mii, round: opt ? opt.round : G.round + 1, big, ray: rayAt, pickGround }, (res) => {
       A.duck(false);
       G.mini = null;
       if (car.problem) {
         car.problem.busy = false;
         car.parts.sprite.visible = true;
       }
-      if (res && car.problem) jobDone(car, res);
+      if (opt) opt.done(res);
+      else if (res && car.problem) jobDone(car, res);
       P.target = null;
     });
   }
@@ -844,7 +855,13 @@
   const keys = new Set();
   addEventListener("keydown", (e) => {
     A.init();
-    if (JOB.active && G.state === "play") {
+    // the Adopt map takes its own keys (a hands-on job there goes to the job, below)
+    if (adopting() && !JOB.active) {
+      if (!e.repeat) keys.add(e.code);
+      if (WG.adopt && WG.adopt.key(e)) e.preventDefault();
+      return;
+    }
+    if (JOB.active && onStreet()) {
       if (!e.repeat) keys.add(e.code);
       if (e.code === "Escape") JOB.cancel();
       else if (JOB.key(e.code)) e.preventDefault();
@@ -981,7 +998,11 @@
   cv.addEventListener("pointerdown", (e) => {
     A.init();
     if (e.pointerType !== "mouse") touches.set(e.pointerId, [e.clientX, e.clientY]);
-    if (G.state !== "play") return;
+    if (adopting() && !JOB.active) {
+      if (WG.adopt) WG.adopt.pointer("down", e);
+      return;
+    }
+    if (!onStreet()) return;
     if (turnStart(e)) {
       if (e.pointerType !== "mouse") {
         let mx = 0,
@@ -994,7 +1015,7 @@
       }
       return;
     }
-    if (G.state === "play" && JOB.active) {
+    if (onStreet() && JOB.active) {
       e.preventDefault();
       try {
         cv.setPointerCapture(e.pointerId);
@@ -1022,6 +1043,10 @@
   });
   cv.addEventListener("pointermove", (e) => {
     if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (adopting() && !JOB.active) {
+      if (WG.adopt) WG.adopt.pointer("move", e);
+      return;
+    }
     if (turnMove(e)) return;
     if (JOB.active) JOB.pointer("move", e);
     if (holding && holding.id === e.pointerId) {
@@ -1031,6 +1056,10 @@
   });
   const endHold = (e) => {
     touches.delete(e.pointerId);
+    if (adopting() && !JOB.active) {
+      if (WG.adopt) WG.adopt.pointer("up", e);
+      return;
+    }
     if (turning) {
       if (e.pointerType === "mouse" || touches.size < 2) turning = null;
       return;
@@ -1043,7 +1072,10 @@
   cv.addEventListener(
     "wheel",
     (e) => {
-      if (G.state === "play" && !JOB.active) {
+      if (adopting() && !JOB.active) {
+        if (WG.adopt) WG.adopt.pointer("wheel", e);
+        e.preventDefault();
+      } else if (G.state === "play" && !JOB.active) {
         zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 10, 60);
         e.preventDefault();
       }
@@ -1107,6 +1139,10 @@
     A.sfx("select");
     resetRun();
     openBrief();
+  });
+  on("t-adopt", () => {
+    A.sfx("select");
+    if (WG.adopt) WG.adopt.enter();
   });
   on("t-how", () => {
     A.sfx("select");
@@ -1283,11 +1319,14 @@
   const tourMark = () => (W.marks.length ? W.marks[Math.floor(G.stateT / TOUR) % W.marks.length] : null);
   function cameraUpdate(dt) {
     let k = 2.2;
-    if (G.state === "play") {
+    if (onStreet()) {
       const q = (keys.has("KeyQ") ? 1 : 0) - (keys.has("KeyE") ? 1 : 0) + turnHold;
       if (q) turnCamera(q * 1.9 * dt);
     }
-    if (G.state === "title" || G.state === "howto" || G.state === "final") {
+    if (adopting() && !JOB.active) {
+      // Adopt-a-Waymo's bird's-eye map, and its swoops down to a Care Spot and back
+      k = WG.adopt.camera(dt, wantPos, wantLook);
+    } else if (G.state === "title" || G.state === "howto" || G.state === "final") {
       // a slow orbit over Slop Skies' San Francisco, around the downtown end of the city
       const a = 0.6 + G.t * 0.025;
       wantLook.set(420 * S, 60 * S, -620 * S);
@@ -1350,7 +1389,7 @@
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // the houses between the camera and the crew member (or, in a job, the car) go see-through
-    const street = G.state === "play" || G.state === "ready" || G.state === "timeup" || G.state === "pause";
+    const street = G.state === "play" || G.state === "ready" || G.state === "timeup" || G.state === "pause" || (G.state === "adoptCare" && JOB.active);
     if (!street) W.see(null);
     else if (JOB.active) W.see(_o.set(camLook.x, Math.min(camLook.y, P.pos.y), camLook.z));
     else W.see(P.pos);
@@ -1370,7 +1409,7 @@
     let ix = 0,
       iz = 0;
     const drives = JOB.active && JOB.active.drives;
-    if (G.state === "play" && (!JOB.active || drives)) {
+    if (onStreet() && (!JOB.active || drives)) {
       if (keys.has("KeyW") || keys.has("ArrowUp")) iz -= 1;
       if (keys.has("KeyS") || keys.has("ArrowDown")) iz += 1;
       if (keys.has("KeyA") || keys.has("ArrowLeft")) ix -= 1;
@@ -1422,7 +1461,7 @@
       const l = Math.hypot(ix, iz);
       dx = ix / l;
       dz = iz / l;
-    } else if (P.path.length && G.state === "play" && !JOB.active) {
+    } else if (P.path.length && onStreet() && !JOB.active) {
       const [wx, wz] = P.path[0],
         ddx = wx - P.pos.x,
         ddz = wz - P.pos.z,
@@ -1434,7 +1473,7 @@
       }
     }
     // hold Shift (or flip the board button) to ride the skateboard: faster, and it coasts
-    const riding = G.state === "play" && !JOB.active && (keys.has("ShiftLeft") || keys.has("ShiftRight") || boardOn);
+    const riding = onStreet() && !JOB.active && (keys.has("ShiftLeft") || keys.has("ShiftRight") || boardOn);
     if (riding !== P.riding) {
       P.riding = riding;
       if (riding) A.sfx("ollie");
@@ -1628,13 +1667,15 @@
     G.stateT += dt;
     const paused = G.state === "pause";
     if (!paused) {
-      Traffic.update(dt, G.t, G.state === "play" || G.state === "ready" ? P.pos : null, W.look);
+      Traffic.update(dt, G.t, G.state === "play" || G.state === "ready" || G.state === "adoptCare" ? P.pos : null, W.look);
       for (const c of Traffic.cars)
         if (c.beeped === G.t) A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
-      playerUpdate(dt);
-      playUpdate(dt);
+      // the Adopt map has no crew member to walk and no shift clock; its hands-on jobs do walk the crew member
+      if (G.state !== "adopt") playerUpdate(dt);
+      if (!adopting()) playUpdate(dt);
       JOB.update(dt);
     }
+    if (adopting() && WG.adopt) WG.adopt.update(dt);
     VOX.update(dt);
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();
@@ -1647,6 +1688,7 @@
     drawHud(dt);
     placeFloaters();
     placeTags();
+    if (adopting() && WG.adopt) WG.adopt.after();
   }
 
   function resize() {
@@ -1679,6 +1721,8 @@
   if (TOUCH) document.body.classList.add("touch");
   WG.G = G;
   WG.P = P;
+  // what Adopt-a-Waymo (js/adopt/) builds on
+  WG.game = { G, scene, camera, renderer, P, mii, CAM, keys, setState, big, tip, rayAt, pickGround, moveDistrict, startJob, toTitle, focusFirst, restPose, A, VOX, snap: () => (snapCamera = true) };
   WG.debug = {
     scene,
     camera,

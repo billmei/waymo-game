@@ -464,6 +464,34 @@
     },
   });
 
+  // Adopt-a-Waymo's garage: the bossa slowed right down, with a bell on top
+  SONGS.garage = Object.assign({}, SONGS.title, {
+    bpm: 84,
+    swing: 0.12,
+    lead: "bell",
+    leadV: 0.07,
+    melIdx: null,
+    drums(bar, b, t, step, d) {
+      d.shaker(t, b % 2 ? 0.03 : 0.06);
+      if (b === 0) d.kick(t, 0.22);
+      if ([3, 6].includes(b) && bar % 2 === 0) d.rim(t, 0.05);
+    },
+  });
+  // and its nights: slower still, just vibes, bass and a soft shaker
+  SONGS.night = Object.assign({}, SONGS.title, {
+    bpm: 68,
+    swing: 0.08,
+    lead: "vibes",
+    leadV: 0.055,
+    melIdx: null,
+    comp(bar, b, t, step, c, play) {
+      if (b === 0 || b === 5) c.notes.forEach((n, i) => play("ep", t, n, step * 2, 0.024, i * 0.15 - 0.2));
+    },
+    drums(bar, b, t, step, d) {
+      if (b % 2 === 0) d.shaker(t, 0.025);
+    },
+  });
+
   /* ---------- sequencer ---------- */
   const M = {
     cur: null,
