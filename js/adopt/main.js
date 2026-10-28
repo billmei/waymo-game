@@ -80,7 +80,7 @@
     U.update();
     U.coach();
     if (S.recovered) U.toast("🛟", "Your save couldn't be read, so the last good copy was restored.", "bad");
-    if (!S.cars.length) setTimeout(() => U.welcome(), 600);
+    if (!S.cars.length) setTimeout(() => !S.cars.length && U.welcome(), 600);
     else if (away && away.minutes >= 30)
       U.modal(
         "While you were away",
@@ -108,6 +108,7 @@
     G.CAM.yaw = W.start.yaw;
     G.snap();
     AD.active = false;
+    G.VOX.clear();
     G.toTitle();
   };
   AD.isActive = () => AD.active;

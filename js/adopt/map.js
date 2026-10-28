@@ -701,14 +701,15 @@
     for (const name in labels) {
       const L = labels[name],
         H = D.HOODS[name];
-      L.p.y = Sim.G.hoods[name].y + 30;
+      L.p.y = Sim.G.hoods[name].y;
       _v.copy(L.p).project(camera);
       // the plain neighbourhoods only show up close; the lands always do
       const show = (H.rank !== null || height < 900 * K) && _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05;
       L.on = show;
       L.sx = (_v.x * 0.5 + 0.5) * w;
       L.sy = (-_v.y * 0.5 + 0.5) * h;
-      if (show) L.e.style.transform = "translate(" + L.sx.toFixed(1) + "px," + L.sy.toFixed(1) + "px) translate(-50%,-50%)";
+      // just below the plaza, so a parked car's name tag (above it) stays clear
+      if (show) L.e.style.transform = "translate(" + L.sx.toFixed(1) + "px," + L.sy.toFixed(1) + "px) translate(-50%,40%)";
       if (L.e.hidden === show) L.e.hidden = !show;
     }
   };

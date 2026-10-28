@@ -191,10 +191,17 @@
     }
   }
 
+  // stop talking and forget what was waiting (leaving Adopt-a-Waymo, so its lines don't spill into a shift)
+  function clear() {
+    stop();
+    V.q.length = 0;
+  }
+
   WG.voice = {
     say,
     interrupt,
     stop,
+    clear,
     update,
     setOn,
     get on() {

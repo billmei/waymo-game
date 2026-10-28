@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
   p.on("console", (m) => m.type() === "error" && errs.push(m.text()));
   p.on("pageerror", (e) => errs.push(e.message));
   const shot = async (n) => {
-    await p.waitForTimeout(400);
+    await p.waitForTimeout(2500);
     await p.screenshot({ path: "adopt_" + n + ".png", timeout: 180000 });
     console.log("shot", n);
   };
