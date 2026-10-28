@@ -922,6 +922,7 @@
     c.minute = 360;
     c.night = false;
     c.sleepReady = false;
+    dailyDay(S);
     for (const car of S.cars.concat(S.stored))
       if (car.training && car.training.endsAt <= absMin(S)) {
         finishTraining(S, car);
@@ -1105,12 +1106,13 @@
      ====================================================================================================== */
   Sim.today = () => St.today(Sim.now());
   Sim.realTick = function (S) {
+    dailyDay(S);
     const now = Sim.now(),
       date = St.today(now);
     if (S.dailies.date !== date) {
       const first = !S.dailies.date;
-      // (the lands' dailies, done/day, follow the in-game day instead: see dailyDay)
-      S.dailies = { date, day: S.dailies.day, done: S.dailies.done || {}, gamePlays: {}, fish: 0, run: false, derby: 0 };
+      // (the dailies' counters follow the in-game day instead: see dailyDay)
+      S.dailies.date = date;
       // a dashpet sometimes picks up a tiny hanger-on of its own (purely for show)
       if (!first)
         for (const car of S.cars)
@@ -1495,13 +1497,20 @@
   /* ======================================================================================================
      the dailies
      ====================================================================================================== */
-  // the lands' dailies come back every in-game morning (not on the real calendar)
+  // the dailies (the lands' freebies, fishing, the Derby's prizes, the arcade's pay) come back every in-game morning
+  // (not on the real calendar)
   function dailyDay(S) {
-    if (S.dailies.day !== S.clock.day) {
-      S.dailies.day = S.clock.day;
-      S.dailies.done = {};
+    const d = S.dailies;
+    if (d.day !== S.clock.day) {
+      d.day = S.clock.day;
+      d.done = {};
+      d.gamePlays = {};
+      d.fish = 0;
+      d.run = false;
+      d.derby = 0;
     }
   }
+  Sim.dailyDay = dailyDay;
   Sim.dailyState = function (S, id) {
     dailyDay(S);
     const d = D.DAILIES[id],
@@ -1635,6 +1644,7 @@
   }
   // Pier 39 fishing: three casts a day; the more you fish, the better you get
   Sim.fish = function (S) {
+    dailyDay(S);
     if (!Sim.open(S, "Fisherman's Wharf")) return { ok: false };
     if (S.dailies.fish >= 3) return { ok: false, msg: "The fish are tired. Come back tomorrow." };
     S.dailies.fish++;
@@ -1884,6 +1894,7 @@
      ====================================================================================================== */
   Sim.arcadeScore = (res) => Math.round(250 + res.q * 250 + Math.max(0, 750 - res.time * 15));
   Sim.arcadeResult = function (S, kind, res) {
+    dailyDay(S);
     const score = Sim.arcadeScore(res),
       A = S.arcade,
       plays = S.dailies.gamePlays[kind] || 0,
@@ -1902,6 +1913,7 @@
   };
   // a whole arcade run (the five shifts) pays into the Adopt save once a day
   Sim.arcadeRun = function (S, score) {
+    dailyDay(S);
     if (S.dailies.run) return 0;
     S.dailies.run = true;
     const f = Math.min(D.ARCADE.runCap, Math.round(score / D.ARCADE.runDivisor));
@@ -2005,6 +2017,7 @@
     }
   }
   Sim.derbyMove = function (S, move, itemId) {
+    dailyDay(S);
     const race = S.derby.race;
     if (!race || race.done) return { ok: false };
     if (move === "item") {
