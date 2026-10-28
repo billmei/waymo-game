@@ -68,7 +68,7 @@
       settings: { offline: "gentle", speed: 1 },
       clock: { day: 1, minute: 8 * 60, weather: "clear", night: false, sleepReady: false },
       player: { name: "Crew", rank: 1, xp: 0, fares: 300, avatar: "car", trophies: [], avatars: ["car", "pigeon"] },
-      dailies: { date: "", done: {}, gamePlays: {}, fish: 0, run: false, wishes: 0 },
+      dailies: { date: "", day: 0, done: {}, gamePlays: {}, fish: 0, run: false, wishes: 0 },
       unlocked: { hoods: [], carSlots: 1 },
       inventory: { snack_volt_bar: 2, wipe_basic: 1, toy_tennis: 1 },
       garage: { bays: 1, wash: 0, vac: 0, pods: 0, fridge: 0, rooms: 0, vault: 0, furniture: [] },

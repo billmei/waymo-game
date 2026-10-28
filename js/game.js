@@ -630,6 +630,7 @@
   // opt (Adopt-a-Waymo's hands-on care): { round, done(res) } in place of the shift's scoring
   function startJob(car, opt) {
     if (!car.problem || JOB.active) return;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     P.path = [];
     P.target = car;
     G.mini = car;
@@ -1123,7 +1124,7 @@
     focusFirst("#title");
   }
   function pause() {
-    if (G.state !== "play") return;
+    if (G.state !== "play" || JOB.active) return;
     G.paused = "play";
     setState("pause");
     A.sfx("open");

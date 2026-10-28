@@ -262,9 +262,10 @@
         C.abort();
         return true;
       }
-      U.menu();
+      if (!e.repeat) U.menu();
       return true;
     }
+    if (e.repeat && !/^(Arrow|Key[WASDQE])/.test(e.code)) return true;
     if (typing) {
       if (e.code === "Enter") {
         const b = document.querySelector("#ad-modal .panel-f .btn.primary");
@@ -273,11 +274,16 @@
       }
       return false;
     }
-    if (e.code === "KeyP" && !U.modalOpen) {
+    if (U.modalOpen && (e.code === "Space" || e.code === "Enter") && (!onBtn || document.getElementById("ad-timing"))) {
+      const b = document.querySelector("#ad-modal .panel-f .btn.primary") || document.querySelector("#ad-modal .panel-f button");
+      if (b) b.click();
+      return true;
+    }
+    if (e.code === "KeyP" && !U.modalOpen && !C.active) {
       U.menu();
       return true;
     }
-    if (e.code === "Space" && !onBtn) {
+    if (e.code === "Space" && !onBtn && !U.modalOpen && !C.active) {
       const S = AD.S;
       if (S.settings.speed) {
         lastSpeed = S.settings.speed;
@@ -287,7 +293,7 @@
       return true;
     }
     const sp = { Digit1: 1, Digit2: 2, Digit3: 4, Digit0: 0 }[e.code];
-    if (sp !== undefined && !U.modalOpen) {
+    if (sp !== undefined && !U.modalOpen && !C.active) {
       AD.S.settings.speed = sp;
       U.update();
       return true;
@@ -323,10 +329,11 @@
   AD.care = function (id, kind) {
     const S = AD.S,
       car = Sim.find(S, id);
-    if (!car || C.active) return;
+    if (!car || (C.active && C.active.phase !== "up")) return;
     const incident = kind === "doors" || kind === "cone",
       hood = Sim.careSpot(car) ? car.sim.at : Sim.nearestCare(car);
     if (!incident && !Sim.careSpot(car)) return U.toast("📍", "Call " + Sim.nameOf(car) + " to a Care Spot first.", "bad");
+    const prevTask = car.sim.task;
     if (!incident) car.sim.task = "care";
     M.cam.follow = id;
     C.start({
@@ -339,14 +346,17 @@
           U.toast("💖", Sim.nameOf(car) + " feels " + (r && r.need ? Sim.label(r.need, car.needs[r.need]).toLowerCase() : "free to go") + "! +" + (r ? r.bond.toFixed(1) : "0.3") + " bond", "good", id);
           g().VOX.say("adopt.care");
           M.hop(id);
-        } else U.toast("🙂", "Maybe later. " + Sim.nameOf(car) + " doesn't mind.", "", id);
+        } else {
+          if (!incident && car.sim.task === "care") car.sim.task = prevTask === "care" ? "care" : car.sim.at === Sim.HOME ? "garage" : "idle";
+          U.toast("🙂", "Maybe later. " + Sim.nameOf(car) + " doesn't mind.", "", id);
+        }
         AD.changed();
         save();
       },
     });
   };
   AD.arcade = function (kind) {
-    if (C.active) return;
+    if (C.active && C.active.phase !== "up") return;
     C.start({
       kind,
       arcade: true,

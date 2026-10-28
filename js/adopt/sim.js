@@ -716,6 +716,10 @@
     } else if (atHome) {
       ch += charging ? 28 : -1;
       cl += 5;
+      // the garage's auto-wash, auto-vac and nap pods: +15 an hour per level for every car at home
+      sh += 15 * S.garage.wash;
+      cz += 15 * S.garage.vac;
+      cl += 15 * S.garage.pods;
     } else if (s.task !== "tow") ch -= 0.5;
     if (has(car, "neat_freak") && plus(car)) sh *= 0.5;
     if (n.mood < 20 && cl < 0) cl *= 1.5;
@@ -778,9 +782,11 @@
     const home = S.cars.filter((car) => !car.sim.from && car.sim.at === Sim.HOME).sort((a, b) => a.needs.charge - b.needs.charge);
     const charging = new Set(home.filter((car) => car.needs.charge < 100).slice(0, S.garage.bays));
     for (const car of S.cars) {
+      if (car.training && car.training.endsAt <= absMin(S)) finishTraining(S, car);
       decay(S, car, charging.has(car), away);
       carMinute(S, car, away);
     }
+    for (const car of S.stored) if (car.training && car.training.endsAt <= absMin(S)) finishTraining(S, car);
     if (c.minute >= 1440) startNight(S, away);
   }
   function carMinute(S, car, away) {
@@ -897,14 +903,14 @@
     const entry = { day: c.day, lines: lines || diaryLines(S) };
     S.diary.unshift(entry);
     if (S.diary.length > 30) S.diary.length = 30;
-    // overnight in the garage: the bays, the auto-wash, the auto-vac and the nap pods
+    // overnight in the garage (midnight to 06:00, six hours): the bays, and six hours of the auto-wash, auto-vac and nap pods
     const home = S.cars.filter((car) => Sim.atHome(car)).sort((a, b) => a.needs.charge - b.needs.charge);
     home.forEach((car, i) => {
       const n = car.needs;
       n.charge = Math.min(Math.max(100, n.charge), n.charge + (i < S.garage.bays ? 90 : 25));
-      n.shine = Math.min(100, n.shine + 20 * S.garage.wash);
-      n.cozy = Math.min(100, n.cozy + 20 * S.garage.vac);
-      n.clarity = Math.min(100, n.clarity + 20 * S.garage.pods + 10);
+      n.shine = Math.min(100, n.shine + 6 * 15 * S.garage.wash);
+      n.cozy = Math.min(100, n.cozy + 6 * 15 * S.garage.vac);
+      n.clarity = Math.min(100, n.clarity + 6 * 15 * S.garage.pods + 10);
       n.mood = Math.min(100, n.mood + 8);
       car.sim.task = car.training ? car.sim.task : "garage";
     });
@@ -916,6 +922,11 @@
     c.minute = 360;
     c.night = false;
     c.sleepReady = false;
+    for (const car of S.cars.concat(S.stored))
+      if (car.training && car.training.endsAt <= absMin(S)) {
+        finishTraining(S, car);
+        car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+      }
     c.weather = rollWeather(S);
     S.req = [];
     newToday(S);
@@ -1098,7 +1109,8 @@
       date = St.today(now);
     if (S.dailies.date !== date) {
       const first = !S.dailies.date;
-      S.dailies = { date, done: {}, gamePlays: {}, fish: 0, run: false, derby: 0 };
+      // (the lands' dailies, done/day, follow the in-game day instead: see dailyDay)
+      S.dailies = { date, day: S.dailies.day, done: S.dailies.done || {}, gamePlays: {}, fish: 0, run: false, derby: 0 };
       // a dashpet sometimes picks up a tiny hanger-on of its own (purely for show)
       if (!first)
         for (const car of S.cars)
@@ -1111,7 +1123,10 @@
       if (S.auction.date !== date) S.auction = { date, lots: [] };
     }
     for (const car of S.cars.concat(S.stored)) {
-      if (car.training && now >= car.training.endsAt) finishTraining(S, car);
+      if (car.training) {
+        if (car.training.endsAt > 1e9) car.training.endsAt = absMin(S) + 60;
+        if (absMin(S) >= car.training.endsAt) finishTraining(S, car);
+      }
       // the Sourdough Starter grows into a loaf over 30 days
       if (car.dashpet && car.dashpet.id === "starter" && St.daysBetween(car.dashpet.since, date) >= 30) {
         car.dashpet.since = date;
@@ -1480,12 +1495,20 @@
   /* ======================================================================================================
      the dailies
      ====================================================================================================== */
+  // the lands' dailies come back every in-game morning (not on the real calendar)
+  function dailyDay(S) {
+    if (S.dailies.day !== S.clock.day) {
+      S.dailies.day = S.clock.day;
+      S.dailies.done = {};
+    }
+  }
   Sim.dailyState = function (S, id) {
+    dailyDay(S);
     const d = D.DAILIES[id],
       hood = Object.keys(D.HOODS).find((h) => D.HOODS[h].daily === id);
     if (!Sim.open(S, hood)) return { open: false, why: "Unlocks at Crew Rank " + D.HOODS[hood].rank };
     if (d.rank && S.player.rank < d.rank) return { open: false, why: "Unlocks at Crew Rank " + d.rank };
-    if (S.dailies.done[id]) return { open: false, done: true, why: "Come back tomorrow" };
+    if (S.dailies.done[id]) return { open: false, done: true, why: "Come back tomorrow morning" };
     return { open: true };
   };
   const WHEEL_W = [18, 14, 12, 10, 8, 10, 6, 3];
@@ -1730,12 +1753,12 @@
   };
 
   /* ======================================================================================================
-     the Driving Academy (real time)
+     the Driving Academy (1 in-game hour per course)
      ====================================================================================================== */
   const CHIP_FOR = (lv) => (lv <= 3 ? "chip_lombard" : lv <= 6 ? "chip_sutro" : lv <= 9 ? "chip_coit" : "chip_bridge");
   Sim.course = (car, stat) => {
     const lv = clamp(Math.floor(car.stats[stat] / 3) + 1, 1, 12);
-    return { level: lv, hours: lv, fares: 40 * lv, chip: CHIP_FOR(lv) };
+    return { level: lv, hours: 1, fares: 40 * lv, chip: CHIP_FOR(lv) };
   };
   Sim.train = function (S, carId, stat) {
     const car = Sim.find(S, carId);
@@ -1748,9 +1771,9 @@
     if (!Sim.has(S, c.chip)) return { ok: false, msg: "The course needs a " + D.ITEMS[c.chip].name + "." };
     fares(S, -c.fares);
     Sim.take(S, c.chip);
-    car.training = { stat, endsAt: Sim.now() + (c.hours * 3600e3) / Sim.fast };
+    car.training = { stat, endsAt: absMin(S) + c.hours * 60 };
     if (!S.clock.night) goTo(S, car, "Twin Peaks", "toSchool");
-    return { ok: true, msg: nameOf(car) + " enrolled in Level " + c.level + " " + D.STATS[stat].name + ". Back in " + c.hours + " real hour" + (c.hours > 1 ? "s" : "") + "." };
+    return { ok: true, msg: nameOf(car) + " enrolled in Level " + c.level + " " + D.STATS[stat].name + ". Back in " + c.hours + " in-game hour" + (c.hours > 1 ? "s" : "") + "." };
   };
   function finishTraining(S, car) {
     const st = car.training.stat,

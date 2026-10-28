@@ -988,6 +988,7 @@ body[data-state="play"] #snd {
   transition: transform 0.15s;
 }
 body.in-job #h-jobs,
+body.in-job #h-pause,
 body.in-job .prompt {
   display: none;
 }

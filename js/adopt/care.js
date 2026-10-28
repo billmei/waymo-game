@@ -22,7 +22,16 @@
   C.start = function (o) {
     const g = WG.game,
       M = WG.adoptMap;
-    if (C.active) return false;
+    if (C.active) {
+      if (C.active.phase !== "up") return false;
+      if (C.active.street) {
+        fleetVisible(false);
+        g.mii.root.visible = false;
+        M.show(true);
+      }
+      C.active = null;
+    }
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const hood = o.hood,
       zone = Sim.CARE[hood] || "lombard",
       hp = M.hoodPos(hood);

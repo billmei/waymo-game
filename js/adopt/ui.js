@@ -266,6 +266,11 @@
   /* ---------- modals ---------- */
   U.modal = function (title, html, o) {
     o = o || {};
+    if (U.onModalClose) {
+      const f = U.onModalClose;
+      U.onModalClose = null;
+      f();
+    }
     const m = $("#ad-modal");
     $(".panel-h span", m).innerHTML = title;
     $(".panel-h small", m).innerHTML = o.sub || "";
@@ -421,10 +426,10 @@
       }
     return t;
   }
-  function when(ms) {
-    const d = Math.max(0, ms - Sim.now()),
-      m = Math.round(d / 60000);
-    return m < 1 ? "any moment" : m < 60 ? "in " + m + " min" : "in " + Math.floor(m / 60) + " h " + (m % 60) + " min";
+  function when(endMin) {
+    if (endMin > 1e9) return "in 1 in-game hour";
+    const m = Math.max(0, endMin - Sim.absMin(S));
+    return m < 1 ? "any moment" : m < 60 ? "in " + m + " min (" + Sim.fmtClock(endMin % 1440) + ")" : "in " + Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "") + " (" + Sim.fmtClock(endMin % 1440) + ")";
   }
   H.careMenu = (ds) => {
     const car = Sim.find(S, ds.id);
@@ -856,7 +861,7 @@
     U.act(Sim.showEnter(S, ds.id), { icon: "🎀" });
   };
   FEAT.academy = () => {
-    let h = "<h3>🎓 Twin Peaks Driving Academy</h3><p class='ad-hint'>Courses take real time (Level 1: an hour, up to 12 hours). Pay Fares and a firmware chip; the car studies at the top of the hill and comes back +1 (sometimes +2).</p>";
+    let h = "<h3>🎓 Twin Peaks Driving Academy</h3><p class='ad-hint'>Courses take 1 in-game hour. Pay Fares and a firmware chip; the car studies at the top of the hill and comes back +1 (sometimes +2).</p>";
     const at = S.cars.filter((c) => c.training);
     if (at.length) h += "<ul class='ad-list'>" + at.map((c) => "<li>🎓 " + nm(c) + ": " + D.STATS[c.training.stat].name + ", back " + when(c.training.endsAt) + "</li>").join("") + "</ul>";
     return h + "<div class='ad-acts'>" + btn("enrol", "Enrol a car", { cls: "tiny primary" }) + "</div>";
@@ -1119,6 +1124,7 @@
     return { title: "Arcade", sub: "Games for Fares", html: h, after: (b) => $$("canvas[data-icon]", b).forEach((cv) => WG.drawIcon(cv.getContext("2d"), cv.dataset.icon, 32, 34, 1)) };
   };
   H.play = (ds) => {
+    U.closeModal();
     U.close();
     WG.adopt.arcade(ds.k);
   };
@@ -1244,7 +1250,7 @@
         <li>🔋 <b>Needs</b>: Charge, Shine, Cozy, Senses and Clarity drop as a car drives. A bubble shows the most urgent. Use items anywhere, or call the car to a Care Spot 🔧 and do the job by hand (more bond).</li>
         <li>★ <b>Lands</b>: each neighbourhood with a label is a land, with a shop, a daily freebie (★ when it's waiting) and things to do. More open as your Crew Rank rises.</li>
         <li>❤️ <b>Bond</b>: pats, items and hands-on care earn hearts. Hearts unlock a nickname, a horn, the lidar dance, Ride Along and a trait upgrade.</li>
-        <li>🌙 <b>Days</b>: an in-game day is about 13 minutes. At midnight the cars drive home and Dispatch writes the diary. The dailies reset on the real calendar.</li>
+        <li>🌙 <b>Days</b>: an in-game day is about 13 minutes. At midnight the cars drive home and Dispatch writes the diary. The lands' dailies come back every in-game morning.</li>
         <li>⏸ <b>Speed</b>: 1×, 2×, 4× or paused at the top. <kbd>Space</kbd> pauses. <kbd>Esc</kbd> closes a panel or opens the menu.</li>
       </ul>`;
     return { title: "How to Play", sub: "Adopt-a-Waymo", html: h };
@@ -1277,7 +1283,7 @@
         '<button type="button" class="tgl" data-a="setOff" role="switch" aria-checked="' + (off === "gentle") + '"><span>Fleet keeps going while I\'m away (gently)</span><i aria-hidden="true"></i></button>' +
         '<button type="button" class="tgl" data-a="setMusic" role="switch" aria-checked="' + A().musicOn + '"><span>Music</span><i aria-hidden="true"></i></button>' +
         '<button type="button" class="tgl" data-a="setVoice" role="switch" aria-checked="' + WG.game.VOX.on + '"><span>Voices &amp; captions</span><i aria-hidden="true"></i></button>' +
-        "</div><p class='ad-hint'>Away, the fleet runs at a sixth of the speed for up to a day, and needs never drop below 25. Turn it off to stop the clock while you're gone. The dailies reset at midnight either way.</p>",
+        "</div><p class='ad-hint'>Away, the fleet runs at a sixth of the speed for up to a day, and needs never drop below 25. Turn it off to stop the clock while you're gone.</p>",
       {
         buttons: [
           ["quit", "Save & quit to title"],
@@ -1359,6 +1365,7 @@
     for (const b of $$("#ad-speed button"))
       b.addEventListener("click", () => {
         S.settings.speed = +b.dataset.sp;
+        b.blur();
         A().sfx("click");
         top();
       });
