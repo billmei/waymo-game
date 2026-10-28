@@ -11997,7 +11997,7 @@ void main(){vec4 t=texture2D(uAtlas,vUv);float l=pow(smoothstep(0.10,0.92,t.r),1
     });
     const mesh = new T.Mesh(g, m);
     mesh.frustumCulled = false;
-    mesh.renderOrder = -1;
+    mesh.renderOrder = 3;
     mesh.name = "cloud-quads";
     scn.add(mesh);
     CLD = {
