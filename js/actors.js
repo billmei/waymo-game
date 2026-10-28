@@ -710,8 +710,11 @@
         d.pivot.rotation.y = open ? d.side * 1.1 : 0;
       });
     }
-    P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : 0x36d3c4);
-    P.ring.material.emissive.set(p && p.type === "charge" ? 0x551010 : 0x0b4a44);
+    // red for a flat battery; otherwise the car's own colour (teal, or an adopted car's signature colour, ringCol)
+    P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : this.ringCol || 0x36d3c4);
+    if (p && p.type === "charge") P.ring.material.emissive.set(0x551010);
+    else if (!this.ringCol) P.ring.material.emissive.set(0x0b4a44);
+    else P.ring.material.emissive.copy(P.ring.material.color).multiplyScalar(0.3);
     this.bubbleT = 0;
   };
   Car.prototype.showDirt = function (spots) {

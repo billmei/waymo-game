@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/adopt.css" />
   </head>
   <body data-state="boot">
     <canvas id="gl" aria-label="The city"></canvas>
@@ -87,6 +88,7 @@
       </div>
       <div class="menu">
         <button type="button" class="btn primary" id="t-start">Start Shift</button>
+        <button type="button" class="btn adopt" id="t-adopt">Adopt-a-Waymo 🐾</button>
         <button type="button" class="btn" id="t-how">How to Play</button>
       </div>
       <p class="t-best" id="t-best"></p>
@@ -239,6 +241,53 @@
     </div>
     <div id="job-words" aria-hidden="true"></div>
 
+    <!-- ===== Adopt-a-Waymo (js/adopt/): the labels and name tags over the map, then the panels ===== -->
+    <div id="ad-hoods" hidden></div>
+    <div id="ad-tags" hidden></div>
+    <div id="adopt" hidden>
+      <header id="ad-top">
+        <button type="button" id="ad-menu-btn" class="round-btn" aria-label="Menu (Esc)" title="Menu (Esc)">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke-width="2.6" stroke-linecap="round" /></svg>
+        </button>
+        <div class="card ad-clock"><b id="ad-time">08:00</b><small id="ad-day">Day 1</small></div>
+        <div class="card ad-fares"><small>Fares</small><b id="ad-fares">◎0</b></div>
+        <div class="card ad-rank" id="ad-rank"><small id="ad-rank-n">Crew Rank 1</small><i class="ad-bar"><u id="ad-xp"></u></i></div>
+        <div id="ad-speed" class="card" role="group" aria-label="Game speed">
+          <button type="button" data-sp="0" aria-label="Pause (Space)" title="Pause (Space)">❚❚</button>
+          <button type="button" data-sp="1" aria-label="Normal speed (1)">1×</button>
+          <button type="button" data-sp="2" aria-label="Double speed (2)">2×</button>
+          <button type="button" data-sp="4" aria-label="Four times speed (3)">4×</button>
+        </div>
+        <button type="button" id="ad-inbox-btn" class="round-btn" aria-label="Inbox">🔔<span id="ad-inbox-n"></span></button>
+      </header>
+      <nav id="ad-dock" aria-label="Adopt-a-Waymo">
+        <button type="button" data-p="garage"><span>🏠</span>Garage</button>
+        <button type="button" data-p="inventory"><span>🎒</span>Items</button>
+        <button type="button" data-p="album"><span>📮</span>Album</button>
+        <button type="button" data-p="arcade"><span>🕹️</span>Arcade</button>
+        <button type="button" data-p="lot"><span>🐾</span>Adopt</button>
+        <button type="button" data-p="diary"><span>📔</span>Diary</button>
+        <button type="button" data-p="help"><span>❔</span>Help</button>
+      </nav>
+      <div id="ad-strip" aria-label="Your fleet"></div>
+      <aside id="ad-panel" aria-labelledby="ad-ph-t" hidden>
+        <header class="ad-ph">
+          <div><h2 id="ad-ph-t"></h2><small></small></div>
+          <button type="button" class="x round-btn" aria-label="Close (Esc)">✕</button>
+        </header>
+        <div class="ad-pb"></div>
+      </aside>
+      <div id="ad-coach" class="card" hidden><p></p><div><small></small><button type="button" class="btn tiny primary">Next</button></div></div>
+      <div id="ad-toasts" aria-live="polite"></div>
+      <section id="ad-modal" class="screen" role="dialog" aria-modal="true" hidden>
+        <div class="panel">
+          <header class="panel-h"><small></small><span></span></header>
+          <div class="panel-b"></div>
+          <div class="panel-f"></div>
+        </div>
+      </section>
+    </div>
+
     <button type="button" id="snd" class="round-btn" aria-label="Sound" aria-pressed="true">
       <svg viewBox="0 0 24 24" class="on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
       <svg viewBox="0 0 24 24" class="off"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
@@ -260,6 +309,13 @@
     <script src="js/actors.js"></script>
     <script src="js/jobs.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/adopt/data.js"></script>
+    <script src="js/adopt/state.js"></script>
+    <script src="js/adopt/sim.js"></script>
+    <script src="js/adopt/map.js"></script>
+    <script src="js/adopt/care.js"></script>
+    <script src="js/adopt/ui.js"></script>
+    <script src="js/adopt/main.js"></script>
     <script>
       // the pause menu shows the How to Play instructions too
       document.getElementById("pz-how").innerHTML = document.querySelector("#howto .panel-b").innerHTML;

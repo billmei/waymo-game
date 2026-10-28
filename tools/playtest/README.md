@@ -6,6 +6,7 @@ To run them, serve the repository on port 8123 (`python3 -m http.server 8123` fr
 
 | Script | What it does |
 | --- | --- |
+| `adopt.js` | Adopt-a-Waymo: adopts a car, runs the clock, opens the panels and the prize wheel, swoops down for a hands-on job and back, then checks an arcade shift still starts (`adopt_*.png`). |
 | `dump.js` | Prints every island landmark (`WG.isle.MARKS`): position, ground height, height. |
 | `ev.js '<js expression>'` | Evaluates an expression in the booted page and prints the result. Used for terrain heights, collider checks and similar. |
 | `probe.js '<json zones>'` | ASCII map of a district grid: district name, water (`~`) or collider (`#`) at each street corner. |
