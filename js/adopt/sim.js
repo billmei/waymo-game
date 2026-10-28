@@ -897,12 +897,13 @@
     const entry = { day: c.day, lines: lines || diaryLines(S) };
     S.diary.unshift(entry);
     if (S.diary.length > 30) S.diary.length = 30;
-    // overnight in the garage: the bays, the auto-wash and the nap pods
+    // overnight in the garage: the bays, the auto-wash, the auto-vac and the nap pods
     const home = S.cars.filter((car) => Sim.atHome(car)).sort((a, b) => a.needs.charge - b.needs.charge);
     home.forEach((car, i) => {
       const n = car.needs;
       n.charge = Math.min(Math.max(100, n.charge), n.charge + (i < S.garage.bays ? 90 : 25));
       n.shine = Math.min(100, n.shine + 20 * S.garage.wash);
+      n.cozy = Math.min(100, n.cozy + 20 * S.garage.vac);
       n.clarity = Math.min(100, n.clarity + 20 * S.garage.pods + 10);
       n.mood = Math.min(100, n.mood + 8);
       car.sim.task = car.training ? car.sim.task : "garage";

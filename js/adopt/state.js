@@ -71,7 +71,7 @@
       dailies: { date: "", done: {}, gamePlays: {}, fish: 0, run: false, wishes: 0 },
       unlocked: { hoods: [], carSlots: 1 },
       inventory: { snack_volt_bar: 2, wipe_basic: 1, toy_tennis: 1 },
-      garage: { bays: 1, wash: 0, pods: 0, fridge: 0, rooms: 0, vault: 0, furniture: [] },
+      garage: { bays: 1, wash: 0, vac: 0, pods: 0, fridge: 0, rooms: 0, vault: 0, furniture: [] },
       cars: [],
       stored: [],
       adopted: 0,

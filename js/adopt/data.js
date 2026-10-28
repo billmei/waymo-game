@@ -972,6 +972,7 @@ Hunters Point: Candlestick`;
   D.GARAGE = {
     bays: { name: "Charger bays", icon: "🔌", max: 4, cost: [0, 800, 2500, 6000], desc: "Each bay charges one car at home (+15 Charge an hour)." },
     wash: { name: "Auto-wash", icon: "🫧", max: 2, cost: [0, 1500, 5000], desc: "A slow wash overnight: +20 Shine per level for every car at home." },
+    vac: { name: "Auto-vac", icon: "🌀", max: 2, cost: [0, 1500, 5000], desc: "A cabin sweep overnight: +20 Cozy per level for every car at home." },
     pods: { name: "Nap pods", icon: "😴", max: 2, cost: [0, 1500, 5000], desc: "A deep rest overnight: +20 Clarity per level." },
     fridge: { name: "Snack fridge", icon: "🧊", max: 3, cost: [0, 600, 2000, 5000], desc: "More inventory space: 40, 60, 90, then 130 items." },
     rooms: { name: "Rooms", icon: "🏠", max: 3, cost: [0, 1200, 4000, 9000], desc: "Furniture slots: 2, 4, 6, then 8." },
