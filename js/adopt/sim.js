@@ -283,7 +283,7 @@
     }
     const w = D.ITEMS["wrap_" + car.wrap];
     if (w) s.charm += w.rarity >= 70 ? 2 : w.rarity >= 45 ? 1 : 0;
-    if (car.needs.shine >= 80) s.charm += 1;
+    if (car.needs.cleanliness >= 80) s.charm += 1;
     const pet = car.dashpet && car.dashpet.id;
     if (pet === "parrot") s.charm += 2;
     if (pet === "mini_bison") s.range += 2;
@@ -549,7 +549,7 @@
     // the cabin after the rider
     let mess = 1.4 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
     if (car.dashpet && car.dashpet.id === "succulent") mess *= 0.6;
-    car.needs.cozy = clamp(car.needs.cozy - mess, AWAY ? Math.min(car.needs.cozy, 25) : 0, 100);
+    car.needs.cleanliness = clamp(car.needs.cleanliness - mess, AWAY ? Math.min(car.needs.cleanliness, 25) : 0, 100);
     s.emote = { k: "◎", at: absMin(S) };
     Sim.emit(S, { type: "ride", carId: car.id, fare, rider: r.rider, from: r.from, to: r.to });
     // friendship, rider cards and lucky finds
@@ -665,7 +665,7 @@
   function moodTarget(S, car, hood, atHome) {
     const n = car.needs,
       sw = has(car, "neat_freak") ? 2 : 1;
-    const base = (Math.min(100, n.charge) * 1.2 + n.shine * sw + n.cozy + n.senses + n.clarity) / (4.2 + sw);
+    const base = (Math.min(100, n.charge) * 1.2 + n.cleanliness * sw + n.code) / (2.2 + sw);
     let t = base * 0.8 + 10 + car.bond * 2;
     for (const k of D.NEED_KEYS) if (n[k] < 10) t -= 6;
     const tags = D.HOODS[hood].tags;
@@ -698,32 +698,30 @@
       fogHere = S.clock.weather === "fog" && tags.includes("fog"),
       fogSafe = has(car, "fog_lover") || (car.dashpet && car.dashpet.id === "mini_karl");
     let ch = 0,
-      sh = 0,
-      cz = 0,
-      se = 0,
-      cl = 0;
+      cln = 0,
+      cd = 0;
     if (moving) {
       let c = tags.includes("hills") ? 9.5 : 6.5;
       if (tags.includes("hills") && has(car, "hill_hater") && !plus(car)) c *= 1.6;
       if (has(car, "speed_demon") && !plus(car)) c *= 1.2;
       c *= 1 - Math.min(0.6, e.range * 0.02);
       ch -= c;
-      sh -= tags.includes("beach") ? 5 : 2.5;
-      if (S.clock.weather === "drizzle") sh -= 4;
-      if (tags.includes("downtown")) cz -= 4.5 * (has(car, "foodie") ? 1.5 : 1) * (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
-      se -= tags.includes("park") ? 4 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1) : 1.6;
-      cl -= fogHere && !fogSafe ? 6.5 : 1.6;
-      if (fogHere && has(car, "fog_lover") && plus(car)) cl += 4;
+      let clnDrain = tags.includes("beach") ? 3.5 : 1.8;
+      if (S.clock.weather === "drizzle") clnDrain += 2.5;
+      if (tags.includes("downtown")) clnDrain += 2.5 * (has(car, "foodie") ? 1.5 : 1) * (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
+      if (tags.includes("park")) clnDrain += 2.5 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1);
+      cln -= clnDrain;
+      cd -= fogHere && !fogSafe ? 6.5 : 1.6;
+      if (fogHere && has(car, "fog_lover") && plus(car)) cd += 4;
     } else if (atHome) {
       ch += charging ? 28 : -1;
-      cl += 5;
+      cd += 5;
       // the garage's auto-wash, auto-vac and nap pods: +15 an hour per level for every car at home
-      sh += 15 * S.garage.wash;
-      cz += 15 * S.garage.vac;
-      cl += 15 * S.garage.pods;
+      cln += 15 * S.garage.wash + 15 * S.garage.vac;
+      cd += 15 * S.garage.pods;
     } else if (s.task !== "tow") ch -= 0.5;
-    if (has(car, "neat_freak") && plus(car)) sh *= 0.5;
-    if (n.mood < 10 && cl < 0) cl *= 1.5;
+    if (has(car, "neat_freak") && plus(car)) cln *= 0.5;
+    if (n.mood < 10 && cd < 0) cd *= 1.5;
     const k = 1 / 60,
       floor = away ? 25 : 0,
       dec = (key, d) => {
@@ -734,10 +732,8 @@
         else n[key] = Math.min(v, key === "charge" ? Math.max(100, n[key]) : 100);
       };
     dec("charge", ch);
-    dec("shine", sh);
-    dec("cozy", cz);
-    dec("senses", se);
-    dec("clarity", cl);
+    dec("cleanliness", cln);
+    dec("code", cd);
     // an overcharged car settles back down
     if (n.charge > 100 && !moving) n.charge = Math.max(100, n.charge - 2 * k);
     // mood drifts toward its target at 10 an hour, never below 5
@@ -913,9 +909,8 @@
     home.forEach((car, i) => {
       const n = car.needs;
       n.charge = Math.min(Math.max(100, n.charge), n.charge + (i < S.garage.bays ? 90 : 25));
-      n.shine = Math.min(100, n.shine + 6 * 15 * S.garage.wash);
-      n.cozy = Math.min(100, n.cozy + 6 * 15 * S.garage.vac);
-      n.clarity = Math.min(100, n.clarity + 6 * 15 * S.garage.pods + 10);
+      n.cleanliness = Math.min(100, n.cleanliness + 6 * 15 * (S.garage.wash + S.garage.vac));
+      n.code = Math.min(100, n.code + 6 * 15 * S.garage.pods + 10);
       n.mood = Math.min(100, n.mood + 8);
       car.sim.task = car.training ? car.sim.task : "garage";
     });
@@ -1008,8 +1003,13 @@
   Sim.forceEvent = (S, car, id) => applyEvent(S, car, D.EVENTS.find((e) => e.id === id), false);
   function applyEvent(S, car, ev, away) {
     if (!ev) return;
-    const fx = ev.fx,
+    const rawFx = ev.fx || {},
+      fx = {},
       n = car.needs;
+    for (const [rk, rv] of Object.entries(rawFx)) {
+      const k = rk === "shine" || rk === "cozy" || rk === "senses" ? "cleanliness" : rk === "clarity" ? "code" : rk;
+      fx[k] = (fx[k] || 0) + rv;
+    }
     if (ev.id === "pigeon_home" && car.dashpet && car.dashpet.id === "pigeon_pal" && R(S) < 0.5) return;
     let num = 0;
     for (const k of D.NEED_KEYS.concat(["mood"]))
@@ -1175,9 +1175,9 @@
   /* ======================================================================================================
      caring: hands-on, items, pats
      ====================================================================================================== */
-  const JOB_NEED = { charge: "charge", dirty: "shine", vacuum: "cozy", birds: "senses", reboot: "clarity" };
+  const JOB_NEED = { charge: "charge", dirty: "cleanliness", vacuum: "cleanliness", birds: "cleanliness", reboot: "code" };
   Sim.JOB_NEED = JOB_NEED;
-  Sim.NEED_JOB = { charge: "charge", shine: "dirty", cozy: "vacuum", senses: "birds", clarity: "reboot" };
+  Sim.NEED_JOB = { charge: "charge", cleanliness: "dirty", code: "reboot", shine: "dirty", cozy: "vacuum", senses: "birds", clarity: "reboot" };
   Sim.careDone = function (S, carId, kind, q) {
     const car = Sim.find(S, carId);
     if (!car) return null;
@@ -1220,7 +1220,8 @@
     if (!it.effect) return { ok: false, msg: it.cat === "chip" ? "Firmware chips are for the Driving Academy on Twin Peaks." : "That's a treasure: keep it, or sell it at the Pawn Shop." };
     Sim.take(S, itemId);
     const n = car.needs;
-    for (const [k, v] of Object.entries(it.effect)) {
+    for (const [rawK, v] of Object.entries(it.effect)) {
+      const k = rawK === "shine" || rawK === "cozy" || rawK === "senses" ? "cleanliness" : rawK === "clarity" ? "code" : rawK;
       if (k === "charge") n.charge = clamp(n.charge + v, 0, it.over ? 120 : Math.max(100, n.charge));
       else n[k] = clamp(n[k] + v, k === "mood" ? 5 : 0, 100);
     }
@@ -1653,8 +1654,8 @@
         if (!opt.sneak) msg = "You tiptoe away. Wise.";
         else if (R(S) < 0.55) msg = "You sneak in… and out, holding " + prize(S, St.wpick(S, D.LOOT.sutro)) + "!";
         else {
-          for (const c of S.cars) c.needs.shine = Math.max(0, c.needs.shine - 15);
-          msg = "It woke up! A great foggy sneeze blows you out of the baths and all over your fleet (Shine −15). Nobody's hurt. Everyone's damp.";
+          for (const c of S.cars) c.needs.cleanliness = Math.max(0, c.needs.cleanliness - 15);
+          msg = "It woke up! A great foggy sneeze blows you out of the baths and all over your fleet (Cleanliness −15). Nobody's hurt. Everyone's damp.";
         }
         break;
       default: {
@@ -2003,7 +2004,7 @@
     if (theme === "night" && has(car, "night_owl")) match += 1;
     let rare = 0;
     for (const k in car.gear) if (car.gear[k]) rare += D.ITEMS[car.gear[k]].rarity / 20;
-    return e.charm * 3 + car.needs.shine / 10 + match * 8 + rare;
+    return e.charm * 3 + car.needs.cleanliness / 10 + match * 8 + rare;
   };
   Sim.showEnter = function (S, carId) {
     const car = Sim.find(S, carId);

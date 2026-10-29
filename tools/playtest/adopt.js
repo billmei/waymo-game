@@ -61,7 +61,7 @@ const { chromium } = require("playwright");
     const S = WG.adopt.S,
       c = WG.adoptSim.find(S, id);
     c.sim = { at: "Russian Hill", from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
-    c.needs.shine = 12;
+    c.needs.cleanliness = 12;
     WG.adopt.care(id, "dirty");
   }, id);
   await p.waitForFunction(() => WG.jobs.active, null, { timeout: 600000 });

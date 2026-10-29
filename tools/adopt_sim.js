@@ -34,7 +34,7 @@ let S = St.fresh(T0, seed);
 Sim.now = () => T0 + (S.clock.day - 1) * 864e5 + (S.clock.minute - 480) * 60e3;
 Sim.start(S);
 const log = [],
-  low = { charge: 0, shine: 0, cozy: 0, senses: 0, clarity: 0, mood: 0 },
+  low = { charge: 0, cleanliness: 0, code: 0, mood: 0 },
   milestones = {};
 let lowSamples = 0;
 const src = { rides: 0, other: 0 };
@@ -44,7 +44,7 @@ Sim.on = (ev) => {
   if (!quiet && ["rank", "stage", "trophy", "nap", "adopt"].includes(ev.type)) log.push("  day " + S.clock.day + " " + Sim.fmtClock(S.clock.minute) + "  " + ev.text);
 };
 
-const NEED_ITEM = { charge: "snack_capacitor", shine: "wax_sea_salt", cozy: "cozy_air", senses: "sense_lens", clarity: "clar_reboot_tea" };
+const NEED_ITEM = { charge: "snack_capacitor", cleanliness: "wax_sea_salt", code: "clar_reboot_tea" };
 function player() {
   // the dailies
   for (const id of Object.keys(D.DAILIES)) {

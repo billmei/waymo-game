@@ -433,9 +433,17 @@
   }
   H.careMenu = (ds) => {
     const car = Sim.find(S, ds.id);
-    const rows = D.NEED_KEYS.map((k) => {
+    const CARE_JOBS = [
+      { job: "charge", name: "Recharge" },
+      { job: "dirty", name: "Wash" },
+      { job: "vacuum", name: "Vacuum" },
+      { job: "birds", name: "Shoo Birds" },
+      { job: "reboot", name: "Reboot" },
+    ];
+    const rows = CARE_JOBS.map(({ job, name }) => {
+      const k = Sim.JOB_NEED[job];
       const v = car.needs[k];
-      return '<button type="button" class="ad-pick need ' + needCol(v) + '" data-a="care" data-id="' + car.id + '" data-k="' + Sim.NEED_JOB[k] + '"><canvas width="64" height="64" data-icon="' + Sim.NEED_JOB[k] + '"></canvas><b>' + D.NEEDS[k].name + "</b><small>" + esc(Sim.label(k, v)) + "</small>" + bar(v) + "</button>";
+      return '<button type="button" class="ad-pick need ' + needCol(v) + '" data-a="care" data-id="' + car.id + '" data-k="' + job + '"><canvas width="64" height="64" data-icon="' + job + '"></canvas><b>' + name + "</b><small>" + D.NEEDS[k].name + ": " + esc(Sim.label(k, v)) + "</small>" + bar(v) + "</button>";
     }).join("");
     U.modal("Care for " + nm(car), '<p class="lead">Pick a job. The crew swoops down to the ' + esc(car.sim.at) + ' Care Spot and you do it by hand: the best care there is (+bond).</p><div class="ad-picks">' + rows + "</div>", {
       buttons: [["close", "Not now"]],

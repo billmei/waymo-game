@@ -129,7 +129,22 @@
     low: { run: 0, hours: 0, total: 0 },
     sim: { at: "Russian Hill", from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 },
   };
-  const fillCar = (c) => fill(c, CAR_DEF);
+  const fillCar = (c) => {
+    fill(c, CAR_DEF);
+    if (c.needs) {
+      if (c.needs.cleanliness === undefined) {
+        c.needs.cleanliness = c.needs.shine ?? c.needs.cozy ?? c.needs.senses ?? 80;
+      }
+      if (c.needs.code === undefined) {
+        c.needs.code = c.needs.clarity ?? 80;
+      }
+      delete c.needs.shine;
+      delete c.needs.cozy;
+      delete c.needs.senses;
+      delete c.needs.clarity;
+    }
+    return c;
+  };
 
   /* ---------- load and save ---------- */
   const St = {

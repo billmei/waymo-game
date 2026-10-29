@@ -224,10 +224,10 @@ Hunters Point: Candlestick`;
   // how a neighbourhood changes a car's needs per in-game hour while it drives there (sim.js applies them)
   D.TAG_FX = {
     hills: { label: "Hills", desc: "Charge −12/h instead of −8", icon: "⛰️" },
-    park: { label: "Park", desc: "Senses −5/h, birds 3× as likely", icon: "🌳" },
-    beach: { label: "Beach", desc: "Shine −6/h (sand and salt)", icon: "🏖️" },
-    fog: { label: "Fog belt", desc: "Clarity −8/h when Karl is out", icon: "🌫️" },
-    downtown: { label: "Downtown", desc: "Cozy −6/h (lunch crumbs), cones 2× as likely", icon: "🏙️" },
+    park: { label: "Park", desc: "Cleanliness −3/h, birds 3× as likely", icon: "🌳" },
+    beach: { label: "Beach", desc: "Cleanliness −3/h (sand and salt)", icon: "🏖️" },
+    fog: { label: "Fog belt", desc: "Code −8/h when Karl is out", icon: "🌫️" },
+    downtown: { label: "Downtown", desc: "Cleanliness −3/h (lunch crumbs), cones 2× as likely", icon: "🏙️" },
     tourist: { label: "Tourist hotspot", desc: "Doors left open 2× as often, more stamps", icon: "📸" },
     nightlife: { label: "Nightlife", desc: "Busier from 20:00 to midnight", icon: "🌃" },
   };
@@ -247,47 +247,21 @@ Hunters Point: Candlestick`;
         [101, "Overcharged & Bloated"],
       ],
     },
-    shine: {
-      name: "Shine",
+    cleanliness: {
+      name: "Cleanliness",
       icon: "🧽",
       job: "dirty",
       labels: [
         [0, "Needs a Wash"],
         [1, "A Bit Dirty"],
-        [10, "Dusty"],
+        [10, "Tidy"],
         [40, "Clean"],
         [75, "Sparkling"],
         [95, "Showroom"],
       ],
     },
-    cozy: {
-      name: "Cozy",
-      icon: "🍿",
-      job: "vacuum",
-      labels: [
-        [0, "Needs a Vacuum"],
-        [1, "A Bit Messy"],
-        [10, "Lived-in"],
-        [40, "Tidy"],
-        [75, "Fresh"],
-        [95, "Spa Day"],
-      ],
-    },
-    senses: {
-      name: "Senses",
-      icon: "🐦",
-      job: "birds",
-      labels: [
-        [0, "Needs a Wipe"],
-        [1, "Smudged Sensors"],
-        [10, "Decent Vision"],
-        [40, "Clear"],
-        [70, "Sharp"],
-        [92, "Eagle-eyed"],
-      ],
-    },
-    clarity: {
-      name: "Clarity",
+    code: {
+      name: "Code",
       icon: "💻",
       job: "reboot",
       labels: [
@@ -312,7 +286,12 @@ Hunters Point: Candlestick`;
       ],
     },
   };
-  D.NEED_KEYS = ["charge", "shine", "cozy", "senses", "clarity"];
+  // aliases for backward compatibility
+  D.NEEDS.shine = D.NEEDS.cleanliness;
+  D.NEEDS.cozy = D.NEEDS.cleanliness;
+  D.NEEDS.senses = D.NEEDS.cleanliness;
+  D.NEEDS.clarity = D.NEEDS.code;
+  D.NEED_KEYS = ["charge", "cleanliness", "code"];
   D.MOOD_FACE = ["😤", "😒", "😐", "🙂", "😊", "🤩"];
   // the one-off incidents during rides; they stop the car until fixed (the doors and cone jobs)
   D.INCIDENTS = {
@@ -323,9 +302,9 @@ Hunters Point: Candlestick`;
   /* ---------- traits: two at random when a car is adopted (their effects are in sim.js, by id) ---------- */
   D.TRAITS = {
     hill_hater: { name: "Hill Hater", icon: "⛰️", desc: "Charge drains ×1.6 on hills; happier in flat neighbourhoods" },
-    bird_magnet: { name: "Bird Magnet", icon: "🐦", desc: "Senses drain ×2 in parks, but it likes birds (no mood penalty)" },
-    neat_freak: { name: "Neat Freak", icon: "🧼", desc: "Mood follows Shine twice as strongly" },
-    foodie: { name: "Foodie", icon: "🍔", desc: "Cozy drains ×1.5; riders tip +20%" },
+    bird_magnet: { name: "Bird Magnet", icon: "🐦", desc: "Cleanliness drains ×2 in parks, but it likes birds (no mood penalty)" },
+    neat_freak: { name: "Neat Freak", icon: "🧼", desc: "Mood follows Cleanliness twice as strongly" },
+    foodie: { name: "Foodie", icon: "🍔", desc: "Cleanliness drains ×1.5 from riders; riders tip +20%" },
     night_owl: { name: "Night Owl", icon: "🦉", desc: "Faster at night; sleepy in the morning (rides 20% slower)" },
     fog_lover: { name: "Fog Lover", icon: "🌫️", desc: "Immune to fog glitches; happier at Ocean Beach and Lands End" },
     tour_guide: { name: "Tour Guide", icon: "📸", desc: "Twice the chance of stamps and postcards at landmarks" },
@@ -337,10 +316,10 @@ Hunters Point: Candlestick`;
   D.TRAIT_PLUS = {
     hill_hater: "Hill Tolerator (no extra drain on hills)",
     bird_magnet: "Bird Whisperer (birds clean its sensors)",
-    neat_freak: "Neat Champion (Shine drains half as fast)",
+    neat_freak: "Neat Champion (Cleanliness drains half as fast)",
     foodie: "Gourmand (tips +40%)",
     night_owl: "Moon Racer (no morning sleepiness)",
-    fog_lover: "Karl's Favourite (+Clarity in fog)",
+    fog_lover: "Karl's Favourite (+Code in fog)",
     tour_guide: "City Historian (×3 stamps)",
     shy: "Quietly Confident (no downtown penalty)",
     chatty: "Life of the Party (+mood to every car nearby)",
@@ -351,7 +330,7 @@ Hunters Point: Candlestick`;
   D.STATS = {
     range: { name: "Range", icon: "🔋", desc: "Charge drains 2% less per point" },
     handling: { name: "Handling", icon: "🛞", desc: "Rides are 3% faster per point" },
-    comfort: { name: "Comfort", icon: "🛋️", desc: "Tips +2% per point; Cozy drains less" },
+    comfort: { name: "Comfort", icon: "🛋️", desc: "Tips +2% per point; Cleanliness drains less" },
     smarts: { name: "Smarts", icon: "🧠", desc: "Better routes, more rider requests. Raised by reading" },
     charm: { name: "Charm", icon: "✨", desc: "Car Show score and stamp finds" },
   };
@@ -385,38 +364,34 @@ Hunters Point: Candlestick`;
     ["snack_capacitor", "Ghirardelli Capacitor", "🍫", 35, 45, { effect: { charge: 30, mood: 5 }, desc: "Dark chocolate, dark current." }],
     ["snack_sourdough_cell", "Sourdough Battery Bowl", "🥖", 40, 60, { effect: { charge: 45 }, desc: "Chowder not included." }],
     ["snack_dim_sum", "Dim Sum Discharge Pack", "🥟", 42, 80, { effect: { charge: 40, mood: 6 }, desc: "Four little dumplings of power." }],
-    ["snack_irish_coffee", "Buena Vista Irish Coffee (decaf, for cars)", "☕", 45, 70, { effect: { charge: 25, clarity: 15 }, desc: "Wakes up the processor." }],
-    ["snack_burrito_battery", "Mission Burrito Battery", "🌯", 50, 95, { effect: { charge: 70, cozy: -10 }, desc: "Enormous. Some of it ends up on the seats." }],
+    ["snack_irish_coffee", "Buena Vista Irish Coffee (decaf, for cars)", "☕", 45, 70, { effect: { charge: 25, code: 15 }, desc: "Wakes up the processor." }],
+    ["snack_burrito_battery", "Mission Burrito Battery", "🌯", 50, 95, { effect: { charge: 70, cleanliness: -10 }, desc: "Enormous. Some of it ends up on the seats." }],
     ["snack_cioppino_cell", "Cioppino Power Cell", "🍲", 55, 120, { effect: { charge: 60, mood: 5 }, desc: "A Wharf classic, in a can with terminals." }],
     ["snack_its_it", "It's-It Coolant", "🍦", 60, 140, { effect: { charge: 35, mood: 15 }, desc: "Ice cream between two oatmeal cookies, dipped in chocolate. For the radiator." }],
     ["snack_megawatt_muffin", "Mega Megawatt Muffin", "🧁", 72, 220, { effect: { charge: 60, mood: 4 }, over: true, desc: "Can push a car past 100%. It will regret nothing." }],
-    ["snack_grandma_cookie", "Grandma's Cookie", "🍪", 100, 60, { effect: { cozy: 10, mood: 12, charge: 10 }, desc: "Left in the back seat, still warm." }],
+    ["snack_grandma_cookie", "Grandma's Cookie", "🍪", 100, 60, { effect: { cleanliness: 10, mood: 12, charge: 10 }, desc: "Left in the back seat, still warm." }],
     ["snack_pumpkin_cell", "Pumpkin Spice Power Cell", "🎃", 70, 90, { effect: { charge: 40, mood: 10 }, season: "halloween", desc: "Seasonal. Smells like October." }],
     ["snack_mooncake", "Mooncake Megacell", "🥮", 70, 90, { effect: { charge: 40, mood: 10 }, season: "lunar", desc: "Rich, dense and full of lotus-paste joules." }],
     ["snack_pan_muerto", "Pan de Muerto Pack", "🍞", 70, 90, { effect: { charge: 35, mood: 14 }, season: "muertos", desc: "Sweet bread for the season." }],
   ]);
   add("wash", [
-    ["wipe_basic", "Wet Wipes", "🧻", 5, 20, { effect: { shine: 15 }, desc: "Better than nothing." }],
-    ["wipe_fog_mist", "Fog Mist Spray", "💨", 18, 40, { effect: { shine: 25 }, desc: "Bottled Karl, with a squeegee." }],
-    ["wax_sea_salt", "Sea Salt Scrub", "🧂", 28, 55, { effect: { shine: 30 }, desc: "Gritty, but it works." }],
-    ["wax_surf", "Surf Wax", "🏄", 35, 75, { effect: { shine: 40, mood: 4 }, desc: "Made for boards. Works on robotaxis." }],
-    ["wax_showroom", "Showroom Polish", "✨", 65, 220, { effect: { shine: 70 }, desc: "So shiny the gulls get confused." }],
+    ["wipe_basic", "Wet Wipes", "🧻", 5, 20, { effect: { cleanliness: 15 }, desc: "Better than nothing." }],
+    ["wipe_fog_mist", "Fog Mist Spray", "💨", 18, 40, { effect: { cleanliness: 25 }, desc: "Bottled Karl, with a squeegee." }],
+    ["wax_sea_salt", "Sea Salt Scrub", "🧂", 28, 55, { effect: { cleanliness: 30 }, desc: "Gritty, but it works." }],
+    ["wax_surf", "Surf Wax", "🏄", 35, 75, { effect: { cleanliness: 40, mood: 4 }, desc: "Made for boards. Works on robotaxis." }],
+    ["wax_showroom", "Showroom Polish", "✨", 65, 220, { effect: { cleanliness: 70 }, desc: "So shiny the gulls get confused." }],
+    ["cozy_lint", "Lint Roller", "🧽", 8, 25, { effect: { cleanliness: 15 }, desc: "Takes care of the dog hair. And the crumbs." }],
+    ["cozy_air", "Eucalyptus Air Freshener", "🌿", 24, 45, { effect: { cleanliness: 25, mood: 3 }, desc: "Smells like the Presidio after rain." }],
+    ["cozy_cushion", "Hand-Knit Seat Cushion", "🧶", 45, 110, { effect: { cleanliness: 45 }, desc: "Knitted by a grandma in the Sunset." }],
+    ["cozy_crumbvac", "Pocket Crumb-Vac", "🌀", 55, 160, { effect: { cleanliness: 60 }, desc: "A tiny vacuum with a big attitude." }],
+    ["sense_lens", "Lens Cloth", "👓", 8, 25, { effect: { cleanliness: 20 }, desc: "For lidar domes and spectacles." }],
+    ["sense_bird_sign", "Polite Bird Sign", "🪧", 30, 60, { effect: { cleanliness: 30 }, desc: "'Please roost elsewhere. Thank you.'" }],
+    ["sense_eagle_drops", "Eagle-Eye Drops", "🦅", 55, 150, { effect: { cleanliness: 55 }, desc: "Sees round corners. Almost." }],
   ]);
-  add("cozy", [
-    ["cozy_lint", "Lint Roller", "🧽", 8, 25, { effect: { cozy: 15 }, desc: "Takes care of the dog hair. And the crumbs." }],
-    ["cozy_air", "Eucalyptus Air Freshener", "🌿", 24, 45, { effect: { cozy: 25, mood: 3 }, desc: "Smells like the Presidio after rain." }],
-    ["cozy_cushion", "Hand-Knit Seat Cushion", "🧶", 45, 110, { effect: { cozy: 45 }, desc: "Knitted by a grandma in the Sunset." }],
-    ["cozy_crumbvac", "Pocket Crumb-Vac", "🌀", 55, 160, { effect: { cozy: 60 }, desc: "A tiny vacuum with a big attitude." }],
-  ]);
-  add("senses", [
-    ["sense_lens", "Lens Cloth", "👓", 8, 25, { effect: { senses: 20 }, desc: "For lidar domes and spectacles." }],
-    ["sense_bird_sign", "Polite Bird Sign", "🪧", 30, 60, { effect: { senses: 30 }, desc: "'Please roost elsewhere. Thank you.'" }],
-    ["sense_eagle_drops", "Eagle-Eye Drops", "🦅", 55, 150, { effect: { senses: 55 }, desc: "Sees round corners. Almost." }],
-  ]);
-  add("clarity", [
-    ["clar_reboot_tea", "Reboot Tea", "🍵", 14, 35, { effect: { clarity: 20 }, desc: "Turn it off, have a cup, turn it on again." }],
-    ["clar_patch", "Weekend Patch Notes", "📄", 30, 60, { effect: { clarity: 35 }, desc: "Fixed a bug where the car believed it was a boat." }],
-    ["clar_defrag", "Defrag Massage", "💆", 50, 130, { effect: { clarity: 55, mood: 5 }, desc: "Soothing for every sector." }],
+  add("code", [
+    ["clar_reboot_tea", "Reboot Tea", "🍵", 14, 35, { effect: { code: 20 }, desc: "Turn it off, have a cup, turn it on again." }],
+    ["clar_patch", "Weekend Patch Notes", "📄", 30, 60, { effect: { code: 35 }, desc: "Fixed a bug where the car believed it was a boat." }],
+    ["clar_defrag", "Defrag Massage", "💆", 50, 130, { effect: { code: 55, mood: 5 }, desc: "Soothing for every sector." }],
   ]);
   add("toy", [
     ["toy_tennis", "Golden Gate Tennis Ball", "🎾", 15, 30, { effect: { mood: 10 }, desc: "Bouncy. Orange. Irresistible." }],
@@ -509,8 +484,8 @@ Hunters Point: Candlestick`;
     ["rare_golden_ticket", "Golden Cable Car Ticket", "🎫", 101, 5000, { effect: { mood: 40 }, desc: "Free rides for life. For whom is unclear." }],
     ["rare_sea_glass", "Sutro Sea Glass", "🔹", 100, 2500, { desc: "Worn smooth by a hundred years of tides. Sell it, or keep it as a treasure." }],
     ["rare_old_token", "Old Muni Token", "🪙", 100, 1800, { desc: "From before the Clipper card. A collector's dream." }],
-    ["rare_bison_hair", "Lucky Bison Hair", "🦬", 100, 1500, { effect: { mood: 25, charge: 25, shine: 25, cozy: 25, senses: 25, clarity: 25 }, desc: "Freely given. Very lucky." }],
-    ["rare_fog_jar", "Jar of Karl", "🫙", 101, 4000, { effect: { clarity: 100 }, desc: "A whole morning of fog, in a jar. Handle gently." }],
+    ["rare_bison_hair", "Lucky Bison Hair", "🦬", 100, 1500, { effect: { mood: 25, charge: 25, cleanliness: 50, code: 25 }, desc: "Freely given. Very lucky." }],
+    ["rare_fog_jar", "Jar of Karl", "🫙", 101, 4000, { effect: { code: 100 }, desc: "A whole morning of fog, in a jar. Handle gently." }],
     ["rare_starter_loaf", "Sourdough Mother Loaf", "🍞", 101, 6000, { effect: { charge: 100, mood: 30 }, desc: "Grown from a Sourdough Starter over thirty days." }],
   ]);
   // paint wraps: used up when applied (Neopets' paint brushes)
@@ -542,7 +517,7 @@ Hunters Point: Candlestick`;
     sea_lion_pup: { name: "Sea Lion Pup", icon: "🦭", perk: "Happier at Pier 39 (Fisherman's Wharf)", price: 1500, rarity: 45, food: "treat_kelp" },
     parrot: { name: "Telegraph Hill Parrot", icon: "🦜", perk: "+2 Charm; repeats captions", price: 2000, rarity: 55, food: "treat_cracker" },
     mini_karl: { name: "Mini Karl", icon: "☁️", perk: "Fog doesn't cause glitches", price: 2500, rarity: 60, food: "treat_dew" },
-    succulent: { name: "Lombard Succulent", icon: "🌵", perk: "Cozy drains less", price: 800, rarity: 25, food: "treat_dew" },
+    succulent: { name: "Lombard Succulent", icon: "🌵", perk: "Cleanliness drains less", price: 800, rarity: 25, food: "treat_dew" },
     starter: { name: "Sourdough Starter", icon: "🫙", perk: "Grows into a rare loaf after 30 days", price: 1800, rarity: 50, food: "treat_dew" },
     mini_bison: { name: "Mini Bison", icon: "🦬", perk: "+2 Range", price: 3000, rarity: 65, food: "treat_kelp" },
     bell: { name: "Cable Car Bell", icon: "🔔", perk: "+1 Handling in the Derby", price: 1400, rarity: 40, food: "treat_dew" },
@@ -553,10 +528,12 @@ Hunters Point: Candlestick`;
   D.MITES = { crumb_mite: { name: "Crumb Mite", icon: "🦠" }, dust_bunny: { name: "Dust Bunny", icon: "🐰" }, fog_droplet: { name: "Fog Droplet", icon: "💧" } };
   D.CAT_NAMES = {
     snack: "Snacks",
-    wash: "Shine",
-    cozy: "Cozy",
-    senses: "Senses",
-    clarity: "Clarity",
+    wash: "Cleanliness",
+    code: "Code",
+    cleanliness: "Cleanliness",
+    cozy: "Cleanliness",
+    senses: "Cleanliness",
+    clarity: "Code",
     toy: "Toys",
     treat: "Dashpet treats",
     read: "Map packs & podcasts",
@@ -754,34 +731,34 @@ Hunters Point: Candlestick`;
      fix). fx: needs, fares, an item, a stat, bond, a wrap, a dashpet chance; when: a condition (fog, park, beach, …) ---------- */
   D.EVENTS = [
     { id: "fry", tone: "good", icon: "🍟", text: "A seagull dropped a french fry on {car}'s roof. It… seems pleased?", fx: { mood: 10 } },
-    { id: "cookie", tone: "good", icon: "🍪", text: "Grandma left a cookie in {car}'s back seat.", fx: { item: "snack_grandma_cookie", cozy: 5 } },
+    { id: "cookie", tone: "good", icon: "🍪", text: "Grandma left a cookie in {car}'s back seat.", fx: { item: "snack_grandma_cookie", cleanliness: 5 } },
     { id: "podcast", tone: "good", icon: "🎧", text: "{car} downloaded a podcast about bridges. +1 Smarts!", fx: { stat: "smarts" } },
     { id: "wave", tone: "good", icon: "👋", text: "A kid on a cable car waved at {car}. {car} flashed its lights back.", fx: { mood: 8, bond: 0.05 } },
     { id: "tip", tone: "good", icon: "💸", text: "A rider in a hurry left a ◎{n} tip in {car}'s cup holder.", fx: { fares: [20, 60] } },
     { id: "photo", tone: "good", icon: "📸", text: "A tourist took {car}'s photo. {car} is now briefly famous on the internet.", fx: { mood: 12 }, when: "tourist" },
     { id: "rainbow", tone: "good", icon: "🌈", text: "A rainbow over the bay! {car} slowed down to look.", fx: { mood: 10 } },
     { id: "sunbeam", tone: "good", icon: "☀️", text: "Sun broke through over {hood}. {car}'s panels drank it up.", fx: { charge: 10, mood: 5 } },
-    { id: "street_sweeper", tone: "good", icon: "🧹", text: "A street sweeper gave {car} a free rinse on the way past.", fx: { shine: 20 } },
+    { id: "street_sweeper", tone: "good", icon: "🧹", text: "A street sweeper gave {car} a free rinse on the way past.", fx: { cleanliness: 20 } },
     { id: "chip_found", tone: "good", icon: "💾", text: "{car} found a firmware chip under a seat.", fx: { item: "chip_lombard" } },
     { id: "parrots", tone: "good", icon: "🦜", text: "The wild parrots of Telegraph Hill sang to {car}.", fx: { mood: 14 }, when: "hills" },
     { id: "bison", tone: "good", icon: "🦬", text: "A bison in Golden Gate Park nodded at {car}. Respect.", fx: { mood: 10, bond: 0.05 }, when: "park" },
-    { id: "kind_rider", tone: "good", icon: "🧻", text: "A kind rider tidied {car}'s cabin before getting out.", fx: { cozy: 20 } },
+    { id: "kind_rider", tone: "good", icon: "🧻", text: "A kind rider tidied {car}'s cabin before getting out.", fx: { cleanliness: 20 } },
     { id: "mural", tone: "good", icon: "🖌️", text: "A street artist in the Mission painted a tiny mural on {car}! (A free Mission Mural wrap!)", fx: { item: "wrap_mission_mural" }, rare: 0.03 },
     { id: "map_gift", tone: "good", icon: "🗺️", text: "A retired cabbie gave {car} his old map pack.", fx: { item: "map_hidden_stairways" } },
-    { id: "fog_hug", tone: "good", icon: "🌫️", text: "Karl wrapped {car} in a cool, soft hug.", fx: { mood: 10, shine: 5 }, when: "fog" },
-    { id: "pigeon_home", tone: "funny", icon: "🐦", text: "A pigeon has decided {car} is its home now.", fx: { senses: -30, petChance: "pigeon_pal" } },
-    { id: "beige", tone: "funny", icon: "🎭", text: "{car} spent ten minutes convinced it was a parking meter. It's fine now.", fx: { clarity: -5, mood: 3 } },
-    { id: "sock", tone: "funny", icon: "🧦", text: "{car} found a single sock. It doesn't know what to do with it. Nobody does.", fx: { cozy: -5 } },
+    { id: "fog_hug", tone: "good", icon: "🌫️", text: "Karl wrapped {car} in a cool, soft hug.", fx: { mood: 10, cleanliness: 5 }, when: "fog" },
+    { id: "pigeon_home", tone: "funny", icon: "🐦", text: "A pigeon has decided {car} is its home now.", fx: { cleanliness: -20, petChance: "pigeon_pal" } },
+    { id: "beige", tone: "funny", icon: "🎭", text: "{car} spent ten minutes convinced it was a parking meter. It's fine now.", fx: { code: -5, mood: 3 } },
+    { id: "sock", tone: "funny", icon: "🧦", text: "{car} found a single sock. It doesn't know what to do with it. Nobody does.", fx: { cleanliness: -5 } },
     { id: "dog", tone: "funny", icon: "🐕", text: "A dog barked at {car} for a full minute. {car} beeped back. They're friends now.", fx: { mood: 5 } },
-    { id: "selfie", tone: "funny", icon: "🤳", text: "An influencer used {car} as a background for forty-five selfies.", fx: { mood: 4, shine: -5 } },
+    { id: "selfie", tone: "funny", icon: "🤳", text: "An influencer used {car} as a background for forty-five selfies.", fx: { mood: 4, cleanliness: -5 } },
     { id: "sea_lion_bark", tone: "funny", icon: "🦭", text: "The sea lions at Pier 39 barked at {car} and {car} took it personally.", fx: { mood: -3 }, when: "tourist" },
     { id: "karl_steal", tone: "bad", icon: "🌫️", text: "Karl the Fog swept through and stole ◎{n}.", fx: { fares: [-60, -20] }, when: "fog" },
-    { id: "mud", tone: "bad", icon: "💩", text: "{car} drove through a puddle that was mostly mud.", fx: { shine: -25 } },
-    { id: "crumbs", tone: "bad", icon: "🍿", text: "A whole bag of popcorn went off like a firework in {car}'s back seat.", fx: { cozy: -25 } },
-    { id: "glitch", tone: "bad", icon: "💻", text: "{car} downloaded an update in the middle of a hill start. It needs a moment.", fx: { clarity: -25 } },
+    { id: "mud", tone: "bad", icon: "💩", text: "{car} drove through a puddle that was mostly mud.", fx: { cleanliness: -20 } },
+    { id: "crumbs", tone: "bad", icon: "🍿", text: "A whole bag of popcorn went off like a firework in {car}'s back seat.", fx: { cleanliness: -20 } },
+    { id: "glitch", tone: "bad", icon: "💻", text: "{car} downloaded an update in the middle of a hill start. It needs a moment.", fx: { code: -20 } },
   ];
 
-  /* ---------- riders: the cast, plus nameless riders. tip multiplies the fare; mess multiplies the Cozy cost ---------- */
+  /* ---------- riders: the cast, plus nameless riders. tip multiplies the fare; mess multiplies the Cleanliness cost ---------- */
   D.RIDERS = {
     TOURIST: { name: "The Tourist", icon: "🧢", tip: 1.3, mess: 1.0, fav: ["Fisherman's Wharf", "North Beach", "Russian Hill"], desc: "A wide-eyed dad from Ohio. Everything is amazing." },
     INFLUENCER: { name: "The Influencer", icon: "🤳", tip: 1.15, mess: 0.8, fav: ["Western Addition", "Castro", "Crissy Field"], desc: "Every smudge is a crisis. Every view is content." },
