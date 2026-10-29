@@ -55,7 +55,13 @@
         let h = 0;
         for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) | 0;
         const s = (h & 1 ? 1 : -1) * (0.07 + ((h >>> 3) % 7) * 0.012);
-        const e = { a: A.name, b: B.name, len: L * 1.25, cx: (A.x + B.x) / 2 - (dz / L) * L * s, cz: (A.z + B.z) / 2 + (dx / L) * L * s };
+        const e = {
+          a: A.name,
+          b: B.name,
+          len: L * 1.25,
+          cx: (A.x + B.x) / 2 - (dz / L) * L * s,
+          cz: (A.z + B.z) / 2 + (dx / L) * L * s,
+        };
         G.edges.push(e);
         G.adj[A.name].push([B.name, e]);
         G.adj[B.name].push([A.name, e]);
@@ -98,7 +104,8 @@
       open = [a];
     while (open.length) {
       let bi = 0;
-      for (let i = 1; i < open.length; i++) if (dist[open[i]] < dist[open[bi]]) bi = i;
+      for (let i = 1; i < open.length; i++)
+        if (dist[open[i]] < dist[open[bi]]) bi = i;
       const n = open.splice(bi, 1)[0];
       if (n === b) break;
       if (done.has(n)) continue;
@@ -127,7 +134,8 @@
   };
   Sim.km = (units) => units * D.KM_PER_UNIT;
   Sim.CARE = {};
-  for (const [n, h] of Object.entries(D.HOODS)) if (h.care) Sim.CARE[n] = h.care;
+  for (const [n, h] of Object.entries(D.HOODS))
+    if (h.care) Sim.CARE[n] = h.care;
   Sim.HOME = Object.keys(D.HOODS).find((n) => D.HOODS[n].home);
 
   /* ======================================================================================================
@@ -141,13 +149,24 @@
   Sim.hour = (S) => Math.floor(S.clock.minute / 60) % 24;
   Sim.fmtClock = (min) => {
     const m = ((min % 1440) + 1440) % 1440;
-    return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+    return (
+      String(Math.floor(m / 60)).padStart(2, "0") +
+      ":" +
+      String(m % 60).padStart(2, "0")
+    );
   };
-  Sim.fmtWhen = (abs) => "Day " + Math.floor(abs / 1440) + ", " + Sim.fmtClock(abs % 1440);
+  Sim.fmtWhen = (abs) =>
+    "Day " + Math.floor(abs / 1440) + ", " + Sim.fmtClock(abs % 1440);
   // which light the city is in: morning, day, dusk or night
   Sim.look = (S) => {
     const m = S.clock.minute;
-    return S.clock.night || m >= 1200 ? "night" : m < 600 ? "morning" : m < 1020 ? "day" : "dusk";
+    return S.clock.night || m >= 1200
+      ? "night"
+      : m < 600
+        ? "morning"
+        : m < 1020
+          ? "day"
+          : "dusk";
   };
   Sim.weekend = (S) => S.clock.day % 7 === 6 || S.clock.day % 7 === 0;
   let acc = 0;
@@ -173,7 +192,12 @@
   Sim.emit = function (S, ev) {
     ev.at = absMin(S);
     if (ev.inbox) {
-      S.inbox.unshift({ at: ev.at, icon: ev.icon || "🔔", text: ev.text, read: false });
+      S.inbox.unshift({
+        at: ev.at,
+        icon: ev.icon || "🔔",
+        text: ev.text,
+        read: false,
+      });
       if (S.inbox.length > 40) S.inbox.length = 40;
     }
     if (ev.diary && S.today) {
@@ -182,14 +206,17 @@
     }
     if (Sim.on) Sim.on(ev, S);
   };
-  const toast = (S, icon, text, o) => Sim.emit(S, Object.assign({ type: "toast", icon, text }, o || {}));
+  const toast = (S, icon, text, o) =>
+    Sim.emit(S, Object.assign({ type: "toast", icon, text }, o || {}));
   const nameOf = (car) => car.nick || car.name;
   Sim.nameOf = nameOf;
   const fill = (s, car, extra) =>
     s
       .replace(/\{car\}/g, car ? nameOf(car) : "")
       .replace(/\{hood\}/g, car ? hoodOf(car) : "")
-      .replace(/\{(\w+)\}/g, (m, k) => (extra && extra[k] !== undefined ? extra[k] : m));
+      .replace(/\{(\w+)\}/g, (m, k) =>
+        extra && extra[k] !== undefined ? extra[k] : m,
+      );
   Sim.invCount = (S) => Object.values(S.inventory).reduce((a, b) => a + b, 0);
   Sim.invCap = (S) => D.FRIDGE[S.garage.fridge] || 40;
   Sim.has = (S, id, n) => (S.inventory[id] || 0) >= (n || 1);
@@ -204,7 +231,15 @@
     if (keep < n) {
       const f = Math.floor(it.price * 0.5) * (n - keep);
       S.player.fares += f;
-      toast(S, "🧊", "The snack fridge is full, so the " + it.name + " went to the Pawn Shop for ◎" + f + ".");
+      toast(
+        S,
+        "🧊",
+        "The snack fridge is full, so the " +
+          it.name +
+          " went to the Pawn Shop for ◎" +
+          f +
+          ".",
+      );
     }
     return keep > 0;
   };
@@ -223,14 +258,29 @@
       p.xp -= Sim.xpNeed(p.rank);
       p.rank++;
       syncUnlocks(S);
-      const lands = Object.keys(D.HOODS).filter((h) => D.HOODS[h].rank === p.rank),
+      const lands = Object.keys(D.HOODS).filter(
+          (h) => D.HOODS[h].rank === p.rank,
+        ),
         extra = D.RANK_UNLOCKS[p.rank],
         what = lands.map((h) => h + " unlocked").concat(extra ? [extra] : []);
-      Sim.emit(S, { type: "rank", rank: p.rank, icon: "⭐", text: "Crew Rank " + p.rank + "!" + (what.length ? " " + what.join(" · ") + "." : ""), inbox: true, diary: true });
+      Sim.emit(S, {
+        type: "rank",
+        rank: p.rank,
+        icon: "⭐",
+        text:
+          "Crew Rank " +
+          p.rank +
+          "!" +
+          (what.length ? " " + what.join(" · ") + "." : ""),
+        inbox: true,
+        diary: true,
+      });
     }
   };
   function syncUnlocks(S) {
-    S.unlocked.hoods = Object.keys(D.HOODS).filter((h) => D.HOODS[h].rank !== null && D.HOODS[h].rank <= S.player.rank);
+    S.unlocked.hoods = Object.keys(D.HOODS).filter(
+      (h) => D.HOODS[h].rank !== null && D.HOODS[h].rank <= S.player.rank,
+    );
     let slots = 1;
     for (const [r, n] of D.CAR_SLOTS) if (S.player.rank >= r) slots = n;
     S.unlocked.carSlots = slots;
@@ -245,7 +295,15 @@
     if (S.player.trophies.includes(id)) return;
     S.player.trophies.push(id);
     const t = D.TROPHIES[id];
-    if (t) Sim.emit(S, { type: "trophy", id, icon: t.icon, text: "Trophy: " + t.name + "!", inbox: true, diary: true });
+    if (t)
+      Sim.emit(S, {
+        type: "trophy",
+        id,
+        icon: t.icon,
+        text: "Trophy: " + t.name + "!",
+        inbox: true,
+        diary: true,
+      });
   };
   const fares = (S, n, why) => {
     S.player.fares = Math.max(0, S.player.fares + n);
@@ -273,8 +331,12 @@
   /* ======================================================================================================
      cars: effective stats, labels, where they are
      ====================================================================================================== */
-  Sim.find = (S, id) => S.cars.find((c) => c.id === id) || S.stored.find((c) => c.id === id) || null;
-  Sim.level = (car) => Math.floor(D.STAT_KEYS.reduce((a, k) => a + car.stats[k], 0) / 5);
+  Sim.find = (S, id) =>
+    S.cars.find((c) => c.id === id) ||
+    S.stored.find((c) => c.id === id) ||
+    null;
+  Sim.level = (car) =>
+    Math.floor(D.STAT_KEYS.reduce((a, k) => a + car.stats[k], 0) / 5);
   Sim.eff = function (S, car) {
     const s = Object.assign({}, car.stats);
     for (const k in car.gear) {
@@ -354,9 +416,17 @@
   Sim.doing = function (car) {
     const s = car.sim;
     let t = TASK[s.task] || s.task;
-    if (s.task === "ride" && s.ride) t = "Giving " + (s.ride.rider ? D.RIDERS[s.ride.rider].name.replace(/^The /, "the ") : "a rider") + " a ride to " + s.ride.to;
+    if (s.task === "ride" && s.ride)
+      t =
+        "Giving " +
+        (s.ride.rider
+          ? D.RIDERS[s.ride.rider].name.replace(/^The /, "the ")
+          : "a rider") +
+        " a ride to " +
+        s.ride.to;
     if (s.task === "stuck" && s.incident) t = D.INCIDENTS[s.incident].name;
-    if ((s.task === "hang" || s.task === "idle" || s.task === "care") && s.at) t += " · " + s.at;
+    if ((s.task === "hang" || s.task === "idle" || s.task === "care") && s.at)
+      t += " · " + s.at;
     if (s.from && s.dest) t += " → " + s.dest;
     return t;
   };
@@ -366,7 +436,8 @@
      ====================================================================================================== */
   const BUSY = ["toPickup", "ride", "nap", "tow", "stuck"];
   Sim.busy = (car) => BUSY.includes(car.sim.task) || !!car.training;
-  Sim.canCallToCare = (car) => !!car && !car.training && !["stuck", "nap", "tow"].includes(car.sim.task);
+  Sim.canCallToCare = (car) =>
+    !!car && !car.training && !["stuck", "nap", "tow"].includes(car.sim.task);
   // head for a neighbourhood; arrival is handled by the task (arrive())
   function goTo(S, car, dest, task) {
     const s = car.sim,
@@ -446,27 +517,70 @@
       w = S.clock.weather;
     for (const st of D.STAMPS) {
       if (st.hood !== hood || S.album.stamps[st.name]) continue;
-      const ok = st.when === "any" || st.when === look || (st.when === "fog" && w === "fog") || (st.when === "clear" && w === "clear");
+      const ok =
+        st.when === "any" ||
+        st.when === look ||
+        (st.when === "fog" && w === "fog") ||
+        (st.when === "clear" && w === "clear");
       if (!ok) continue;
       let p = 0.08 + Sim.eff(S, car).charm * 0.015;
       if (has(car, "tour_guide")) p *= plus(car) ? 3 : 2;
       if (D.HOODS[hood].tags.includes("tourist")) p *= 1.3;
       if (R(S) > p) continue;
-      S.album.stamps[st.name] = { car: car.id, carName: nameOf(car), day: S.clock.day, mark: st.mark, img: null };
+      S.album.stamps[st.name] = {
+        car: car.id,
+        carName: nameOf(car),
+        day: S.clock.day,
+        mark: st.mark,
+        img: null,
+      };
       Sim.xp(S, 30);
-      Sim.emit(S, { type: "stamp", stamp: st.name, mark: st.mark, carId: car.id, icon: "📮", text: "New stamp: " + st.name + "! " + nameOf(car) + " was there.", inbox: true, diary: true });
+      Sim.emit(S, {
+        type: "stamp",
+        stamp: st.name,
+        mark: st.mark,
+        carId: car.id,
+        icon: "📮",
+        text: "New stamp: " + st.name + "! " + nameOf(car) + " was there.",
+        inbox: true,
+        diary: true,
+      });
       if (Object.keys(S.album.stamps).length >= 10) Sim.trophy(S, "collector");
     }
     const ra = S.quests.rally;
-    if (ra && ra.day === S.clock.day && !ra.won && ra.hoods.includes(hood) && !ra.done.includes(hood)) {
+    if (
+      ra &&
+      ra.day === S.clock.day &&
+      !ra.won &&
+      ra.hoods.includes(hood) &&
+      !ra.done.includes(hood)
+    ) {
       ra.done.push(hood);
-      toast(S, "🏁", "Rider Rally: " + nameOf(car) + " reached " + hood + " (" + ra.done.length + "/" + ra.hoods.length + ").");
+      toast(
+        S,
+        "🏁",
+        "Rider Rally: " +
+          nameOf(car) +
+          " reached " +
+          hood +
+          " (" +
+          ra.done.length +
+          "/" +
+          ra.hoods.length +
+          ").",
+      );
       if (ra.done.length === ra.hoods.length) {
         ra.won = true;
         fares(S, 400);
         Sim.give(S, "chip_sutro");
         Sim.xp(S, 60);
-        Sim.emit(S, { type: "toast", icon: "🏆", text: "Rider Rally complete! ◎400 and a Chip-Sutro.", inbox: true, diary: true });
+        Sim.emit(S, {
+          type: "toast",
+          icon: "🏆",
+          text: "Rider Rally complete! ◎400 and a Chip-Sutro.",
+          inbox: true,
+          diary: true,
+        });
       }
     }
     storyHook(S, { visit: hood });
@@ -481,7 +595,13 @@
       // somebody boxed it in with cones while it waited
       let pc = 0.03 * (D.HOODS[s.at].tags.includes("downtown") ? 2 : 1);
       s.task = "ride";
-      Sim.emit(S, { type: "pickup", carId: car.id, rider: r.rider, from: r.from, to: r.to });
+      Sim.emit(S, {
+        type: "pickup",
+        carId: car.id,
+        rider: r.rider,
+        from: r.from,
+        to: r.to,
+      });
       if (!S.clock.night && R(S) < pc) return incident(S, car, "cone", "ride");
       if (!goTo(S, car, r.to, "ride")) finishRide(S, car);
       return;
@@ -490,7 +610,13 @@
     if (task === "toCare") {
       s.task = "care";
       s.careT = 0;
-      if (!S.clock.night) toast(S, "🔧", nameOf(car) + " is at the " + s.at + " Care Spot, ready for you.", { carId: car.id, care: true });
+      if (!S.clock.night)
+        toast(
+          S,
+          "🔧",
+          nameOf(car) + " is at the " + s.at + " Care Spot, ready for you.",
+          { carId: car.id, care: true },
+        );
       return;
     }
     if (task === "toHang") {
@@ -514,7 +640,13 @@
     s.incident = kind;
     s.stuckT = 45;
     s.resume = resume;
-    Sim.emit(S, { type: "incident", carId: car.id, icon: D.INCIDENTS[kind].icon, text: fill(D.INCIDENTS[kind].text, car), inbox: true });
+    Sim.emit(S, {
+      type: "incident",
+      carId: car.id,
+      icon: D.INCIDENTS[kind].icon,
+      text: fill(D.INCIDENTS[kind].text, car),
+      inbox: true,
+    });
   }
   // the incident's over (fixed by hand, by roadside help, or by a kind passer-by)
   Sim.clearIncident = function (S, car) {
@@ -539,43 +671,104 @@
       tags = D.HOODS[hood].tags;
     let tip = rd ? rd.tip : 1;
     if (has(car, "foodie")) tip += plus(car) ? 0.4 : 0.2;
-    if (car.dashpet && car.dashpet.id === "gull_chick" && (hood === "Fisherman's Wharf" || hood === "Embarcadero" || r.from === "Fisherman's Wharf")) tip += 0.15;
+    if (
+      car.dashpet &&
+      car.dashpet.id === "gull_chick" &&
+      (hood === "Fisherman's Wharf" ||
+        hood === "Embarcadero" ||
+        r.from === "Fisherman's Wharf")
+    )
+      tip += 0.15;
     const moodF = 0.8 + car.needs.mood / 250,
-      fare = Math.round((10 + 2 * r.km) * (1 + e.comfort * 0.02) * tip * moodF * (r.half ? 0.5 : 1));
+      fare = Math.round(
+        (10 + 2 * r.km) *
+          (1 + e.comfort * 0.02) *
+          tip *
+          moodF *
+          (r.half ? 0.5 : 1),
+      );
     fares(S, fare);
     car.rides++;
     if (S.today) S.today.rides[car.id] = (S.today.rides[car.id] || 0) + 1;
     Sim.xp(S, 10);
     // the cabin after the rider
-    let mess = 1.4 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
+    let mess =
+      1.4 *
+      (rd ? rd.mess : 1) *
+      (has(car, "foodie") ? 1.5 : 1) *
+      (1 - Math.min(0.5, e.comfort * 0.02));
     if (car.dashpet && car.dashpet.id === "succulent") mess *= 0.6;
-    car.needs.cleanliness = clamp(car.needs.cleanliness - mess, AWAY ? Math.min(car.needs.cleanliness, 25) : 0, 100);
+    car.needs.cleanliness = clamp(
+      car.needs.cleanliness - mess,
+      AWAY ? Math.min(car.needs.cleanliness, 25) : 0,
+      100,
+    );
     s.emote = { k: "◎", at: absMin(S) };
-    Sim.emit(S, { type: "ride", carId: car.id, fare, rider: r.rider, from: r.from, to: r.to });
+    Sim.emit(S, {
+      type: "ride",
+      carId: car.id,
+      fare,
+      rider: r.rider,
+      from: r.from,
+      to: r.to,
+    });
     // friendship, rider cards and lucky finds
     if (r.rider) {
-      const f = (S.riders[r.rider] = S.riders[r.rider] || { friend: 0, rides: 0, request: null });
+      const f = (S.riders[r.rider] = S.riders[r.rider] || {
+        friend: 0,
+        rides: 0,
+        request: null,
+      });
       f.rides++;
       const lv = Math.min(10, Math.floor(f.rides / 4));
       if (lv > f.friend) {
         f.friend = lv;
-        Sim.emit(S, { type: "toast", icon: rd.icon, text: rd.name + " is now a friend (level " + lv + ")!" + (lv === 2 ? " They might ask you for things now." : ""), inbox: lv === 2 });
-        if (r.rider === "GRANDMA" && lv >= 5) Sim.trophy(S, "grandmas_favorite");
+        Sim.emit(S, {
+          type: "toast",
+          icon: rd.icon,
+          text:
+            rd.name +
+            " is now a friend (level " +
+            lv +
+            ")!" +
+            (lv === 2 ? " They might ask you for things now." : ""),
+          inbox: lv === 2,
+        });
+        if (r.rider === "GRANDMA" && lv >= 5)
+          Sim.trophy(S, "grandmas_favorite");
       }
       if (R(S) < 0.06 * (tags.includes("tourist") ? 1.5 : 1)) {
         const tier = R(S) < 1 / 40 ? "s" : R(S) < 1 / 8 ? "h" : "c",
           id = r.rider.toLowerCase() + "_" + tier,
           card = D.CARDS[id];
         S.album.cards[id] = (S.album.cards[id] || 0) + 1;
-        Sim.emit(S, { type: "toast", icon: "🃏", text: rd.name + " left a rider card: " + card.name + (tier === "h" ? " (holo!)" : tier === "s" ? " (SECRET!)" : "") + ".", inbox: tier !== "c" });
+        Sim.emit(S, {
+          type: "toast",
+          icon: "🃏",
+          text:
+            rd.name +
+            " left a rider card: " +
+            card.name +
+            (tier === "h" ? " (holo!)" : tier === "s" ? " (SECRET!)" : "") +
+            ".",
+          inbox: tier !== "c",
+        });
       }
     }
     if (R(S) < 0.05) {
       const p = St.wpick(S, D.LOOT.ride);
-      toast(S, "🎁", nameOf(car) + " found something after the ride: " + prize(S, p, car) + ".");
+      toast(
+        S,
+        "🎁",
+        nameOf(car) +
+          " found something after the ride: " +
+          prize(S, p, car) +
+          ".",
+      );
     }
     // the riders walked off and left the doors open
-    if (!S.clock.night && R(S) < 0.035 * (tags.includes("tourist") ? 2 : 1)) incident(S, car, "doors", null);
+    if (!S.clock.night && R(S) < 0.035 * (tags.includes("tourist") ? 2 : 1))
+      incident(S, car, "doors", null);
     checkStage(S, car);
   }
 
@@ -591,7 +784,13 @@
     if (COMMUTE.includes(hood) && h >= 7 && h < 10) d += 0.5;
     if (t.includes("downtown") && h >= 11 && h < 14) d += 0.35;
     if (t.includes("tourist") && h >= 10 && h < 18) d += 0.32;
-    if ((t.includes("park") || t.includes("beach")) && Sim.weekend(S) && h >= 9 && h < 18) d += 0.3;
+    if (
+      (t.includes("park") || t.includes("beach")) &&
+      Sim.weekend(S) &&
+      h >= 9 &&
+      h < 18
+    )
+      d += 0.3;
     if (t.includes("nightlife") && h >= 20) d += 0.45;
     if (h < 7 || h >= 22) d *= 0.7;
     if (!Sim.open(S, hood)) d *= 0.65;
@@ -604,23 +803,41 @@
     for (const hood of G.names) {
       // riders mostly go somewhere nearby
       const H = G.hoods[hood],
-        weights = G.names.map((n) => [(Sim.demand(S, n, h) + 0.25) / (1 + Math.hypot(G.hoods[n].x - H.x, G.hoods[n].z - H.z) / 900), n]);
+        weights = G.names.map((n) => [
+          (Sim.demand(S, n, h) + 0.25) /
+            (1 + Math.hypot(G.hoods[n].x - H.x, G.hoods[n].z - H.z) / 900),
+          n,
+        ]);
       const d = Sim.demand(S, hood, h);
       let n = Math.floor(d) + (R(S) < d % 1 ? 1 : 0);
       n = Math.min(n, 4 - S.req.filter((r) => r.from === hood).length);
       for (let k = 0; k < n; k++) {
         let to = hood;
-        for (let tries = 0; to === hood && tries < 6; tries++) to = St.wpick(S, weights);
+        for (let tries = 0; to === hood && tries < 6; tries++)
+          to = St.wpick(S, weights);
         if (to === hood) continue;
         let rider = null;
         const smarts = S.cars.reduce((a, c) => Math.max(a, c.stats.smarts), 0);
         if (R(S) < 0.35 + smarts * 0.01) {
-          const w = D.RIDER_KEYS.map((k2) => [D.RIDERS[k2].fav.includes(hood) || D.RIDERS[k2].fav.includes(to) ? 3 : 1, k2]);
+          const w = D.RIDER_KEYS.map((k2) => [
+            D.RIDERS[k2].fav.includes(hood) || D.RIDERS[k2].fav.includes(to)
+              ? 3
+              : 1,
+            k2,
+          ]);
           rider = St.wpick(S, w);
         }
         const units = Sim.routeLen(hood, to);
         if (!isFinite(units)) continue;
-        S.req.push({ id: ((now * 97 + k) % 1e7) + "_" + hood.length + k, from: hood, to, rider, at: now, km: +Sim.km(units).toFixed(2), units });
+        S.req.push({
+          id: ((now * 97 + k) % 1e7) + "_" + hood.length + k,
+          from: hood,
+          to,
+          rider,
+          at: now,
+          km: +Sim.km(units).toFixed(2),
+          units,
+        });
       }
     }
   }
@@ -629,7 +846,7 @@
     const e = Sim.eff(S, car);
     let rate = 3.75 * (1 - Math.min(0.6, e.range * 0.02));
     if (has(car, "speed_demon") && !plus(car)) rate *= 1.2;
-    return ((units / speedOf(S, car)) / 60) * rate;
+    return (units / speedOf(S, car) / 60) * rate;
   }
   function findRide(S, car) {
     const here = car.sim.at,
@@ -651,7 +868,12 @@
     }
     if (!best) return false;
     best.taken = true;
-    car.sim.ride = { from: best.from, to: best.to, rider: best.rider, km: best.km };
+    car.sim.ride = {
+      from: best.from,
+      to: best.to,
+      rider: best.rider,
+      km: best.km,
+    };
     if (best.from === here) {
       car.sim.task = "toPickup";
       arrive(S, car);
@@ -665,19 +887,36 @@
   function moodTarget(S, car, hood, atHome) {
     const n = car.needs,
       sw = has(car, "neat_freak") ? 2 : 1;
-    const base = (Math.min(100, n.charge) * 1.2 + n.cleanliness * sw + n.code) / (2.2 + sw);
+    const base =
+      (Math.min(100, n.charge) * 1.2 + n.cleanliness * sw + n.code) /
+      (2.2 + sw);
     let t = base * 0.8 + 10 + car.bond * 2;
     for (const k of D.NEED_KEYS) if (n[k] < 10) t -= 6;
     const tags = D.HOODS[hood].tags;
     if (has(car, "hill_hater") && !tags.includes("hills")) t += 4;
-    if (has(car, "fog_lover") && (hood === "Ocean Beach" || hood === "Lands End")) t += 10;
+    if (
+      has(car, "fog_lover") &&
+      (hood === "Ocean Beach" || hood === "Lands End")
+    )
+      t += 10;
     if (has(car, "shy")) {
       if (tags.includes("downtown") && !plus(car)) t -= 10;
-      if (D.HOODS[hood].rank === null && !tags.includes("downtown") && !tags.includes("tourist") && !tags.includes("nightlife")) t += 5;
+      if (
+        D.HOODS[hood].rank === null &&
+        !tags.includes("downtown") &&
+        !tags.includes("tourist") &&
+        !tags.includes("nightlife")
+      )
+        t += 5;
     }
     if (car.likes && car.likes.hood === hood) t += 10;
     if (car.dashpet) t += 5;
-    if (car.dashpet && car.dashpet.id === "sea_lion_pup" && hood === "Fisherman's Wharf") t += 10;
+    if (
+      car.dashpet &&
+      car.dashpet.id === "sea_lion_pup" &&
+      hood === "Fisherman's Wharf"
+    )
+      t += 10;
     if (atHome)
       for (const f of S.garage.furniture) {
         const it = D.ITEMS[f];
@@ -696,20 +935,28 @@
       atHome = !s.from && s.at === Sim.HOME,
       e = Sim.eff(S, car),
       fogHere = S.clock.weather === "fog" && tags.includes("fog"),
-      fogSafe = has(car, "fog_lover") || (car.dashpet && car.dashpet.id === "mini_karl");
+      fogSafe =
+        has(car, "fog_lover") ||
+        (car.dashpet && car.dashpet.id === "mini_karl");
     let ch = 0,
       cln = 0,
       cd = 0;
     if (moving) {
       let c = tags.includes("hills") ? 9.5 : 6.5;
-      if (tags.includes("hills") && has(car, "hill_hater") && !plus(car)) c *= 1.6;
+      if (tags.includes("hills") && has(car, "hill_hater") && !plus(car))
+        c *= 1.6;
       if (has(car, "speed_demon") && !plus(car)) c *= 1.2;
       c *= 1 - Math.min(0.6, e.range * 0.02);
       ch -= c;
       let clnDrain = tags.includes("beach") ? 3.5 : 1.8;
       if (S.clock.weather === "drizzle") clnDrain += 2.5;
-      if (tags.includes("downtown")) clnDrain += 2.5 * (has(car, "foodie") ? 1.5 : 1) * (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
-      if (tags.includes("park")) clnDrain += 2.5 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1);
+      if (tags.includes("downtown"))
+        clnDrain +=
+          2.5 *
+          (has(car, "foodie") ? 1.5 : 1) *
+          (car.dashpet && car.dashpet.id === "succulent" ? 0.6 : 1);
+      if (tags.includes("park"))
+        clnDrain += 2.5 * (has(car, "bird_magnet") && !plus(car) ? 2 : 1);
       cln -= clnDrain;
       cd -= fogHere && !fogSafe ? 6.5 : 1.6;
       if (fogHere && has(car, "fog_lover") && plus(car)) cd += 4;
@@ -729,7 +976,8 @@
         if (d < 0) d *= 0.5;
         const v = n[key] + d * k;
         if (d < 0) n[key] = Math.max(v, Math.min(n[key], floor), 0);
-        else n[key] = Math.min(v, key === "charge" ? Math.max(100, n[key]) : 100);
+        else
+          n[key] = Math.min(v, key === "charge" ? Math.max(100, n[key]) : 100);
       };
     dec("charge", ch);
     dec("cleanliness", cln);
@@ -739,14 +987,19 @@
     // mood drifts toward its target at 10 an hour, never below 5
     const tgt = moodTarget(S, car, hood, atHome),
       d = tgt - n.mood;
-    n.mood = clamp(n.mood + clamp(d, -10 * k, 10 * k), Math.max(5, away ? Math.min(n.mood, 25) : 5), 100);
+    n.mood = clamp(
+      n.mood + clamp(d, -10 * k, 10 * k),
+      Math.max(5, away ? Math.min(n.mood, 25) : 5),
+      100,
+    );
     // a need left below 10 for more than two hours costs a little bond (it never goes below 0)
     const low = D.NEED_KEYS.some((q) => n[q] < 10);
     car.low.total += k;
     if (low) {
       car.low.run += 1;
       car.low.hours += k;
-      if (car.low.run > 120 && !away) car.bond = Math.max(0, car.bond - 0.05 * k);
+      if (car.low.run > 120 && !away)
+        car.bond = Math.max(0, car.bond - 0.05 * k);
     } else car.low.run = 0;
     car.hoodTime[hood] = (car.hoodTime[hood] || 0) + 1;
   }
@@ -764,7 +1017,10 @@
     if (!S.today || S.today.day !== c.day) newToday(S);
     if (c.night) {
       for (const car of S.cars) nightCar(S, car);
-      if (!c.sleepReady && S.cars.every((car) => ["garage", "school"].includes(car.sim.task))) {
+      if (
+        !c.sleepReady &&
+        S.cars.every((car) => ["garage", "school"].includes(car.sim.task))
+      ) {
         c.sleepReady = true;
         if (!away) Sim.emit(S, { type: "sleepReady" });
       }
@@ -777,14 +1033,21 @@
     if (Math.floor(c.minute / 60) !== prevH && c.minute < 1440) hourly(S, away);
     else if (c.minute % 20 === 0 && c.minute < 1440) spawnRequests(S);
     // the charger bays go to the cars at home that need them most
-    const home = S.cars.filter((car) => !car.sim.from && car.sim.at === Sim.HOME).sort((a, b) => a.needs.charge - b.needs.charge);
-    const charging = new Set(home.filter((car) => car.needs.charge < 100).slice(0, S.garage.bays));
+    const home = S.cars
+      .filter((car) => !car.sim.from && car.sim.at === Sim.HOME)
+      .sort((a, b) => a.needs.charge - b.needs.charge);
+    const charging = new Set(
+      home.filter((car) => car.needs.charge < 100).slice(0, S.garage.bays),
+    );
     for (const car of S.cars) {
-      if (car.training && car.training.endsAt <= absMin(S)) finishTraining(S, car);
+      if (car.training && car.training.endsAt <= absMin(S))
+        finishTraining(S, car);
       decay(S, car, charging.has(car), away);
       carMinute(S, car, away);
     }
-    for (const car of S.stored) if (car.training && car.training.endsAt <= absMin(S)) finishTraining(S, car);
+    for (const car of S.stored)
+      if (car.training && car.training.endsAt <= absMin(S))
+        finishTraining(S, car);
     if (c.minute >= 1440) startNight(S, away);
   }
   function carMinute(S, car, away) {
@@ -802,7 +1065,16 @@
         s.task = "nap";
         s.napT = 60;
         s.emote = { k: "z", at: absMin(S) };
-        Sim.emit(S, { type: "nap", carId: car.id, icon: "💤", text: nameOf(car) + " ran out of charge and is napping at the kerb. A tow van is on its way.", inbox: true, diary: true });
+        Sim.emit(S, {
+          type: "nap",
+          carId: car.id,
+          icon: "💤",
+          text:
+            nameOf(car) +
+            " ran out of charge and is napping at the kerb. A tow van is on its way.",
+          inbox: true,
+          diary: true,
+        });
         return;
       }
       if (s.task === "nap") return;
@@ -822,7 +1094,11 @@
         return;
       case "stuck":
         if (--s.stuckT <= 0) {
-          toast(S, "🙂", "A kind passer-by helped " + nameOf(car) + " get going again.");
+          toast(
+            S,
+            "🙂",
+            "A kind passer-by helped " + nameOf(car) + " get going again.",
+          );
           Sim.clearIncident(S, car);
         }
         return;
@@ -837,7 +1113,11 @@
       case "garage":
         if (car.training) return;
         if (s.wait % 2 === 0) {
-          const freeBay = S.garage.bays > S.cars.filter((c2) => c2 !== car && Sim.atHome(c2) && c2.needs.charge < 100).length;
+          const freeBay =
+            S.garage.bays >
+            S.cars.filter(
+              (c2) => c2 !== car && Sim.atHome(c2) && c2.needs.charge < 100,
+            ).length;
           if (n.charge >= (freeBay ? 70 : 50) && findRide(S, car)) return;
         }
         return;
@@ -891,10 +1171,19 @@
         s.ride = null;
         s.task = "idle";
       }
-      if (["idle", "hang", "care", "toHang", "toCare"].includes(s.task) && !car.training) goTo(S, car, Sim.HOME, "home");
+      if (
+        ["idle", "hang", "care", "toHang", "toCare"].includes(s.task) &&
+        !car.training
+      )
+        goTo(S, car, Sim.HOME, "home");
     }
     S.req = [];
-    if (!away) Sim.emit(S, { type: "night", icon: "🌙", text: "Midnight! The fleet is driving home." });
+    if (!away)
+      Sim.emit(S, {
+        type: "night",
+        icon: "🌙",
+        text: "Midnight! The fleet is driving home.",
+      });
   }
   // go to sleep: write the diary, then the next morning
   // lines: the diary already shown to the player (Sim.diary), so it's the same one that gets kept
@@ -905,11 +1194,19 @@
     S.diary.unshift(entry);
     if (S.diary.length > 30) S.diary.length = 30;
     // overnight in the garage (midnight to 06:00, six hours): the bays, and six hours of the auto-wash, auto-vac and nap pods
-    const home = S.cars.filter((car) => Sim.atHome(car)).sort((a, b) => a.needs.charge - b.needs.charge);
+    const home = S.cars
+      .filter((car) => Sim.atHome(car))
+      .sort((a, b) => a.needs.charge - b.needs.charge);
     home.forEach((car, i) => {
       const n = car.needs;
-      n.charge = Math.min(Math.max(100, n.charge), n.charge + (i < S.garage.bays ? 90 : 25));
-      n.cleanliness = Math.min(100, n.cleanliness + 6 * 15 * (S.garage.wash + S.garage.vac));
+      n.charge = Math.min(
+        Math.max(100, n.charge),
+        n.charge + (i < S.garage.bays ? 90 : 25),
+      );
+      n.cleanliness = Math.min(
+        100,
+        n.cleanliness + 6 * 15 * (S.garage.wash + S.garage.vac),
+      );
       n.code = Math.min(100, n.code + 6 * 15 * S.garage.pods + 10);
       n.mood = Math.min(100, n.mood + 8);
       car.sim.task = car.training ? car.sim.task : "garage";
@@ -926,14 +1223,36 @@
     for (const car of S.cars.concat(S.stored))
       if (car.training && car.training.endsAt <= absMin(S)) {
         finishTraining(S, car);
-        car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+        car.sim = {
+          at: Sim.HOME,
+          from: null,
+          to: null,
+          t: 0,
+          path: [],
+          dest: null,
+          task: "garage",
+          wait: 0,
+        };
       }
     c.weather = rollWeather(S);
     S.req = [];
     newToday(S);
     spawnRequests(S);
     if (S.quests.karl && S.quests.karl.by < absMin(S)) S.quests.karl = null;
-    if (!away) Sim.emit(S, { type: "morning", icon: c.weather === "fog" ? "🌫️" : "☀️", text: "Day " + c.day + ". " + (c.weather === "fog" ? "Karl the Fog is out on the west side." : c.weather === "drizzle" ? "A grey drizzle. The cars will need a wash." : "Clear skies over the city.") });
+    if (!away)
+      Sim.emit(S, {
+        type: "morning",
+        icon: c.weather === "fog" ? "🌫️" : "☀️",
+        text:
+          "Day " +
+          c.day +
+          ". " +
+          (c.weather === "fog"
+            ? "Karl the Fog is out on the west side."
+            : c.weather === "drizzle"
+              ? "A grey drizzle. The cars will need a wash."
+              : "Clear skies over the city."),
+      });
     return entry;
   };
   Sim.diary = (S) => diaryLines(S);
@@ -962,9 +1281,16 @@
     let worst = null;
     for (const car of S.cars) {
       const w = Sim.worst(car);
-      if (w.v < 10 && (!worst || w.v < worst.v)) worst = { car, need: w.need, v: w.v };
+      if (w.v < 10 && (!worst || w.v < worst.v))
+        worst = { car, need: w.need, v: w.v };
     }
-    if (worst) out.push(fill(D.DIARY.low, worst.car, { need: D.NEEDS[worst.need].name, label: Sim.label(worst.need, worst.v) }));
+    if (worst)
+      out.push(
+        fill(D.DIARY.low, worst.car, {
+          need: D.NEEDS[worst.need].name,
+          label: Sim.label(worst.need, worst.v),
+        }),
+      );
     else if (S.cars.length) out.push(St.pick(S, D.DIARY.good));
     out.push(fill(D.DIARY.fares, null, { fares: T.fares }));
     for (const l of T.lines.slice(-6)) out.push(l);
@@ -977,7 +1303,8 @@
      ====================================================================================================== */
   function hourly(S, away) {
     spawnRequests(S);
-    for (const car of S.cars) if (!car.training && R(S) < 0.08) randomEvent(S, car, away);
+    for (const car of S.cars)
+      if (!car.training && R(S) < 0.08) randomEvent(S, car, away);
     riderRequests(S);
     karlQuest(S);
     stocksTick(S);
@@ -989,33 +1316,63 @@
     const hood = hoodOf(car),
       tags = D.HOODS[hood].tags,
       fog = S.clock.weather === "fog" && tags.includes("fog");
-    const tone = away ? (R(S) < 0.8 ? "good" : "funny") : St.wpick(S, [
-      [70, "good"],
-      [20, "funny"],
-      [10, "bad"],
+    const tone = away
+      ? R(S) < 0.8
+        ? "good"
+        : "funny"
+      : St.wpick(S, [
+          [70, "good"],
+          [20, "funny"],
+          [10, "bad"],
+        ]);
+    const ok = (e) =>
+      !e.when || (e.when === "fog" ? fog : tags.includes(e.when));
+    const pool = D.EVENTS.filter((e) => e.tone === tone && ok(e)).map((e) => [
+      (e.rare || 1) * (e.id === "pigeon_home" && tags.includes("park") ? 3 : 1),
+      e,
     ]);
-    const ok = (e) => !e.when || (e.when === "fog" ? fog : tags.includes(e.when));
-    const pool = D.EVENTS.filter((e) => e.tone === tone && ok(e)).map((e) => [(e.rare || 1) * (e.id === "pigeon_home" && tags.includes("park") ? 3 : 1), e]);
     if (!pool.length) return;
     applyEvent(S, car, St.wpick(S, pool), away);
   }
   // what a random event does to a car (also the debug hook's way in)
-  Sim.forceEvent = (S, car, id) => applyEvent(S, car, D.EVENTS.find((e) => e.id === id), false);
+  Sim.forceEvent = (S, car, id) =>
+    applyEvent(
+      S,
+      car,
+      D.EVENTS.find((e) => e.id === id),
+      false,
+    );
   function applyEvent(S, car, ev, away) {
     if (!ev) return;
     const rawFx = ev.fx || {},
       fx = {},
       n = car.needs;
     for (const [rk, rv] of Object.entries(rawFx)) {
-      const k = rk === "shine" || rk === "cozy" || rk === "senses" ? "cleanliness" : rk === "clarity" ? "code" : rk;
+      const k =
+        rk === "shine" || rk === "cozy" || rk === "senses"
+          ? "cleanliness"
+          : rk === "clarity"
+            ? "code"
+            : rk;
       fx[k] = (fx[k] || 0) + rv;
     }
-    if (ev.id === "pigeon_home" && car.dashpet && car.dashpet.id === "pigeon_pal" && R(S) < 0.5) return;
+    if (
+      ev.id === "pigeon_home" &&
+      car.dashpet &&
+      car.dashpet.id === "pigeon_pal" &&
+      R(S) < 0.5
+    )
+      return;
     let num = 0;
     for (const k of D.NEED_KEYS.concat(["mood"]))
       if (fx[k]) {
-        const v = fx[k] < 0 && has(car, "bird_magnet") && k === "mood" ? 0 : fx[k];
-        n[k] = clamp(n[k] + v, k === "mood" ? 5 : away ? Math.min(n[k], 25) : 0, k === "charge" ? Math.max(100, n[k]) : 100);
+        const v =
+          fx[k] < 0 && has(car, "bird_magnet") && k === "mood" ? 0 : fx[k];
+        n[k] = clamp(
+          n[k] + v,
+          k === "mood" ? 5 : away ? Math.min(n[k], 25) : 0,
+          k === "charge" ? Math.max(100, n[k]) : 100,
+        );
       }
     if (fx.fares) {
       num = St.ri(S, fx.fares[0], fx.fares[1]);
@@ -1029,10 +1386,22 @@
     let extra = "";
     if (fx.petChance && !car.dashpet && R(S) < 0.2) {
       Sim.give(S, "pet_" + fx.petChance);
-      extra = " It left behind some adoption papers. Pigeon Pal wants to be friends!";
+      extra =
+        " It left behind some adoption papers. Pigeon Pal wants to be friends!";
     }
-    car.sim.emote = { k: ev.tone === "bad" ? "☁" : ev.tone === "funny" ? "!" : "♥", at: absMin(S) };
-    Sim.emit(S, { type: "event", tone: ev.tone, icon: ev.icon, carId: car.id, text: fill(ev.text, car, { n: num }) + extra, diary: true, inbox: ev.tone !== "funny" });
+    car.sim.emote = {
+      k: ev.tone === "bad" ? "☁" : ev.tone === "funny" ? "!" : "♥",
+      at: absMin(S),
+    };
+    Sim.emit(S, {
+      type: "event",
+      tone: ev.tone,
+      icon: ev.icon,
+      carId: car.id,
+      text: fill(ev.text, car, { n: num }) + extra,
+      diary: true,
+      inbox: ev.tone !== "funny",
+    });
   }
   function riderRequests(S) {
     const now = absMin(S);
@@ -1040,14 +1409,34 @@
       const f = S.riders[r];
       if (!f) continue;
       if (f.request && f.request.by < now) {
-        Sim.emit(S, { type: "toast", icon: D.RIDERS[r].icon, text: D.RIDERS[r].name + " found a " + D.ITEMS[f.request.item].name + " somewhere else. No hard feelings!" });
+        Sim.emit(S, {
+          type: "toast",
+          icon: D.RIDERS[r].icon,
+          text:
+            D.RIDERS[r].name +
+            " found a " +
+            D.ITEMS[f.request.item].name +
+            " somewhere else. No hard feelings!",
+        });
         f.request = null;
       }
       if (f.friend >= 2 && !f.request && R(S) < 0.04) {
         const item = St.pick(S, D.RIDER_ASKS[r]),
           by = now + 18 * 60;
         f.request = { item, by };
-        Sim.emit(S, { type: "request", icon: D.RIDERS[r].icon, rider: r, text: D.RIDERS[r].name + ": “" + D.ASK_LINES[r].replace("{item}", D.ITEMS[item].name).replace("{when}", Sim.fmtWhen(by)) + "”", inbox: true });
+        Sim.emit(S, {
+          type: "request",
+          icon: D.RIDERS[r].icon,
+          rider: r,
+          text:
+            D.RIDERS[r].name +
+            ": “" +
+            D.ASK_LINES[r]
+              .replace("{item}", D.ITEMS[item].name)
+              .replace("{when}", Sim.fmtWhen(by)) +
+            "”",
+          inbox: true,
+        });
       }
     }
   }
@@ -1055,9 +1444,11 @@
   Sim.deliver = function (S, rider, carId) {
     const f = S.riders[rider],
       car = Sim.find(S, carId);
-    if (!f || !f.request || !car) return { ok: false, msg: "Nothing to deliver." };
+    if (!f || !f.request || !car)
+      return { ok: false, msg: "Nothing to deliver." };
     const it = D.ITEMS[f.request.item];
-    if (!Sim.take(S, it.id)) return { ok: false, msg: "You don't have a " + it.name + " yet." };
+    if (!Sim.take(S, it.id))
+      return { ok: false, msg: "You don't have a " + it.name + " yet." };
     const pay = Math.round(it.price * 1.5 + 60);
     fares(S, pay);
     f.request = null;
@@ -1071,25 +1462,48 @@
       msg += " " + nameOf(car) + " gained +1 " + D.STATS[st].name + "!";
     }
     Sim.xp(S, 50);
-    Sim.emit(S, { type: "toast", icon: D.RIDERS[rider].icon, text: msg, diary: true });
+    Sim.emit(S, {
+      type: "toast",
+      icon: D.RIDERS[rider].icon,
+      text: msg,
+      diary: true,
+    });
     return { ok: true, msg };
   };
   function karlQuest(S) {
-    if (S.clock.weather !== "fog" || S.quests.karl || !Sim.open(S, "Ocean Beach") || R(S) > 0.06) return;
+    if (
+      S.clock.weather !== "fog" ||
+      S.quests.karl ||
+      !Sim.open(S, "Ocean Beach") ||
+      R(S) > 0.06
+    )
+      return;
     const item = St.pick(S, D.KARL_ASKS),
       by = absMin(S) + 6 * 60;
     S.quests.karl = { item, by, reward: St.pick(S, D.KARL_REWARDS) };
-    Sim.emit(S, { type: "karl", icon: "🌫️", text: "Karl the Fog drifts in, cold and curious: “Bring me a " + D.ITEMS[item].name + " before " + Sim.fmtClock(by % 1440) + "… and I'll make it worth your while.”", inbox: true });
+    Sim.emit(S, {
+      type: "karl",
+      icon: "🌫️",
+      text:
+        "Karl the Fog drifts in, cold and curious: “Bring me a " +
+        D.ITEMS[item].name +
+        " before " +
+        Sim.fmtClock(by % 1440) +
+        "… and I'll make it worth your while.”",
+      inbox: true,
+    });
   }
   Sim.karlDeliver = function (S, carId) {
     const q = S.quests.karl,
       car = Sim.find(S, carId);
-    if (!q || !car) return { ok: false, msg: "Karl isn't asking for anything." };
+    if (!q || !car)
+      return { ok: false, msg: "Karl isn't asking for anything." };
     if (q.by < absMin(S)) {
       S.quests.karl = null;
       return { ok: false, msg: "Karl has drifted away." };
     }
-    if (!Sim.take(S, q.item)) return { ok: false, msg: "You need a " + D.ITEMS[q.item].name + "." };
+    if (!Sim.take(S, q.item))
+      return { ok: false, msg: "You need a " + D.ITEMS[q.item].name + "." };
     S.quests.karl = null;
     const r = q.reward;
     let msg = "Karl swirls happily. ";
@@ -1100,9 +1514,16 @@
     } else if (r.dashpet) {
       Sim.give(S, "pet_" + r.dashpet);
       msg += "He leaves a tiny cloud behind: Mini Karl adoption papers!";
-    } else msg += "He leaves behind " + prize(S, { item: r.wrap || r.item }) + ".";
+    } else
+      msg += "He leaves behind " + prize(S, { item: r.wrap || r.item }) + ".";
     Sim.xp(S, 80);
-    Sim.emit(S, { type: "toast", icon: "🌫️", text: msg, inbox: true, diary: true });
+    Sim.emit(S, {
+      type: "toast",
+      icon: "🌫️",
+      text: msg,
+      inbox: true,
+      diary: true,
+    });
     return { ok: true, msg };
   };
 
@@ -1123,7 +1544,17 @@
         for (const car of S.cars)
           if (car.dashpet && !car.dashpet.mite && R(S) < 0.12) {
             car.dashpet.mite = St.pick(S, Object.keys(D.MITES));
-            Sim.emit(S, { type: "toast", carId: car.id, icon: D.MITES[car.dashpet.mite].icon, text: "A " + D.MITES[car.dashpet.mite].name + " has moved in with " + car.dashpet.name + ". They seem happy together." });
+            Sim.emit(S, {
+              type: "toast",
+              carId: car.id,
+              icon: D.MITES[car.dashpet.mite].icon,
+              text:
+                "A " +
+                D.MITES[car.dashpet.mite].name +
+                " has moved in with " +
+                car.dashpet.name +
+                ". They seem happy together.",
+            });
           }
       S.lot = null;
       S.quests.riddle = null;
@@ -1135,10 +1566,20 @@
         if (absMin(S) >= car.training.endsAt) finishTraining(S, car);
       }
       // the Sourdough Starter grows into a loaf over 30 days
-      if (car.dashpet && car.dashpet.id === "starter" && St.daysBetween(car.dashpet.since, date) >= 30) {
+      if (
+        car.dashpet &&
+        car.dashpet.id === "starter" &&
+        St.daysBetween(car.dashpet.since, date) >= 30
+      ) {
         car.dashpet.since = date;
         Sim.give(S, "rare_starter_loaf");
-        Sim.emit(S, { type: "toast", icon: "🍞", text: nameOf(car) + "'s Sourdough Starter grew into a whole Mother Loaf!", inbox: true });
+        Sim.emit(S, {
+          type: "toast",
+          icon: "🍞",
+          text:
+            nameOf(car) + "'s Sourdough Starter grew into a whole Mother Loaf!",
+          inbox: true,
+        });
       }
       checkStage(S, car);
     }
@@ -1151,10 +1592,30 @@
       next = D.STAGES[i + 1];
     if (!next) return;
     const q = next.need;
-    if (!((Sim.age(car) >= q.age || car.km >= q.km) && car.bond >= q.bond && Sim.level(car) >= q.level)) return;
+    if (
+      !(
+        (Sim.age(car) >= q.age || car.km >= q.km) &&
+        car.bond >= q.bond &&
+        Sim.level(car) >= q.level
+      )
+    )
+      return;
     car.stage = next.id;
     car.title = titleFor(car);
-    Sim.emit(S, { type: "stage", carId: car.id, icon: next.badge, text: nameOf(car) + " grew up into a " + next.name + "! Title: " + car.title + ".", inbox: true, diary: true });
+    Sim.emit(S, {
+      type: "stage",
+      carId: car.id,
+      icon: next.badge,
+      text:
+        nameOf(car) +
+        " grew up into a " +
+        next.name +
+        "! Title: " +
+        car.title +
+        ".",
+      inbox: true,
+      diary: true,
+    });
     if (next.id === "legend") Sim.trophy(S, "legend");
   }
   Sim.checkStage = checkStage;
@@ -1175,32 +1636,66 @@
   /* ======================================================================================================
      caring: hands-on, items, pats
      ====================================================================================================== */
-  const JOB_NEED = { charge: "charge", dirty: "cleanliness", vacuum: "cleanliness", birds: "cleanliness", reboot: "code" };
+  const JOB_NEED = {
+    charge: "charge",
+    dirty: "cleanliness",
+    vacuum: "cleanliness",
+    birds: "cleanliness",
+    reboot: "code",
+  };
   Sim.JOB_NEED = JOB_NEED;
-  Sim.NEED_JOB = { charge: "charge", cleanliness: "dirty", code: "reboot", shine: "dirty", cozy: "vacuum", senses: "birds", clarity: "reboot" };
+  Sim.NEED_JOB = {
+    charge: "charge",
+    cleanliness: "dirty",
+    code: "reboot",
+    shine: "dirty",
+    cozy: "vacuum",
+    senses: "birds",
+    clarity: "reboot",
+  };
   Sim.careDone = function (S, carId, kind, q) {
     const car = Sim.find(S, carId);
     if (!car) return null;
     const need = JOB_NEED[kind];
-    if (need) car.needs[need] = need === "charge" ? Math.max(100, car.needs.charge) : 100;
+    if (need)
+      car.needs[need] =
+        need === "charge" ? Math.max(100, car.needs.charge) : 100;
     else Sim.clearIncident(S, car);
     const b = 0.3 + (q === 2 ? 0.2 : 0);
     car.bond = Math.min(10, car.bond + b);
     car.needs.mood = Math.min(100, car.needs.mood + 6);
     if (car.sim.task === "nap" && car.needs.charge > 10) car.sim.task = "idle";
-    if (car.sim.task === "care") car.sim.task = car.sim.at === Sim.HOME ? "garage" : "idle";
+    if (car.sim.task === "care")
+      car.sim.task = car.sim.at === Sim.HOME ? "garage" : "idle";
     car.sim.emote = { k: "♥", at: absMin(S) };
     Sim.xp(S, 25 + (q === 2 ? 10 : 0));
-    if (kind === "birds" && ++S.counts.birds >= 10) Sim.trophy(S, "pigeon_whisperer");
+    if (kind === "birds" && ++S.counts.birds >= 10)
+      Sim.trophy(S, "pigeon_whisperer");
     storyHook(S, { job: kind });
-    if (S.today) S.today.lines.push("You gave " + nameOf(car) + " a hands-on " + { charge: "recharge", dirty: "wash", vacuum: "vacuum", birds: "bird-shooing", reboot: "reboot", doors: "door patrol", cone: "cone toss" }[kind] + ".");
+    if (S.today)
+      S.today.lines.push(
+        "You gave " +
+          nameOf(car) +
+          " a hands-on " +
+          {
+            charge: "recharge",
+            dirty: "wash",
+            vacuum: "vacuum",
+            birds: "bird-shooing",
+            reboot: "reboot",
+            doors: "door patrol",
+            cone: "cone toss",
+          }[kind] +
+          ".",
+      );
     checkStage(S, car);
     return { bond: b, need };
   };
   Sim.useItem = function (S, carId, itemId) {
     const it = D.ITEMS[itemId],
       car = Sim.find(S, carId);
-    if (!it || !Sim.has(S, itemId)) return { ok: false, msg: "You don't have that." };
+    if (!it || !Sim.has(S, itemId))
+      return { ok: false, msg: "You don't have that." };
     if (it.cat === "wrap") return Sim.applyWrap(S, carId, itemId);
     if (it.cat === "gear") return Sim.equip(S, carId, itemId);
     if (it.cat === "dashpet") return Sim.adoptDashpet(S, carId, itemId);
@@ -1208,21 +1703,42 @@
     if (it.cat === "furniture") return Sim.placeFurniture(S, itemId);
     if (!car) return { ok: false, msg: "Pick a car." };
     if (it.cat === "read") {
-      if (car.read.includes(itemId)) return { ok: false, msg: nameOf(car) + " has already read that one." };
+      if (car.read.includes(itemId))
+        return { ok: false, msg: nameOf(car) + " has already read that one." };
       Sim.take(S, itemId);
       car.read.push(itemId);
       car.stats.smarts += it.smarts;
       car.needs.mood = Math.min(100, car.needs.mood + 3);
       Sim.xp(S, 8);
       if (car.read.length >= 10) Sim.trophy(S, "bookworm");
-      return { ok: true, msg: nameOf(car) + " read " + it.name + ". +" + it.smarts + " Smarts!" };
+      return {
+        ok: true,
+        msg: nameOf(car) + " read " + it.name + ". +" + it.smarts + " Smarts!",
+      };
     }
-    if (!it.effect) return { ok: false, msg: it.cat === "chip" ? "Firmware chips are for the Driving Academy on Twin Peaks." : "That's a treasure: keep it, or sell it at the Pawn Shop." };
+    if (!it.effect)
+      return {
+        ok: false,
+        msg:
+          it.cat === "chip"
+            ? "Firmware chips are for the Driving Academy on Twin Peaks."
+            : "That's a treasure: keep it, or sell it at the Pawn Shop.",
+      };
     Sim.take(S, itemId);
     const n = car.needs;
     for (const [rawK, v] of Object.entries(it.effect)) {
-      const k = rawK === "shine" || rawK === "cozy" || rawK === "senses" ? "cleanliness" : rawK === "clarity" ? "code" : rawK;
-      if (k === "charge") n.charge = clamp(n.charge + v, 0, it.over ? 120 : Math.max(100, n.charge));
+      const k =
+        rawK === "shine" || rawK === "cozy" || rawK === "senses"
+          ? "cleanliness"
+          : rawK === "clarity"
+            ? "code"
+            : rawK;
+      if (k === "charge")
+        n.charge = clamp(
+          n.charge + v,
+          0,
+          it.over ? 120 : Math.max(100, n.charge),
+        );
       else n[k] = clamp(n[k] + v, k === "mood" ? 5 : 0, 100);
     }
     let b = 0.05,
@@ -1249,27 +1765,47 @@
     const car = Sim.find(S, carId),
       h = hourIdx(S);
     if (!car) return { ok: false };
-    if (car.patAt === h) return { ok: false, msg: nameOf(car) + " is still happy from the last pat." };
+    if (car.patAt === h)
+      return {
+        ok: false,
+        msg: nameOf(car) + " is still happy from the last pat.",
+      };
     car.patAt = h;
     car.bond = Math.min(10, car.bond + (has(car, "chatty") ? 0.15 : 0.1));
     car.needs.mood = Math.min(100, car.needs.mood + 4);
     car.sim.emote = { k: "♥", at: absMin(S) };
     Sim.xp(S, 1);
-    return { ok: true, msg: nameOf(car) + (has(car, "chatty") ? " beeps a whole happy song." : " beeps happily.") };
+    return {
+      ok: true,
+      msg:
+        nameOf(car) +
+        (has(car, "chatty") ? " beeps a whole happy song." : " beeps happily."),
+    };
   };
   Sim.playSong = function (S, carId, itemId) {
     const car = Sim.find(S, carId),
       it = D.ITEMS[itemId];
     if (!car || !Sim.has(S, itemId)) return { ok: false, msg: "Pick a car." };
     if (!car.heard.includes(itemId)) car.heard.push(itemId);
-    (S.album.playlist[itemId] = S.album.playlist[itemId] || []).includes(car.id) || S.album.playlist[itemId].push(car.id);
+    (S.album.playlist[itemId] = S.album.playlist[itemId] || []).includes(
+      car.id,
+    ) || S.album.playlist[itemId].push(car.id);
     const h = hourIdx(S);
     let mood = car.songAt === h ? 0 : 5;
     if (car.likes && car.likes.song === itemId) mood += 10;
     car.songAt = h;
     car.needs.mood = Math.min(100, car.needs.mood + mood);
     car.sim.emote = { k: "♪", at: absMin(S) };
-    return { ok: true, msg: nameOf(car) + " is listening to " + it.name + (car.likes && car.likes.song === itemId ? ". Its favourite song!" : ".") };
+    return {
+      ok: true,
+      msg:
+        nameOf(car) +
+        " is listening to " +
+        it.name +
+        (car.likes && car.likes.song === itemId
+          ? ". Its favourite song!"
+          : "."),
+    };
   };
   // where to send a car for hands-on care: the nearest Care Spot by road
   Sim.nearestCare = function (car) {
@@ -1289,14 +1825,28 @@
   // the player's orders: a Care Spot, a neighbourhood to hang out in, home
   function order(S, carId, dest, task) {
     const car = Sim.find(S, carId);
-    if (!car || !S.cars.includes(car)) return { ok: false, msg: "That car isn't on the map." };
-    if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
-    if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
+    if (!car || !S.cars.includes(car))
+      return { ok: false, msg: "That car isn't on the map." };
+    if (car.training)
+      return {
+        ok: false,
+        msg: nameOf(car) + " is at the Driving Academy until its course ends.",
+      };
+    if (S.clock.night)
+      return { ok: false, msg: "It's night. Everybody's going home." };
     const s = car.sim;
     if (task === "toCare") {
-      if (["stuck", "nap", "tow"].includes(s.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+      if (["stuck", "nap", "tow"].includes(s.task))
+        return {
+          ok: false,
+          msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + ".",
+        };
     } else {
-      if (["toPickup", "ride", "stuck", "nap", "tow"].includes(s.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+      if (["toPickup", "ride", "stuck", "nap", "tow"].includes(s.task))
+        return {
+          ok: false,
+          msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + ".",
+        };
     }
     if (!dest) return { ok: false, msg: "Nowhere to go." };
     let note = "";
@@ -1305,21 +1855,40 @@
       note = " dropped off its rider and";
     } else if (s.task === "toPickup") {
       if (s.ride && S.req) {
-        const req = S.req.find((q) => q.taken && q.from === s.ride.from && q.to === s.ride.to && q.rider === s.ride.rider);
+        const req = S.req.find(
+          (q) =>
+            q.taken &&
+            q.from === s.ride.from &&
+            q.to === s.ride.to &&
+            q.rider === s.ride.rider,
+        );
         if (req) req.taken = false;
       }
       s.ride = null;
       note = " cancelled its pickup and";
     }
     goTo(S, car, dest, task);
-    return { ok: true, msg: nameOf(car) + note + " is on its way to " + dest + "." };
+    return {
+      ok: true,
+      msg: nameOf(car) + note + " is on its way to " + dest + ".",
+    };
   }
   Sim.callToCare = (S, carId) => {
     const car = Sim.find(S, carId);
-    if (!car || !S.cars.includes(car)) return { ok: false, msg: "That car isn't on the map." };
-    if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
-    if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
-    if (["stuck", "nap", "tow"].includes(car.sim.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    if (!car || !S.cars.includes(car))
+      return { ok: false, msg: "That car isn't on the map." };
+    if (car.training)
+      return {
+        ok: false,
+        msg: nameOf(car) + " is at the Driving Academy until its course ends.",
+      };
+    if (S.clock.night)
+      return { ok: false, msg: "It's night. Everybody's going home." };
+    if (["stuck", "nap", "tow"].includes(car.sim.task))
+      return {
+        ok: false,
+        msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + ".",
+      };
     if (Sim.careSpot(car)) {
       let note = "";
       if (car.sim.task === "ride") {
@@ -1327,7 +1896,13 @@
         note = " dropped off its rider and";
       } else if (car.sim.task === "toPickup") {
         if (car.sim.ride && S.req) {
-          const req = S.req.find((q) => q.taken && q.from === car.sim.ride.from && q.to === car.sim.ride.to && q.rider === car.sim.ride.rider);
+          const req = S.req.find(
+            (q) =>
+              q.taken &&
+              q.from === car.sim.ride.from &&
+              q.to === car.sim.ride.to &&
+              q.rider === car.sim.ride.rider,
+          );
           if (req) req.taken = false;
         }
         car.sim.ride = null;
@@ -1335,17 +1910,30 @@
       }
       car.sim.task = "care";
       car.sim.careT = 0;
-      return { ok: true, msg: nameOf(car) + note + " is already at a Care Spot." };
+      return {
+        ok: true,
+        msg: nameOf(car) + note + " is already at a Care Spot.",
+      };
     }
     return order(S, carId, car && Sim.nearestCare(car), "toCare");
   };
   // send a car to a particular Care Spot
   Sim.callTo = (S, carId, hood) => {
     const car = Sim.find(S, carId);
-    if (!car || !S.cars.includes(car)) return { ok: false, msg: "That car isn't on the map." };
-    if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
-    if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
-    if (["stuck", "nap", "tow"].includes(car.sim.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    if (!car || !S.cars.includes(car))
+      return { ok: false, msg: "That car isn't on the map." };
+    if (car.training)
+      return {
+        ok: false,
+        msg: nameOf(car) + " is at the Driving Academy until its course ends.",
+      };
+    if (S.clock.night)
+      return { ok: false, msg: "It's night. Everybody's going home." };
+    if (["stuck", "nap", "tow"].includes(car.sim.task))
+      return {
+        ok: false,
+        msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + ".",
+      };
     if (!car.sim.from && car.sim.at === hood) {
       let note = "";
       if (car.sim.task === "ride") {
@@ -1353,7 +1941,13 @@
         note = " dropped off its rider and";
       } else if (car.sim.task === "toPickup") {
         if (car.sim.ride && S.req) {
-          const req = S.req.find((q) => q.taken && q.from === car.sim.ride.from && q.to === car.sim.ride.to && q.rider === car.sim.ride.rider);
+          const req = S.req.find(
+            (q) =>
+              q.taken &&
+              q.from === car.sim.ride.from &&
+              q.to === car.sim.ride.to &&
+              q.rider === car.sim.ride.rider,
+          );
           if (req) req.taken = false;
         }
         car.sim.ride = null;
@@ -1365,16 +1959,21 @@
     }
     return order(S, carId, hood, "toCare");
   };
-  Sim.sendTo = (S, carId, hood) => order(S, carId, hood, hood === Sim.HOME ? "home" : "toHang");
+  Sim.sendTo = (S, carId, hood) =>
+    order(S, carId, hood, hood === Sim.HOME ? "home" : "toHang");
   Sim.goHome = (S, carId) => order(S, carId, Sim.HOME, "home");
   // roadside help: an incident fixed for a few Fares (less bond than doing it yourself)
   Sim.roadside = function (S, carId) {
     const car = Sim.find(S, carId);
     if (!car || car.sim.task !== "stuck") return { ok: false };
-    if (S.player.fares < 25) return { ok: false, msg: "Roadside help costs ◎25." };
+    if (S.player.fares < 25)
+      return { ok: false, msg: "Roadside help costs ◎25." };
     fares(S, -25);
     Sim.clearIncident(S, car);
-    return { ok: true, msg: "Roadside help sorted " + nameOf(car) + " out. ◎25." };
+    return {
+      ok: true,
+      msg: "Roadside help sorted " + nameOf(car) + " out. ◎25.",
+    };
   };
 
   /* ======================================================================================================
@@ -1384,25 +1983,43 @@
     const car = Sim.find(S, carId),
       it = D.ITEMS[itemId];
     if (!car) return { ok: false, msg: "Pick a car to paint." };
-    if (!Sim.take(S, itemId)) return { ok: false, msg: "You don't have that wrap." };
+    if (!Sim.take(S, itemId))
+      return { ok: false, msg: "You don't have that wrap." };
     car.wrap = it.wrap;
     if (!S.album.wraps.includes(it.wrap)) S.album.wraps.push(it.wrap);
     car.needs.mood = Math.min(100, car.needs.mood + 10);
     Sim.xp(S, 20);
-    return { ok: true, msg: nameOf(car) + " is now painted " + D.WRAPS[it.wrap].name + "!", look: true };
+    return {
+      ok: true,
+      msg: nameOf(car) + " is now painted " + D.WRAPS[it.wrap].name + "!",
+      look: true,
+    };
   };
   Sim.slots = (car) => D.STAGES.find((s) => s.id === car.stage).slots;
   Sim.equip = function (S, carId, itemId) {
     const car = Sim.find(S, carId),
       it = D.ITEMS[itemId];
     if (!car) return { ok: false, msg: "Pick a car." };
-    if (!Sim.slots(car).includes(it.slot)) return { ok: false, msg: nameOf(car) + " unlocks the " + D.SLOTS[it.slot] + " slot when it grows up." };
-    if (it.slot === "horn" && car.bond < 4) return { ok: false, msg: "Custom horns unlock at 4 hearts." };
+    if (!Sim.slots(car).includes(it.slot))
+      return {
+        ok: false,
+        msg:
+          nameOf(car) +
+          " unlocks the " +
+          D.SLOTS[it.slot] +
+          " slot when it grows up.",
+      };
+    if (it.slot === "horn" && car.bond < 4)
+      return { ok: false, msg: "Custom horns unlock at 4 hearts." };
     if (!Sim.take(S, itemId)) return { ok: false, msg: "You don't have that." };
     if (car.gear[it.slot]) Sim.give(S, car.gear[it.slot]);
     car.gear[it.slot] = itemId;
     car.needs.mood = Math.min(100, car.needs.mood + 4);
-    return { ok: true, msg: nameOf(car) + " is wearing the " + it.name + ".", look: true };
+    return {
+      ok: true,
+      msg: nameOf(car) + " is wearing the " + it.name + ".",
+      look: true,
+    };
   };
   Sim.unequip = function (S, carId, slot) {
     const car = Sim.find(S, carId);
@@ -1415,23 +2032,47 @@
     const car = Sim.find(S, carId),
       it = D.ITEMS[itemId];
     if (!car) return { ok: false, msg: "Pick a car." };
-    if (!Sim.take(S, itemId)) return { ok: false, msg: "You don't have those papers." };
+    if (!Sim.take(S, itemId))
+      return { ok: false, msg: "You don't have those papers." };
     const p = D.DASHPETS[it.dashpet],
       old = car.dashpet;
-    car.dashpet = { id: it.dashpet, name: p.name, since: Sim.today(), mite: null };
-    if (!S.album.dashpets.includes(it.dashpet)) S.album.dashpets.push(it.dashpet);
+    car.dashpet = {
+      id: it.dashpet,
+      name: p.name,
+      since: Sim.today(),
+      mite: null,
+    };
+    if (!S.album.dashpets.includes(it.dashpet))
+      S.album.dashpets.push(it.dashpet);
     car.needs.mood = Math.min(100, car.needs.mood + 15);
     Sim.xp(S, 30);
-    return { ok: true, msg: p.name + " hopped onto " + nameOf(car) + "'s roof!" + (old ? " (" + old.name + " went to live at the Paddock with the bison.)" : ""), look: true };
+    return {
+      ok: true,
+      msg:
+        p.name +
+        " hopped onto " +
+        nameOf(car) +
+        "'s roof!" +
+        (old
+          ? " (" + old.name + " went to live at the Paddock with the bison.)"
+          : ""),
+      look: true,
+    };
   };
   Sim.nickname = function (S, carId, nick) {
     const car = Sim.find(S, carId);
-    if (!car || car.bond < 2) return { ok: false, msg: "Nicknames unlock at 2 hearts." };
+    if (!car || car.bond < 2)
+      return { ok: false, msg: "Nicknames unlock at 2 hearts." };
     nick = String(nick || "")
       .trim()
       .slice(0, 16);
     car.nick = nick || null;
-    return { ok: true, msg: nick ? "From now on, " + car.name + " answers to " + nick + "." : "Nickname cleared." };
+    return {
+      ok: true,
+      msg: nick
+        ? "From now on, " + car.name + " answers to " + nick + "."
+        : "Nickname cleared.",
+    };
   };
 
   /* ======================================================================================================
@@ -1447,8 +2088,13 @@
   Sim.upgrade = function (S, key) {
     const g = D.GARAGE[key],
       cost = Sim.upgradeCost(S, key);
-    if (!g || cost === null || cost === undefined) return { ok: false, msg: "That's fully upgraded." };
-    if (S.player.fares < cost) return { ok: false, msg: "You need ◎" + cost.toLocaleString("en-US") + "." };
+    if (!g || cost === null || cost === undefined)
+      return { ok: false, msg: "That's fully upgraded." };
+    if (S.player.fares < cost)
+      return {
+        ok: false,
+        msg: "You need ◎" + cost.toLocaleString("en-US") + ".",
+      };
     fares(S, -cost);
     S.garage[key]++;
     Sim.xp(S, 25);
@@ -1456,7 +2102,11 @@
   };
   Sim.roomSlots = (S) => D.ROOMS[S.garage.rooms] || 2;
   Sim.placeFurniture = function (S, itemId) {
-    if (S.garage.furniture.length >= Sim.roomSlots(S)) return { ok: false, msg: "No room left. Upgrade the garage's rooms, or put something away." };
+    if (S.garage.furniture.length >= Sim.roomSlots(S))
+      return {
+        ok: false,
+        msg: "No room left. Upgrade the garage's rooms, or put something away.",
+      };
     if (!Sim.take(S, itemId)) return { ok: false, msg: "You don't have that." };
     S.garage.furniture.push(itemId);
     return { ok: true, msg: D.ITEMS[itemId].name + " is in the garage now." };
@@ -1474,7 +2124,10 @@
      ====================================================================================================== */
   Sim.season = function (now) {
     const d = new Date(now || Sim.now()),
-      md = String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      md =
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(d.getDate()).padStart(2, "0");
     return D.SEASONS.filter((s) => md >= s.from && md <= s.to);
   };
   const seasonOn = (id) => Sim.season().some((s) => s.id === id);
@@ -1485,16 +2138,33 @@
     let st = S.shops[id];
     if (st && st.h === h) return st;
     st = S.shops[id] = { h, stock: [] };
-    let pool = sh.pool.filter((i) => D.ITEMS[i] && (!D.ITEMS[i].season || seasonOn(D.ITEMS[i].season)));
+    let pool = sh.pool.filter(
+      (i) => D.ITEMS[i] && (!D.ITEMS[i].season || seasonOn(D.ITEMS[i].season)),
+    );
     // the thrift shop also turns up retired seasonal things
-    if (sh.random) pool = pool.concat(Object.keys(D.ITEMS).filter((i) => D.ITEMS[i].season && !seasonOn(D.ITEMS[i].season) && (D.ITEMS[i].cat === "gear" || D.ITEMS[i].cat === "wrap") && R(S) < 0.15));
+    if (sh.random)
+      pool = pool.concat(
+        Object.keys(D.ITEMS).filter(
+          (i) =>
+            D.ITEMS[i].season &&
+            !seasonOn(D.ITEMS[i].season) &&
+            (D.ITEMS[i].cat === "gear" || D.ITEMS[i].cat === "wrap") &&
+            R(S) < 0.15,
+        ),
+      );
     for (const id2 of St.shuffle(S, pool)) {
       if (st.stock.length >= sh.size) break;
       const it = D.ITEMS[id2];
       if (it.rarity >= 100) continue;
       const p = it.rarity >= 90 ? 0.08 : 1 - it.rarity / 130;
       if (R(S) > p) continue;
-      st.stock.push({ item: id2, qty: it.rarity > 60 ? 1 : St.ri(S, 1, 4), price: Math.max(5, Math.round(it.price * (0.85 + R(S) * 0.35))), tries: 0, mad: false });
+      st.stock.push({
+        item: id2,
+        qty: it.rarity > 60 ? 1 : St.ri(S, 1, 4),
+        price: Math.max(5, Math.round(it.price * (0.85 + R(S) * 0.35))),
+        tries: 0,
+        mad: false,
+      });
     }
     return st;
   };
@@ -1505,36 +2175,77 @@
       keeper = D.SHOPS[shopId].keeper;
     if (!e || e.qty <= 0) return { ok: false, msg: "Sold out!" };
     offer = Math.round(offer === undefined ? e.price : offer);
-    if (e.mad && offer < e.price) return { ok: false, msg: keeper + " glares. “Full price. ◎" + e.price + ". Take it or leave it.”" };
+    if (e.mad && offer < e.price)
+      return {
+        ok: false,
+        msg:
+          keeper +
+          " glares. “Full price. ◎" +
+          e.price +
+          ". Take it or leave it.”",
+      };
     let pay = 0;
     if (offer >= e.price) pay = e.price;
     else if (offer < e.price * 0.55) {
       e.mad = true;
-      return { ok: false, mad: true, msg: keeper + ": “I'm insulted! Get out of my shop!” (They'll only take full price now.)" };
+      return {
+        ok: false,
+        mad: true,
+        msg:
+          keeper +
+          ": “I'm insulted! Get out of my shop!” (They'll only take full price now.)",
+      };
     } else if (R(S) < (offer / e.price - 0.75) / 0.2) pay = offer;
     else if (e.tries >= 3) {
       e.mad = true;
-      return { ok: false, msg: keeper + ": “That's my final price. ◎" + e.price + ".”" };
+      return {
+        ok: false,
+        msg: keeper + ": “That's my final price. ◎" + e.price + ".”",
+      };
     } else {
       e.tries++;
       e.price = Math.round((offer + e.price) / 2);
-      return { ok: false, counter: e.price, msg: keeper + ": “How about ◎" + e.price + "?”" };
+      return {
+        ok: false,
+        counter: e.price,
+        msg: keeper + ": “How about ◎" + e.price + "?”",
+      };
     }
-    if (S.player.fares < pay) return { ok: false, msg: "You need ◎" + pay + "." };
-    if (Sim.invCount(S) >= Sim.invCap(S)) return { ok: false, msg: "Your snack fridge is full! Sell or use something first." };
+    if (S.player.fares < pay)
+      return { ok: false, msg: "You need ◎" + pay + "." };
+    if (Sim.invCount(S) >= Sim.invCap(S))
+      return {
+        ok: false,
+        msg: "Your snack fridge is full! Sell or use something first.",
+      };
     fares(S, -pay);
     e.qty--;
     Sim.give(S, e.item);
     Sim.xp(S, 2);
     const it = D.ITEMS[e.item];
-    return { ok: true, paid: pay, msg: (pay < e.price ? keeper + ": “Fine, fine. Deal.” " : "") + "You bought " + it.icon + " " + it.name + " for ◎" + pay + "." };
+    return {
+      ok: true,
+      paid: pay,
+      msg:
+        (pay < e.price ? keeper + ": “Fine, fine. Deal.” " : "") +
+        "You bought " +
+        it.icon +
+        " " +
+        it.name +
+        " for ◎" +
+        pay +
+        ".",
+    };
   };
   // the season's stall: limited items at a fixed price, only while the event lasts
   Sim.buySeason = function (S, itemId) {
     const it = D.ITEMS[itemId];
-    if (!it || !it.season || !seasonOn(it.season)) return { ok: false, msg: "That's not on sale any more." };
-    if (S.player.fares < it.price) return { ok: false, msg: "You need ◎" + it.price + "." };
-    if (Sim.invCount(S) >= Sim.invCap(S)) return { ok: false, msg: "Your snack fridge is full!" };
+    if (!it || !it.season || !seasonOn(it.season))
+      return { ok: false, msg: "That's not on sale any more." };
+    if (S.player.fares < it.price)
+      return { ok: false, msg: "You need ◎" + it.price + "." };
+    if (Sim.invCount(S) >= Sim.invCap(S))
+      return { ok: false, msg: "Your snack fridge is full!" };
     fares(S, -it.price);
     Sim.give(S, itemId);
     return { ok: true, msg: "You bought " + it.icon + " " + it.name + "." };
@@ -1545,7 +2256,16 @@
     if (!it || !Sim.take(S, itemId, n)) return { ok: false };
     const f = Math.floor(it.price * 0.5) * n;
     fares(S, f);
-    return { ok: true, msg: "The Pawn Shop gave you ◎" + f + " for " + (n > 1 ? n + "× " : "") + it.name + "." };
+    return {
+      ok: true,
+      msg:
+        "The Pawn Shop gave you ◎" +
+        f +
+        " for " +
+        (n > 1 ? n + "× " : "") +
+        it.name +
+        ".",
+    };
   };
 
   /* ======================================================================================================
@@ -1569,13 +2289,25 @@
     dailyDay(S);
     const d = D.DAILIES[id],
       hood = Object.keys(D.HOODS).find((h) => D.HOODS[h].daily === id);
-    if (!Sim.open(S, hood)) return { open: false, why: "Unlocks at Crew Rank " + D.HOODS[hood].rank };
-    if (d.rank && S.player.rank < d.rank) return { open: false, why: "Unlocks at Crew Rank " + d.rank };
-    if (S.dailies.done[id]) return { open: false, done: true, why: "Come back tomorrow morning" };
+    if (!Sim.open(S, hood))
+      return { open: false, why: "Unlocks at Crew Rank " + D.HOODS[hood].rank };
+    if (d.rank && S.player.rank < d.rank)
+      return { open: false, why: "Unlocks at Crew Rank " + d.rank };
+    if (S.dailies.done[id])
+      return { open: false, done: true, why: "Come back tomorrow morning" };
     return { open: true };
   };
   const WHEEL_W = [18, 14, 12, 10, 8, 10, 6, 3];
-  const WHEEL_P = [{ fares: 50 }, { item: "snack_capacitor" }, { fares: 150 }, { item: "toy_squeaky_cone" }, { item: "chip_lombard" }, { text: "The wheel stopped on a pothole. Nothing! But a lovely spin." }, { item: "wax_surf" }, { fares: 600 }];
+  const WHEEL_P = [
+    { fares: 50 },
+    { item: "snack_capacitor" },
+    { fares: 150 },
+    { item: "toy_squeaky_cone" },
+    { item: "chip_lombard" },
+    { text: "The wheel stopped on a pothole. Nothing! But a lovely spin." },
+    { item: "wax_surf" },
+    { fares: 600 },
+  ];
   Sim.claimDaily = function (S, id, opt) {
     opt = opt || {};
     const st = Sim.dailyState(S, id);
@@ -1591,30 +2323,61 @@
           WHEEL_W.map((w, i) => [w, i]),
         );
         out.slice = slice;
-        msg = R(S) < 0.005 ? "JACKPOT! " + prize(S, { item: "rare_golden_ticket" }) : prize(S, WHEEL_P[slice]);
+        msg =
+          R(S) < 0.005
+            ? "JACKPOT! " + prize(S, { item: "rare_golden_ticket" })
+            : prize(S, WHEEL_P[slice]);
         break;
       }
       case "fortune":
         msg = prize(S, { text: "fortune" });
-        if (R(S) < 0.55) msg += " Inside the cookie: " + prize(S, St.wpick(S, D.LOOT.fortune.filter((r) => r[1].text !== "fortune")));
+        if (R(S) < 0.55)
+          msg +=
+            " Inside the cookie: " +
+            prize(
+              S,
+              St.wpick(
+                S,
+                D.LOOT.fortune.filter((r) => r[1].text !== "fortune"),
+              ),
+            );
         break;
       case "interest": {
-        const f = Math.max(1, Math.floor(S.player.fares * D.INTEREST[S.garage.vault]));
+        const f = Math.max(
+          1,
+          Math.floor(S.player.fares * D.INTEREST[S.garage.vault]),
+        );
         msg = "Interest paid: " + prize(S, { fares: f }) + ".";
         break;
       }
       case "timing": {
         const q = clamp(opt.q | 0, 0, 2);
-        msg = ["Clank. Close enough! ", "Nice toss! ", "Ring on! A perfect toss! "][q] + prize(S, { fares: [40, 120, 300][q] });
-        if (q === 2 && R(S) < 0.3) msg += " and " + prize(S, { item: "chip_lombard" });
+        msg =
+          ["Clank. Close enough! ", "Nice toss! ", "Ring on! A perfect toss! "][
+            q
+          ] + prize(S, { fares: [40, 120, 300][q] });
+        if (q === 2 && R(S) < 0.3)
+          msg += " and " + prize(S, { item: "chip_lombard" });
         break;
       }
       case "fountain": {
         const x = R(S);
         if (x < 0.1) {
-          const w = St.pick(S, Object.keys(D.ITEMS).filter((i) => D.ITEMS[i].cat === "wrap" && D.ITEMS[i].rarity <= 60 && !D.ITEMS[i].season));
+          const w = St.pick(
+            S,
+            Object.keys(D.ITEMS).filter(
+              (i) =>
+                D.ITEMS[i].cat === "wrap" &&
+                D.ITEMS[i].rarity <= 60 &&
+                !D.ITEMS[i].season,
+            ),
+          );
           msg = "The fountain glows… a free wrap! " + prize(S, { item: w });
-        } else if (x < 0.5) msg = "The fountain sparkles and spits out " + prize(S, { fares: St.ri(S, 20, 80) }) + ".";
+        } else if (x < 0.5)
+          msg =
+            "The fountain sparkles and spits out " +
+            prize(S, { fares: St.ri(S, 20, 80) }) +
+            ".";
         else msg = "Your coin sinks. The fountain gurgles thoughtfully.";
         break;
       }
@@ -1623,14 +2386,29 @@
         if (x < 0.3 && car) {
           const s = St.pick(S, D.STAT_KEYS);
           car.stats[s]++;
-          msg = "The wind whispers… " + nameOf(car) + " gained +1 " + D.STATS[s].name + "!";
-        } else if (x < 0.55) msg = "A coin rolls down the hill to you: " + prize(S, { fares: 100 }) + ".";
-        else msg = St.pick(S, ["You wish very hard. Sutro Tower hums. Nothing happens, but you feel taller.", "A raven lands, considers you, leaves.", "The fog parts for exactly one second. Beautiful. That's it."]);
+          msg =
+            "The wind whispers… " +
+            nameOf(car) +
+            " gained +1 " +
+            D.STATS[s].name +
+            "!";
+        } else if (x < 0.55)
+          msg =
+            "A coin rolls down the hill to you: " +
+            prize(S, { fares: 100 }) +
+            ".";
+        else
+          msg = St.pick(S, [
+            "You wish very hard. Sutro Tower hums. Nothing happens, but you feel taller.",
+            "A raven lands, considers you, leaves.",
+            "The fog parts for exactly one second. Beautiful. That's it.",
+          ]);
         break;
       }
       case "bonfire":
         if (!car) return { ok: false, msg: "Pick a car to warm by the fire." };
-        for (const k of D.NEED_KEYS) car.needs[k] = k === "charge" ? Math.max(100, car.needs.charge) : 100;
+        for (const k of D.NEED_KEYS)
+          car.needs[k] = k === "charge" ? Math.max(100, car.needs.charge) : 100;
         car.needs.mood = Math.min(100, car.needs.mood + 15);
         msg = nameOf(car) + " warmed up by the bonfire. Every need restored!";
         break;
@@ -1638,12 +2416,17 @@
         S.punch++;
         if (S.punch >= 7) {
           S.punch = 0;
-          msg = "Seventh punch! The taquero hands you " + prize(S, St.wpick(S, D.LOOT.taqueria)) + ".";
+          msg =
+            "Seventh punch! The taquero hands you " +
+            prize(S, St.wpick(S, D.LOOT.taqueria)) +
+            ".";
         } else msg = "Punch " + S.punch + " of 7. " + (7 - S.punch) + " to go!";
         break;
       case "scratch":
         out.win = R(S) < 0.45;
-        msg = out.win ? "Three stars! " + prize(S, St.wpick(S, D.LOOT.raffle)) : "No match this time. The marquee flickers sympathetically.";
+        msg = out.win
+          ? "Three stars! " + prize(S, St.wpick(S, D.LOOT.raffle))
+          : "No match this time. The marquee flickers sympathetically.";
         break;
       case "lab":
         if (!car) return { ok: false, msg: "Pick a car to zap." };
@@ -1652,10 +2435,16 @@
         break;
       case "sneak":
         if (!opt.sneak) msg = "You tiptoe away. Wise.";
-        else if (R(S) < 0.55) msg = "You sneak in… and out, holding " + prize(S, St.wpick(S, D.LOOT.sutro)) + "!";
+        else if (R(S) < 0.55)
+          msg =
+            "You sneak in… and out, holding " +
+            prize(S, St.wpick(S, D.LOOT.sutro)) +
+            "!";
         else {
-          for (const c of S.cars) c.needs.cleanliness = Math.max(0, c.needs.cleanliness - 15);
-          msg = "It woke up! A great foggy sneeze blows you out of the baths and all over your fleet (Cleanliness −15). Nobody's hurt. Everyone's damp.";
+          for (const c of S.cars)
+            c.needs.cleanliness = Math.max(0, c.needs.cleanliness - 15);
+          msg =
+            "It woke up! A great foggy sneeze blows you out of the baths and all over your fleet (Cleanliness −15). Nobody's hurt. Everyone's damp.";
         }
         break;
       default: {
@@ -1671,7 +2460,15 @@
   function labZap(S, car) {
     const x = R(S);
     if (x < 0.2) {
-      const w = St.pick(S, Object.keys(D.WRAPS).filter((k) => k !== "gold" && D.ITEMS["wrap_" + k] && !D.ITEMS["wrap_" + k].season));
+      const w = St.pick(
+        S,
+        Object.keys(D.WRAPS).filter(
+          (k) =>
+            k !== "gold" &&
+            D.ITEMS["wrap_" + k] &&
+            !D.ITEMS["wrap_" + k].season,
+        ),
+      );
       car.wrap = w;
       if (!S.album.wraps.includes(w)) S.album.wraps.push(w);
       return "ZAP! " + nameOf(car) + " is now " + D.WRAPS[w].name + "!";
@@ -1686,50 +2483,118 @@
       return "ZAP! " + nameOf(car) + "'s lidar ring is a new colour!";
     }
     if (x < 0.7) {
-      const g = St.pick(S, Object.keys(D.ITEMS).filter((i) => D.ITEMS[i].cat === "gear" && !D.ITEMS[i].season && D.ITEMS[i].rarity < 60));
-      return "ZAP! An accessory fell out of the ray: " + prize(S, { item: g }) + ".";
+      const g = St.pick(
+        S,
+        Object.keys(D.ITEMS).filter(
+          (i) =>
+            D.ITEMS[i].cat === "gear" &&
+            !D.ITEMS[i].season &&
+            D.ITEMS[i].rarity < 60,
+        ),
+      );
+      return (
+        "ZAP! An accessory fell out of the ray: " + prize(S, { item: g }) + "."
+      );
     }
     if (x < 0.72) {
       car.wrap = "gold";
       if (!S.album.wraps.includes("gold")) S.album.wraps.push("gold");
-      return "ZAP!!! " + nameOf(car) + " is… GOLD. Everyone in the lab is speechless.";
+      return (
+        "ZAP!!! " +
+        nameOf(car) +
+        " is… GOLD. Everyone in the lab is speechless."
+      );
     }
-    return "ZAP! " + nameOf(car) + " is now… " + St.pick(S, ["slightly beige. Actually no, it's fine.", "briefly a cable car. It's back now.", "convinced it can speak French. It cannot.", "exactly the same, but more confident."]);
+    return (
+      "ZAP! " +
+      nameOf(car) +
+      " is now… " +
+      St.pick(S, [
+        "slightly beige. Actually no, it's fine.",
+        "briefly a cable car. It's back now.",
+        "convinced it can speak French. It cannot.",
+        "exactly the same, but more confident.",
+      ])
+    );
   }
   // Pier 39 fishing: three casts a day; the more you fish, the better you get
   Sim.fish = function (S) {
     dailyDay(S);
     if (!Sim.open(S, "Fisherman's Wharf")) return { ok: false };
-    if (S.dailies.fish >= 3) return { ok: false, msg: "The fish are tired. Come back tomorrow." };
+    if (S.dailies.fish >= 3)
+      return { ok: false, msg: "The fish are tired. Come back tomorrow." };
     S.dailies.fish++;
     S.fish.skill = Math.min(100, S.fish.skill + 1);
     const luck = 1 + S.fish.skill / 40,
-      table = D.LOOT.fishing.map(([w, p], i) => [i ? w * Math.pow(luck, i / 4) : w / luck, p]);
-    return { ok: true, msg: "You cast a line… " + prize(S, St.wpick(S, table)) + ". (Fishing skill " + S.fish.skill + ")" };
+      table = D.LOOT.fishing.map(([w, p], i) => [
+        i ? w * Math.pow(luck, i / 4) : w / luck,
+        p,
+      ]);
+    return {
+      ok: true,
+      msg:
+        "You cast a line… " +
+        prize(S, St.wpick(S, table)) +
+        ". (Fishing skill " +
+        S.fish.skill +
+        ")",
+    };
   };
 
   /* ======================================================================================================
      adoption
      ====================================================================================================== */
   function plate(S) {
-    return St.ri(S, 1, 9) + St.pick(S, D.PLATE_WORDS) + String(St.ri(S, 0, 999)).padStart(3, "0");
+    return (
+      St.ri(S, 1, 9) +
+      St.pick(S, D.PLATE_WORDS) +
+      String(St.ri(S, 0, 999)).padStart(3, "0")
+    );
   }
   Sim.genCar = function (S) {
     const traits = St.shuffle(S, Object.keys(D.TRAITS)).slice(0, 2),
       x = R(S);
     let wrap = "default";
-    if (x < 0.08) wrap = St.pick(S, Object.keys(D.WRAPS).filter((k) => D.ITEMS["wrap_" + k] && D.ITEMS["wrap_" + k].rarity >= 55 && D.ITEMS["wrap_" + k].rarity < 100 && !D.ITEMS["wrap_" + k].season));
-    else if (x < 0.3) wrap = St.pick(S, ["golden_gate", "karl_grey", "sourdough", "cable_red", "sea_lion"]);
-    const used = new Set(S.cars.concat(S.stored).map((c) => c.name.toLowerCase()));
-    const name = St.shuffle(S, D.CAR_NAMES).find((n) => !used.has(n.toLowerCase())) || "Car " + St.ri(S, 10, 99);
+    if (x < 0.08)
+      wrap = St.pick(
+        S,
+        Object.keys(D.WRAPS).filter(
+          (k) =>
+            D.ITEMS["wrap_" + k] &&
+            D.ITEMS["wrap_" + k].rarity >= 55 &&
+            D.ITEMS["wrap_" + k].rarity < 100 &&
+            !D.ITEMS["wrap_" + k].season,
+        ),
+      );
+    else if (x < 0.3)
+      wrap = St.pick(S, [
+        "golden_gate",
+        "karl_grey",
+        "sourdough",
+        "cable_red",
+        "sea_lion",
+      ]);
+    const used = new Set(
+      S.cars.concat(S.stored).map((c) => c.name.toLowerCase()),
+    );
+    const name =
+      St.shuffle(S, D.CAR_NAMES).find((n) => !used.has(n.toLowerCase())) ||
+      "Car " + St.ri(S, 10, 99);
     const stats = {};
     for (const k of D.STAT_KEYS) stats[k] = St.ri(S, 1, 3);
     const needs = {};
     for (const k of D.NEED_KEYS) needs[k] = St.ri(S, 60, 92);
     needs.mood = 60;
-    const toys = Object.keys(D.ITEMS).filter((i) => ["toy", "snack"].includes(D.ITEMS[i].cat) && D.ITEMS[i].rarity < 70);
+    const toys = Object.keys(D.ITEMS).filter(
+      (i) =>
+        ["toy", "snack"].includes(D.ITEMS[i].cat) && D.ITEMS[i].rarity < 70,
+    );
     return St.fillCar({
-      id: "c_" + Math.floor(R(S) * 0xffffff).toString(16).padStart(6, "0"),
+      id:
+        "c_" +
+        Math.floor(R(S) * 0xffffff)
+          .toString(16)
+          .padStart(6, "0"),
       name,
       model: "cruiser",
       wrap,
@@ -1741,7 +2606,12 @@
         hood: St.pick(S, Object.keys(D.HOODS)),
         rider: St.pick(S, D.RIDER_KEYS),
         item: St.pick(S, toys),
-        song: St.pick(S, Object.keys(D.ITEMS).filter((i) => D.ITEMS[i].cat === "song" && !D.ITEMS[i].season)),
+        song: St.pick(
+          S,
+          Object.keys(D.ITEMS).filter(
+            (i) => D.ITEMS[i].cat === "song" && !D.ITEMS[i].season,
+          ),
+        ),
       },
       needs,
       stats,
@@ -1749,15 +2619,26 @@
     });
   };
   Sim.lot = function (S) {
-    if (!S.lot || S.lot.date !== Sim.today()) S.lot = { date: Sim.today(), cars: [0, 1, 2].map(() => Sim.genCar(S)) };
+    if (!S.lot || S.lot.date !== Sim.today())
+      S.lot = { date: Sim.today(), cars: [0, 1, 2].map(() => Sim.genCar(S)) };
     return S.lot;
   };
-  Sim.adoptFee = (S) => D.ADOPT_FEE[Math.min(S.adopted, D.ADOPT_FEE.length - 1)];
+  Sim.adoptFee = (S) =>
+    D.ADOPT_FEE[Math.min(S.adopted, D.ADOPT_FEE.length - 1)];
   Sim.validName = function (S, name, exceptId) {
     name = String(name || "").trim();
     if (!name || name.length > 14) return "Names are 1 to 14 characters.";
-    if (!/^[\p{L}\p{N} '.\-]+$/u.test(name)) return "Letters, numbers, spaces and . ' - only.";
-    if (S.cars.concat(S.stored).some((c) => c.id !== exceptId && c.name.toLowerCase() === name.toLowerCase())) return "You already have a car called " + name + ".";
+    if (!/^[\p{L}\p{N} '.\-]+$/u.test(name))
+      return "Letters, numbers, spaces and . ' - only.";
+    if (
+      S.cars
+        .concat(S.stored)
+        .some(
+          (c) =>
+            c.id !== exceptId && c.name.toLowerCase() === name.toLowerCase(),
+        )
+    )
+      return "You already have a car called " + name + ".";
     return null;
   };
   Sim.adopt = function (S, idx, name) {
@@ -1767,13 +2648,23 @@
     const bad = Sim.validName(S, name);
     if (bad) return { ok: false, msg: bad };
     const fee = Sim.adoptFee(S);
-    if (S.player.fares < fee) return { ok: false, msg: "Adopting costs ◎" + fee + "." };
+    if (S.player.fares < fee)
+      return { ok: false, msg: "Adopting costs ◎" + fee + "." };
     fares(S, -fee);
     lot.cars.splice(idx, 1);
     car.name = String(name).trim();
     car.born = Sim.today();
     car.needs.charge = Math.max(85, car.needs.charge);
-    car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+    car.sim = {
+      at: Sim.HOME,
+      from: null,
+      to: null,
+      t: 0,
+      path: [],
+      dest: null,
+      task: "garage",
+      wait: 0,
+    };
     if (!S.req.length && !S.clock.night) spawnRequests(S);
     if (!S.album.wraps.includes(car.wrap)) S.album.wraps.push(car.wrap);
     S.adopted++;
@@ -1783,25 +2674,61 @@
     Sim.xp(S, 50);
     Sim.trophy(S, "first_adopt");
     if (S.cars.length >= 4) Sim.trophy(S, "full_fleet");
-    Sim.emit(S, { type: "adopt", carId: car.id, icon: "🐾", text: "Welcome home, " + car.name + "!" + (active ? "" : " (Your car slots are full, so it's waiting in the lot. Swap it in from the Garage.)"), inbox: true, diary: true });
+    Sim.emit(S, {
+      type: "adopt",
+      carId: car.id,
+      icon: "🐾",
+      text:
+        "Welcome home, " +
+        car.name +
+        "!" +
+        (active
+          ? ""
+          : " (Your car slots are full, so it's waiting in the lot. Swap it in from the Garage.)"),
+      inbox: true,
+      diary: true,
+    });
     return { ok: true, car, active };
   };
   Sim.storeCar = function (S, carId) {
     const i = S.cars.findIndex((c) => c.id === carId);
     if (i < 0) return { ok: false };
-    if (S.cars.length === 1) return { ok: false, msg: "Keep at least one car on the road." };
+    if (S.cars.length === 1)
+      return { ok: false, msg: "Keep at least one car on the road." };
     const car = S.cars.splice(i, 1)[0];
     if (car.sim.ride) car.sim.ride = null;
-    car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+    car.sim = {
+      at: Sim.HOME,
+      from: null,
+      to: null,
+      t: 0,
+      path: [],
+      dest: null,
+      task: "garage",
+      wait: 0,
+    };
     S.stored.push(car);
     return { ok: true, msg: nameOf(car) + " is resting in the lot." };
   };
   Sim.activate = function (S, carId) {
     const i = S.stored.findIndex((c) => c.id === carId);
     if (i < 0) return { ok: false };
-    if (S.cars.length >= S.unlocked.carSlots) return { ok: false, msg: "All your car slots are full. Store a car first." };
+    if (S.cars.length >= S.unlocked.carSlots)
+      return {
+        ok: false,
+        msg: "All your car slots are full. Store a car first.",
+      };
     const car = S.stored.splice(i, 1)[0];
-    car.sim = { at: Sim.HOME, from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 };
+    car.sim = {
+      at: Sim.HOME,
+      from: null,
+      to: null,
+      t: 0,
+      path: [],
+      dest: null,
+      task: "garage",
+      wait: 0,
+    };
     S.cars.push(car);
     if (S.cars.length >= 4) Sim.trophy(S, "full_fleet");
     return { ok: true, msg: nameOf(car) + " is back on the road!" };
@@ -1809,44 +2736,93 @@
   Sim.rehome = function (S, carId) {
     const car = Sim.find(S, carId);
     if (!car) return { ok: false };
-    if (S.cars.length === 1 && S.cars[0] === car) return { ok: false, msg: "You can't rehome your only car." };
+    if (S.cars.length === 1 && S.cars[0] === car)
+      return { ok: false, msg: "You can't rehome your only car." };
     S.cars = S.cars.filter((c) => c !== car);
     S.stored = S.stored.filter((c) => c !== car);
     for (const k in car.gear) if (car.gear[k]) Sim.give(S, car.gear[k]);
-    return { ok: true, msg: car.name + " went to a lovely new home in Marin. It'll send postcards." };
+    return {
+      ok: true,
+      msg:
+        car.name + " went to a lovely new home in Marin. It'll send postcards.",
+    };
   };
 
   /* ======================================================================================================
      the Driving Academy (1 in-game hour per course)
      ====================================================================================================== */
-  const CHIP_FOR = (lv) => (lv <= 3 ? "chip_lombard" : lv <= 6 ? "chip_sutro" : lv <= 9 ? "chip_coit" : "chip_bridge");
+  const CHIP_FOR = (lv) =>
+    lv <= 3
+      ? "chip_lombard"
+      : lv <= 6
+        ? "chip_sutro"
+        : lv <= 9
+          ? "chip_coit"
+          : "chip_bridge";
   Sim.course = (car, stat) => {
     const lv = clamp(Math.floor(car.stats[stat] / 3) + 1, 1, 12);
     return { level: lv, hours: 1, fares: 40 * lv, chip: CHIP_FOR(lv) };
   };
   Sim.train = function (S, carId, stat) {
     const car = Sim.find(S, carId);
-    if (!car || !S.cars.includes(car)) return { ok: false, msg: "Pick a car on the road." };
-    if (!Sim.open(S, "Twin Peaks")) return { ok: false, msg: "The Driving Academy opens at Crew Rank 7." };
-    if (car.training) return { ok: false, msg: nameOf(car) + " is already at school." };
-    if (["toPickup", "ride", "nap", "tow", "stuck"].includes(car.sim.task)) return { ok: false, msg: nameOf(car) + " is busy right now. Try again after this ride." };
+    if (!car || !S.cars.includes(car))
+      return { ok: false, msg: "Pick a car on the road." };
+    if (!Sim.open(S, "Twin Peaks"))
+      return { ok: false, msg: "The Driving Academy opens at Crew Rank 7." };
+    if (car.training)
+      return { ok: false, msg: nameOf(car) + " is already at school." };
+    if (["toPickup", "ride", "nap", "tow", "stuck"].includes(car.sim.task))
+      return {
+        ok: false,
+        msg: nameOf(car) + " is busy right now. Try again after this ride.",
+      };
     const c = Sim.course(car, stat);
-    if (S.player.fares < c.fares) return { ok: false, msg: "The course costs ◎" + c.fares + "." };
-    if (!Sim.has(S, c.chip)) return { ok: false, msg: "The course needs a " + D.ITEMS[c.chip].name + "." };
+    if (S.player.fares < c.fares)
+      return { ok: false, msg: "The course costs ◎" + c.fares + "." };
+    if (!Sim.has(S, c.chip))
+      return {
+        ok: false,
+        msg: "The course needs a " + D.ITEMS[c.chip].name + ".",
+      };
     fares(S, -c.fares);
     Sim.take(S, c.chip);
     car.training = { stat, endsAt: absMin(S) + c.hours * 60 };
     if (!S.clock.night) goTo(S, car, "Twin Peaks", "toSchool");
-    return { ok: true, msg: nameOf(car) + " enrolled in Level " + c.level + " " + D.STATS[stat].name + ". Back in " + c.hours + " in-game hour" + (c.hours > 1 ? "s" : "") + "." };
+    return {
+      ok: true,
+      msg:
+        nameOf(car) +
+        " enrolled in Level " +
+        c.level +
+        " " +
+        D.STATS[stat].name +
+        ". Back in " +
+        c.hours +
+        " in-game hour" +
+        (c.hours > 1 ? "s" : "") +
+        ".",
+    };
   };
   function finishTraining(S, car) {
     const st = car.training.stat,
       n = R(S) < 0.2 ? 2 : 1;
     car.stats[st] += n;
     car.training = null;
-    if (car.sim.task === "school" || car.sim.task === "toSchool") car.sim.task = car.sim.from ? "idle" : car.sim.at === Sim.HOME ? "garage" : "idle";
+    if (car.sim.task === "school" || car.sim.task === "toSchool")
+      car.sim.task = car.sim.from
+        ? "idle"
+        : car.sim.at === Sim.HOME
+          ? "garage"
+          : "idle";
     Sim.xp(S, 20);
-    Sim.emit(S, { type: "toast", carId: car.id, icon: "🎓", text: nameOf(car) + " graduated! +" + n + " " + D.STATS[st].name + ".", inbox: true, diary: true });
+    Sim.emit(S, {
+      type: "toast",
+      carId: car.id,
+      icon: "🎓",
+      text: nameOf(car) + " graduated! +" + n + " " + D.STATS[st].name + ".",
+      inbox: true,
+      diary: true,
+    });
     checkStage(S, car);
   }
 
@@ -1854,7 +2830,8 @@
      quests: the Sutro Tower riddle, the Rider Rally, the seasonal storylines
      ====================================================================================================== */
   Sim.riddle = function (S) {
-    if (S.quests.riddle && S.quests.riddle.date === Sim.today()) return S.quests.riddle;
+    if (S.quests.riddle && S.quests.riddle.date === Sim.today())
+      return S.quests.riddle;
     let q, opts, ans;
     const cars = S.cars;
     if (cars.length && R(S) < 0.5) {
@@ -1863,18 +2840,31 @@
       if (kind === 0) {
         const km = Math.round(car.km);
         q = "How many kilometres has " + nameOf(car) + " driven, give or take?";
-        const set = [km, Math.round(km * 1.6 + 7), Math.max(0, Math.round(km * 0.5 - 3))];
-        opts = St.shuffle(S, set.map((v) => v + " km"));
+        const set = [
+          km,
+          Math.round(km * 1.6 + 7),
+          Math.max(0, Math.round(km * 0.5 - 3)),
+        ];
+        opts = St.shuffle(
+          S,
+          set.map((v) => v + " km"),
+        );
         ans = opts.indexOf(km + " km");
       } else if (kind === 1) {
         q = "What is " + nameOf(car) + "'s favourite neighbourhood?";
-        const others = St.shuffle(S, Object.keys(D.HOODS).filter((h) => h !== car.likes.hood)).slice(0, 2);
+        const others = St.shuffle(
+          S,
+          Object.keys(D.HOODS).filter((h) => h !== car.likes.hood),
+        ).slice(0, 2);
         opts = St.shuffle(S, [car.likes.hood].concat(others));
         ans = opts.indexOf(car.likes.hood);
       } else {
         q = "Which of these is one of " + nameOf(car) + "'s traits?";
         const t = St.pick(S, car.traits),
-          others = St.shuffle(S, Object.keys(D.TRAITS).filter((k) => !car.traits.includes(k))).slice(0, 2);
+          others = St.shuffle(
+            S,
+            Object.keys(D.TRAITS).filter((k) => !car.traits.includes(k)),
+          ).slice(0, 2);
         opts = St.shuffle(S, [t].concat(others)).map((k) => D.TRAITS[k].name);
         ans = opts.indexOf(D.TRAITS[t].name);
       }
@@ -1889,41 +2879,96 @@
   };
   Sim.answerRiddle = function (S, i) {
     const r = Sim.riddle(S);
-    if (r.done) return { ok: false, msg: "Sutro Tower has nothing more to ask today." };
+    if (r.done)
+      return { ok: false, msg: "Sutro Tower has nothing more to ask today." };
     r.done = true;
-    if (i !== r.ans) return { ok: false, msg: "Sutro Tower hums disapprovingly. The answer was “" + r.opts[r.ans] + "”. Try again tomorrow." };
+    if (i !== r.ans)
+      return {
+        ok: false,
+        msg:
+          "Sutro Tower hums disapprovingly. The answer was “" +
+          r.opts[r.ans] +
+          "”. Try again tomorrow.",
+      };
     Sim.xp(S, 40);
-    const p = St.pick(S, [{ item: "chip_sutro" }, { item: "map_fog_patterns" }, { item: "rare_old_token" }, { fares: 400 }, { item: "clar_defrag" }]);
-    return { ok: true, msg: "Correct! Sutro Tower blinks its red lights at you and drops " + prize(S, p) + "." };
+    const p = St.pick(S, [
+      { item: "chip_sutro" },
+      { item: "map_fog_patterns" },
+      { item: "rare_old_token" },
+      { fares: 400 },
+      { item: "clar_defrag" },
+    ]);
+    return {
+      ok: true,
+      msg:
+        "Correct! Sutro Tower blinks its red lights at you and drops " +
+        prize(S, p) +
+        ".",
+    };
   };
   Sim.rallyStart = function (S) {
-    if (S.quests.rally && S.quests.rally.day === S.clock.day) return { ok: false, msg: "Today's rally is already on." };
-    if (S.clock.night) return { ok: false, msg: "The rally starts in the morning." };
-    const hoods = St.shuffle(S, G.names.filter((h) => D.STAMPS.some((s) => s.hood === h) || D.HOODS[h].rank !== null)).slice(0, 5);
+    if (S.quests.rally && S.quests.rally.day === S.clock.day)
+      return { ok: false, msg: "Today's rally is already on." };
+    if (S.clock.night)
+      return { ok: false, msg: "The rally starts in the morning." };
+    const hoods = St.shuffle(
+      S,
+      G.names.filter(
+        (h) => D.STAMPS.some((s) => s.hood === h) || D.HOODS[h].rank !== null,
+      ),
+    ).slice(0, 5);
     S.quests.rally = { day: S.clock.day, hoods, done: [], won: false };
-    return { ok: true, msg: "Rider Rally! Get any of your cars to " + hoods.join(", ") + " before midnight." };
+    return {
+      ok: true,
+      msg:
+        "Rider Rally! Get any of your cars to " +
+        hoods.join(", ") +
+        " before midnight.",
+    };
   };
   // seasonal storylines: a chapter unlocks each real day of the event
   Sim.story = function (S, sid) {
     const se = D.SEASONS.find((s) => s.id === sid),
       year = new Date(Sim.now()).getFullYear();
     let st = S.story[sid];
-    if (!st || st.year !== year) st = S.story[sid] = { year, start: Sim.today(), done: 0, finished: false };
-    const avail = Math.min(se.story.length, St.daysBetween(st.start, Sim.today()) + 1);
-    return { se, st, avail, next: st.done < avail && !st.finished ? se.story[st.done] : null };
+    if (!st || st.year !== year)
+      st = S.story[sid] = {
+        year,
+        start: Sim.today(),
+        done: 0,
+        finished: false,
+      };
+    const avail = Math.min(
+      se.story.length,
+      St.daysBetween(st.start, Sim.today()) + 1,
+    );
+    return {
+      se,
+      st,
+      avail,
+      next: st.done < avail && !st.finished ? se.story[st.done] : null,
+    };
   };
   function storyHook(S, what) {
     for (const se of Sim.season()) {
       const s = Sim.story(S, se.id);
       if (!s.next) continue;
       const a = s.next.ask;
-      if ((a.job && a.job === what.job) || (a.visit && a.visit === what.visit)) advanceStory(S, s);
+      if ((a.job && a.job === what.job) || (a.visit && a.visit === what.visit))
+        advanceStory(S, s);
     }
   }
   Sim.storyGive = function (S, sid) {
     const s = Sim.story(S, sid);
     if (!s.next || !s.next.ask.item) return { ok: false };
-    if (!Sim.take(S, s.next.ask.item)) return { ok: false, msg: "You need a " + D.ITEMS[s.next.ask.item].name + " (sold at the event stall)." };
+    if (!Sim.take(S, s.next.ask.item))
+      return {
+        ok: false,
+        msg:
+          "You need a " +
+          D.ITEMS[s.next.ask.item].name +
+          " (sold at the event stall).",
+      };
     advanceStory(S, s);
     return { ok: true, msg: "Chapter complete!" };
   };
@@ -1931,22 +2976,42 @@
     const ch = s.next;
     s.st.done++;
     Sim.xp(S, 50);
-    Sim.emit(S, { type: "story", icon: s.se.icon, text: s.se.name + ": “" + ch.title + "” complete!", inbox: true, diary: true });
+    Sim.emit(S, {
+      type: "story",
+      icon: s.se.icon,
+      text: s.se.name + ": “" + ch.title + "” complete!",
+      inbox: true,
+      diary: true,
+    });
     if (s.st.done >= s.se.story.length) {
       s.st.finished = true;
       const r = s.se.reward;
-      if (r.avatar && !S.player.avatars.includes(r.avatar)) S.player.avatars.push(r.avatar);
+      if (r.avatar && !S.player.avatars.includes(r.avatar))
+        S.player.avatars.push(r.avatar);
       if (r.item) Sim.give(S, r.item);
       if (r.fares) fares(S, r.fares);
       if (s.se.id === "halloween") Sim.trophy(S, "halloween");
-      Sim.emit(S, { type: "story", icon: "🏆", text: s.se.name + " storyline finished! A new avatar, ◎" + r.fares + " and " + D.ITEMS[r.item].name + ".", inbox: true, diary: true });
+      Sim.emit(S, {
+        type: "story",
+        icon: "🏆",
+        text:
+          s.se.name +
+          " storyline finished! A new avatar, ◎" +
+          r.fares +
+          " and " +
+          D.ITEMS[r.item].name +
+          ".",
+        inbox: true,
+        diary: true,
+      });
     }
   }
 
   /* ======================================================================================================
      the arcade: each job on its own pays a little, three times a day
      ====================================================================================================== */
-  Sim.arcadeScore = (res) => Math.round(250 + res.q * 250 + Math.max(0, 750 - res.time * 15));
+  Sim.arcadeScore = (res) =>
+    Math.round(250 + res.q * 250 + Math.max(0, 750 - res.time * 15));
   Sim.arcadeResult = function (S, kind, res) {
     dailyDay(S);
     const score = Sim.arcadeScore(res),
@@ -1963,17 +3028,31 @@
       S.dailies.gamePlays[kind] = plays + 1;
       Sim.xp(S, 10);
     }
-    return { score, paid, tier, newBest, left: Math.max(0, D.ARCADE.plays - (S.dailies.gamePlays[kind] || 0)) };
+    return {
+      score,
+      paid,
+      tier,
+      newBest,
+      left: Math.max(0, D.ARCADE.plays - (S.dailies.gamePlays[kind] || 0)),
+    };
   };
   // a whole arcade run (the five shifts) pays into the Adopt save once a day
   Sim.arcadeRun = function (S, score) {
     dailyDay(S);
     if (S.dailies.run) return 0;
     S.dailies.run = true;
-    const f = Math.min(D.ARCADE.runCap, Math.round(score / D.ARCADE.runDivisor));
+    const f = Math.min(
+      D.ARCADE.runCap,
+      Math.round(score / D.ARCADE.runDivisor),
+    );
     fares(S, f);
     Sim.xp(S, 30);
-    S.inbox.unshift({ at: absMin(S), icon: "🕹️", text: "Your arcade shift paid ◎" + f + " into the garage's account.", read: false });
+    S.inbox.unshift({
+      at: absMin(S),
+      icon: "🕹️",
+      text: "Your arcade shift paid ◎" + f + " into the garage's account.",
+      read: false,
+    });
     return f;
   };
 
@@ -1985,12 +3064,20 @@
     if (S.show.week === wk) return;
     if (S.show.entry) judgeShow(S);
     S.show.week = wk;
-    const seasonal = D.SHOW_THEMES.filter((t) => t.season && seasonOn(t.season)),
-      list = seasonal.length ? seasonal : D.SHOW_THEMES.filter((t) => !t.season);
-    S.show.theme = list[Math.abs(Math.round(St.daysBetween("2026-01-05", wk) / 7)) % list.length].id;
+    const seasonal = D.SHOW_THEMES.filter(
+        (t) => t.season && seasonOn(t.season),
+      ),
+      list = seasonal.length
+        ? seasonal
+        : D.SHOW_THEMES.filter((t) => !t.season);
+    S.show.theme =
+      list[
+        Math.abs(Math.round(St.daysBetween("2026-01-05", wk) / 7)) % list.length
+      ].id;
     S.show.entry = null;
   }
-  Sim.showTheme = (S) => D.SHOW_THEMES.find((t) => t.id === S.show.theme) || D.SHOW_THEMES[0];
+  Sim.showTheme = (S) =>
+    D.SHOW_THEMES.find((t) => t.id === S.show.theme) || D.SHOW_THEMES[0];
   Sim.showScore = function (S, car, theme) {
     const e = Sim.eff(S, car);
     let match = 0;
@@ -2000,19 +3087,41 @@
       const it = car.gear[k] && D.ITEMS[car.gear[k]];
       if (it && it.theme && it.theme.includes(theme)) match += 1;
     }
-    if (theme === "fog" && (has(car, "fog_lover") || (car.dashpet && car.dashpet.id === "mini_karl"))) match += 1;
+    if (
+      theme === "fog" &&
+      (has(car, "fog_lover") || (car.dashpet && car.dashpet.id === "mini_karl"))
+    )
+      match += 1;
     if (theme === "night" && has(car, "night_owl")) match += 1;
     let rare = 0;
-    for (const k in car.gear) if (car.gear[k]) rare += D.ITEMS[car.gear[k]].rarity / 20;
+    for (const k in car.gear)
+      if (car.gear[k]) rare += D.ITEMS[car.gear[k]].rarity / 20;
     return e.charm * 3 + car.needs.cleanliness / 10 + match * 8 + rare;
   };
   Sim.showEnter = function (S, carId) {
     const car = Sim.find(S, carId);
     if (!car) return { ok: false };
-    if (!Sim.open(S, "Western Addition")) return { ok: false, msg: "The Car Show is in Alamo Square (Crew Rank 5)." };
-    if (S.show.entry) return { ok: false, msg: "You've already entered this week." };
-    S.show.entry = { carId, name: nameOf(car), score: Sim.showScore(S, car, S.show.theme), theme: S.show.theme };
-    return { ok: true, msg: nameOf(car) + " is entered in “" + Sim.showTheme(S).name + "”. The judges announce the winners on Monday." };
+    if (!Sim.open(S, "Western Addition"))
+      return {
+        ok: false,
+        msg: "The Car Show is in Alamo Square (Crew Rank 5).",
+      };
+    if (S.show.entry)
+      return { ok: false, msg: "You've already entered this week." };
+    S.show.entry = {
+      carId,
+      name: nameOf(car),
+      score: Sim.showScore(S, car, S.show.theme),
+      theme: S.show.theme,
+    };
+    return {
+      ok: true,
+      msg:
+        nameOf(car) +
+        " is entered in “" +
+        Sim.showTheme(S).name +
+        "”. The judges announce the winners on Monday.",
+    };
   };
   function judgeShow(S) {
     const en = S.show.entry,
@@ -2020,18 +3129,49 @@
       npcs = St.shuffle(S, D.NPC_CARS)
         .slice(0, 7)
         .map((n) => ({ name: n, score: 12 + R(S) * 34 }));
-    const all = npcs.concat([{ name: en.name, score: me, mine: true }]).sort((a, b) => b.score - a.score),
+    const all = npcs
+        .concat([{ name: en.name, score: me, mine: true }])
+        .sort((a, b) => b.score - a.score),
       place = all.findIndex((r) => r.mine) + 1,
       prizeF = [1000, 500, 250][place - 1] || 50;
     fares(S, prizeF);
     let extra = "";
     if (place === 1) {
       Sim.trophy(S, "show_winner");
-      const retired = Object.keys(D.ITEMS).filter((i) => D.ITEMS[i].season && !seasonOn(D.ITEMS[i].season) && D.ITEMS[i].cat !== "snack");
-      if (retired.length) extra = " and " + prize(S, { item: St.pick(S, retired) });
+      const retired = Object.keys(D.ITEMS).filter(
+        (i) =>
+          D.ITEMS[i].season &&
+          !seasonOn(D.ITEMS[i].season) &&
+          D.ITEMS[i].cat !== "snack",
+      );
+      if (retired.length)
+        extra = " and " + prize(S, { item: St.pick(S, retired) });
     }
-    S.show.last = { week: S.show.week, theme: en.theme, place, results: all.map((r) => ({ name: r.name, score: Math.round(r.score), mine: !!r.mine })) };
-    Sim.emit(S, { type: "show", icon: "🎀", text: "Car Show results: " + en.name + " placed #" + place + " of 8! ◎" + prizeF + extra + ".", inbox: true, diary: true });
+    S.show.last = {
+      week: S.show.week,
+      theme: en.theme,
+      place,
+      results: all.map((r) => ({
+        name: r.name,
+        score: Math.round(r.score),
+        mine: !!r.mine,
+      })),
+    };
+    Sim.emit(S, {
+      type: "show",
+      icon: "🎀",
+      text:
+        "Car Show results: " +
+        en.name +
+        " placed #" +
+        place +
+        " of 8! ◎" +
+        prizeF +
+        extra +
+        ".",
+      inbox: true,
+      diary: true,
+    });
   }
   Sim.judgeShow = (S) => S.show.entry && judgeShow(S);
 
@@ -2041,7 +3181,8 @@
   Sim.derbyStart = function (S, carId) {
     const car = Sim.find(S, carId);
     if (!car) return { ok: false };
-    if (S.player.rank < 6) return { ok: false, msg: "The Hill Climb Derby opens at Crew Rank 6." };
+    if (S.player.rank < 6)
+      return { ok: false, msg: "The Hill Climb Derby opens at Crew Rank 6." };
     const lv = Math.max(1, Sim.level(car)),
       e = Sim.eff(S, car);
     const mk = (name, h, r) => ({ name, h, r, d: 0, st: 100 });
@@ -2049,10 +3190,23 @@
       carId,
       leg: 0,
       legs: 5,
-      me: Object.assign(mk(nameOf(car), e.handling + (car.dashpet && car.dashpet.id === "bell" ? 1 : 0), e.range), { charm: e.charm }),
+      me: Object.assign(
+        mk(
+          nameOf(car),
+          e.handling + (car.dashpet && car.dashpet.id === "bell" ? 1 : 0),
+          e.range,
+        ),
+        { charm: e.charm },
+      ),
       npcs: St.shuffle(S, D.NPC_CARS)
         .slice(0, 3)
-        .map((n) => mk(n, Math.max(1, lv + St.ri(S, -1, 2)), Math.max(1, lv + St.ri(S, -1, 1)))),
+        .map((n) =>
+          mk(
+            n,
+            Math.max(1, lv + St.ri(S, -1, 2)),
+            Math.max(1, lv + St.ri(S, -1, 1)),
+          ),
+        ),
       log: ["The flag drops on Lombard! Eight hairpins to the top."],
       done: false,
     };
@@ -2075,14 +3229,19 @@
     const race = S.derby.race;
     if (!race || race.done) return { ok: false };
     if (move === "item") {
-      if (!itemId || !Sim.take(S, itemId)) return { ok: false, msg: "No snack to use." };
+      if (!itemId || !Sim.take(S, itemId))
+        return { ok: false, msg: "No snack to use." };
     }
-    if (move === "push" && race.me.st < 20) race.log.push(race.me.name + " is too tired to push, and coasts.");
+    if (move === "push" && race.me.st < 20)
+      race.log.push(race.me.name + " is too tired to push, and coasts.");
     derbyLeg(S, race.me, move);
-    for (const n of race.npcs) derbyLeg(S, n, n.st >= 35 && R(S) < 0.8 ? "push" : "coast");
+    for (const n of race.npcs)
+      derbyLeg(S, n, n.st >= 35 && R(S) < 0.8 ? "push" : "coast");
     race.leg++;
     const order = [race.me].concat(race.npcs).sort((a, b) => b.d - a.d);
-    race.log.push("Hairpin " + race.leg + ": " + order.map((c) => c.name).join(" → "));
+    race.log.push(
+      "Hairpin " + race.leg + ": " + order.map((c) => c.name).join(" → "),
+    );
     if (race.leg >= race.legs) {
       race.done = true;
       race.me.d += race.me.charm * 0.3; // the crowd cheers the prettiest car on
@@ -2095,16 +3254,32 @@
         const car = Sim.find(S, race.carId),
           chip = CHIP_FOR(Math.max(1, Sim.level(car)));
         if (place === 1) {
-          msg += " " + prize(S, { fares: 300 }) + " and " + prize(S, { item: chip }) + "!";
+          msg +=
+            " " +
+            prize(S, { fares: 300 }) +
+            " and " +
+            prize(S, { item: chip }) +
+            "!";
           Sim.trophy(S, "derby_winner");
-        } else if (place === 2) msg += " " + prize(S, { fares: 150 }) + " and " + prize(S, { item: "chip_lombard" }) + ".";
+        } else if (place === 2)
+          msg +=
+            " " +
+            prize(S, { fares: 150 }) +
+            " and " +
+            prize(S, { item: "chip_lombard" }) +
+            ".";
         else msg += " " + prize(S, { fares: place === 3 ? 80 : 30 }) + ".";
         if (car && place <= 2 && R(S) < 0.25) {
           car.stats.handling++;
-          msg += " " + nameOf(car) + " learned something on the hairpins: +1 Handling!";
+          msg +=
+            " " +
+            nameOf(car) +
+            " learned something on the hairpins: +1 Handling!";
         }
         Sim.xp(S, 30);
-      } else msg += " (Prizes are for the first three races a day. This one was for glory.)";
+      } else
+        msg +=
+          " (Prizes are for the first three races a day. This one was for glory.)";
       race.log.push(msg);
       race.msg = msg;
     }
@@ -2130,15 +3305,20 @@
     return S.stocks.prices[id];
   };
   Sim.trade = function (S, id, n) {
-    if (S.player.rank < 12) return { ok: false, msg: "The Startup Index opens at Crew Rank 12." };
+    if (S.player.rank < 12)
+      return { ok: false, msg: "The Startup Index opens at Crew Rank 12." };
     const p = Sim.price(S, id),
       own = S.stocks.own[id] || 0;
     if (n > 0) {
       const cost = Math.ceil(p * n);
-      if (S.player.fares < cost) return { ok: false, msg: "You need ◎" + cost + "." };
+      if (S.player.fares < cost)
+        return { ok: false, msg: "You need ◎" + cost + "." };
       fares(S, -cost);
       S.stocks.own[id] = own + n;
-      return { ok: true, msg: "Bought " + n + " " + id + " for ◎" + cost + "." };
+      return {
+        ok: true,
+        msg: "Bought " + n + " " + id + " for ◎" + cost + ".",
+      };
     }
     n = Math.min(own, -n);
     if (!n) return { ok: false, msg: "You don't own any." };
@@ -2153,7 +3333,13 @@
       A.date = Sim.today();
       A.lots = St.shuffle(S, D.AUCTION_POOL)
         .slice(0, 3)
-        .map((item, i) => ({ item, bid: Math.round(D.ITEMS[item].price * 0.4), by: St.pick(S, D.BIDDERS), ends: hourIdx(S) + 3 + i * 2, done: false }));
+        .map((item, i) => ({
+          item,
+          bid: Math.round(D.ITEMS[item].price * 0.4),
+          by: St.pick(S, D.BIDDERS),
+          ends: hourIdx(S) + 3 + i * 2,
+          done: false,
+        }));
     }
     return A;
   };
@@ -2167,7 +3353,17 @@
         l.done = true;
         if (l.by === "you") {
           Sim.give(S, l.item);
-          Sim.emit(S, { type: "toast", icon: "🔨", text: "You won the auction for " + D.ITEMS[l.item].name + " (◎" + l.bid + ")!", inbox: true });
+          Sim.emit(S, {
+            type: "toast",
+            icon: "🔨",
+            text:
+              "You won the auction for " +
+              D.ITEMS[l.item].name +
+              " (◎" +
+              l.bid +
+              ")!",
+            inbox: true,
+          });
         }
         continue;
       }
@@ -2177,7 +3373,16 @@
           nb = Math.round(l.bid * (1.05 + R(S) * 0.1)) + 5;
         if (prev === "you") {
           fares(S, l.bid);
-          Sim.emit(S, { type: "toast", icon: "🔨", text: "You were outbid on " + D.ITEMS[l.item].name + ". Your ◎" + l.bid + " came back." });
+          Sim.emit(S, {
+            type: "toast",
+            icon: "🔨",
+            text:
+              "You were outbid on " +
+              D.ITEMS[l.item].name +
+              ". Your ◎" +
+              l.bid +
+              " came back.",
+          });
         }
         l.bid = nb;
         l.by = St.pick(S, D.BIDDERS);
@@ -2187,11 +3392,13 @@
   Sim.bid = function (S, i, amount) {
     const l = Sim.auction(S).lots[i];
     if (!l || l.done) return { ok: false, msg: "That auction's closed." };
-    if (l.by === "you") return { ok: false, msg: "You're already the top bidder." };
+    if (l.by === "you")
+      return { ok: false, msg: "You're already the top bidder." };
     const min = Math.ceil(l.bid * 1.05) + 1;
     amount = Math.round(amount || min);
     if (amount < min) return { ok: false, msg: "Bid at least ◎" + min + "." };
-    if (S.player.fares < amount) return { ok: false, msg: "You need ◎" + amount + "." };
+    if (S.player.fares < amount)
+      return { ok: false, msg: "You need ◎" + amount + "." };
     fares(S, -amount);
     l.bid = amount;
     l.by = "you";

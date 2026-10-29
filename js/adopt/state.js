@@ -47,7 +47,9 @@
   const pad = (n) => String(n).padStart(2, "0");
   const today = (now) => {
     const d = new Date(now);
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    return (
+      d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate())
+    );
   };
   const dayNum = (date) => Math.round(Date.parse(date + "T12:00:00") / 864e5);
   const daysBetween = (a, b) => dayNum(b) - dayNum(a);
@@ -66,17 +68,54 @@
       createdAt: now,
       lastSeen: now,
       settings: { offline: "gentle", speed: 1 },
-      clock: { day: 1, minute: 8 * 60, weather: "clear", night: false, sleepReady: false },
-      player: { name: "Crew", rank: 1, xp: 0, fares: 300, avatar: "car", trophies: [], avatars: ["car", "pigeon"] },
-      dailies: { date: "", day: 0, done: {}, gamePlays: {}, fish: 0, run: false, wishes: 0 },
+      clock: {
+        day: 1,
+        minute: 8 * 60,
+        weather: "clear",
+        night: false,
+        sleepReady: false,
+      },
+      player: {
+        name: "Crew",
+        rank: 1,
+        xp: 0,
+        fares: 300,
+        avatar: "car",
+        trophies: [],
+        avatars: ["car", "pigeon"],
+      },
+      dailies: {
+        date: "",
+        day: 0,
+        done: {},
+        gamePlays: {},
+        fish: 0,
+        run: false,
+        wishes: 0,
+      },
       unlocked: { hoods: [], carSlots: 1 },
       inventory: { snack_volt_bar: 2, wipe_basic: 1, toy_tennis: 1 },
-      garage: { bays: 1, wash: 0, vac: 0, pods: 0, fridge: 0, rooms: 0, vault: 0, furniture: [] },
+      garage: {
+        bays: 1,
+        wash: 0,
+        vac: 0,
+        pods: 0,
+        fridge: 0,
+        rooms: 0,
+        vault: 0,
+        furniture: [],
+      },
       cars: [],
       stored: [],
       adopted: 0,
       riders: {},
-      album: { stamps: {}, cards: {}, playlist: {}, wraps: ["default"], dashpets: [] },
+      album: {
+        stamps: {},
+        cards: {},
+        playlist: {},
+        wraps: ["default"],
+        dashpets: [],
+      },
       diary: [],
       inbox: [],
       today: null,
@@ -101,7 +140,14 @@
   function fill(dst, def) {
     for (const k in def) {
       if (dst[k] === undefined) dst[k] = JSON.parse(JSON.stringify(def[k]));
-      else if (def[k] && typeof def[k] === "object" && !Array.isArray(def[k]) && dst[k] && typeof dst[k] === "object") fill(dst[k], def[k]);
+      else if (
+        def[k] &&
+        typeof def[k] === "object" &&
+        !Array.isArray(def[k]) &&
+        dst[k] &&
+        typeof dst[k] === "object"
+      )
+        fill(dst[k], def[k]);
     }
     return dst;
   }
@@ -117,7 +163,14 @@
     nick: null,
     title: null,
     stage: "rookie",
-    gear: { roof: null, topper: null, mirrors: null, dash: null, plate: null, horn: null },
+    gear: {
+      roof: null,
+      topper: null,
+      mirrors: null,
+      dash: null,
+      plate: null,
+      horn: null,
+    },
     dashpet: null,
     training: null,
     read: [],
@@ -127,13 +180,23 @@
     rides: 0,
     bond: 0,
     low: { run: 0, hours: 0, total: 0 },
-    sim: { at: "Russian Hill", from: null, to: null, t: 0, path: [], dest: null, task: "garage", wait: 0 },
+    sim: {
+      at: "Russian Hill",
+      from: null,
+      to: null,
+      t: 0,
+      path: [],
+      dest: null,
+      task: "garage",
+      wait: 0,
+    },
   };
   const fillCar = (c) => {
     fill(c, CAR_DEF);
     if (c.needs) {
       if (c.needs.cleanliness === undefined) {
-        c.needs.cleanliness = c.needs.shine ?? c.needs.cozy ?? c.needs.senses ?? 80;
+        c.needs.cleanliness =
+          c.needs.shine ?? c.needs.cozy ?? c.needs.senses ?? 80;
       }
       if (c.needs.code === undefined) {
         c.needs.code = c.needs.clarity ?? 80;
@@ -223,10 +286,15 @@
   St.catchUp = function (S, now) {
     const Sim = WG.adoptSim,
       away = Math.max(0, now - (S.lastSeen || now)) / 1000;
-    if (!Sim || away < 60 || S.settings.offline === "paused" || !S.cars.length) return null;
+    if (!Sim || away < 60 || S.settings.offline === "paused" || !S.cars.length)
+      return null;
     const minutes = Math.min(18 * 60, Math.floor((away * (60 / 45)) / 6));
     if (minutes < 5) return null;
-    const before = { fares: S.player.fares, rides: S.cars.reduce((a, c) => a + c.rides, 0), day: S.clock.day };
+    const before = {
+      fares: S.player.fares,
+      rides: S.cars.reduce((a, c) => a + c.rides, 0),
+      day: S.clock.day,
+    };
     Sim.run(S, minutes, { away: true });
     return {
       minutes,
@@ -268,7 +336,10 @@
       .then(
         (d) =>
           new Promise((res) => {
-            const r = d.transaction("postcards").objectStore("postcards").get(id);
+            const r = d
+              .transaction("postcards")
+              .objectStore("postcards")
+              .get(id);
             r.onsuccess = () => res(r.result || null);
             r.onerror = () => res(null);
           }),

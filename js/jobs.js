@@ -20,7 +20,8 @@
     BOX = new T.BoxGeometry(1, 1, 1),
     CYL = new T.CylinderGeometry(1, 1, 1, 12),
     HIT = new T.MeshBasicMaterial({ visible: false });
-  const lam = (c, o) => new T.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
+  const lam = (c, o) =>
+    new T.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
   function mesh(geo, mat, x, y, z, sx, sy, sz, parent) {
     const m = new T.Mesh(geo, mat);
     m.position.set(x, y, z);
@@ -55,21 +56,55 @@
   }
   function sparkle(pos, n, spread, col) {
     for (let i = 0; i < (n || 6); i++) {
-      const s = new T.Sprite(new T.SpriteMaterial({ map: star(), color: col || 0xffe680, transparent: true, depthWrite: false, depthTest: false }));
+      const s = new T.Sprite(
+        new T.SpriteMaterial({
+          map: star(),
+          color: col || 0xffe680,
+          transparent: true,
+          depthWrite: false,
+          depthTest: false,
+        }),
+      );
       s.position.copy(pos);
       s.scale.setScalar(0.35);
       s.renderOrder = 12;
       env.scene.add(s);
       const a = Math.random() * Math.PI * 2;
-      FX.push({ o: s, v: V3(Math.cos(a), rr(0.6, 1.6), Math.sin(a)).multiplyScalar(spread || 2), g: -3, life: rr(0.5, 0.9), t: 0, kind: "star" });
+      FX.push({
+        o: s,
+        v: V3(Math.cos(a), rr(0.6, 1.6), Math.sin(a)).multiplyScalar(
+          spread || 2,
+        ),
+        g: -3,
+        life: rr(0.5, 0.9),
+        t: 0,
+        kind: "star",
+      });
     }
   }
-  const BUBBLE = new T.MeshPhongMaterial({ color: 0xe6f7ff, transparent: true, opacity: 0.65, shininess: 120, specular: 0xffffff, depthWrite: false });
+  const BUBBLE = new T.MeshPhongMaterial({
+    color: 0xe6f7ff,
+    transparent: true,
+    opacity: 0.65,
+    shininess: 120,
+    specular: 0xffffff,
+    depthWrite: false,
+  });
   function bubble(pos, n) {
     const m = mesh(SPH, BUBBLE, pos.x, pos.y, pos.z, rr(0.04, 0.09));
     m.castShadow = false;
     env.scene.add(m);
-    FX.push({ o: m, v: V3(rr(-0.4, 0.4), rr(0.6, 1.3), rr(-0.4, 0.4)).add(n ? n.clone().multiplyScalar(0.5) : UP), g: 0.2, life: rr(0.7, 1.2), t: 0, kind: "bubble", s0: m.scale.x });
+    FX.push({
+      o: m,
+      v: V3(rr(-0.4, 0.4), rr(0.6, 1.3), rr(-0.4, 0.4)).add(
+        n ? n.clone().multiplyScalar(0.5) : UP,
+      ),
+      g: 0.2,
+      life: rr(0.7, 1.2),
+      t: 0,
+      kind: "bubble",
+      s0: m.scale.x,
+    });
   }
   // a thing knocked off the car: tumbles, bounces on the street, then shrinks away
   function release(o) {
@@ -80,13 +115,31 @@
   function launch(o, v, spin) {
     release(o);
     env.scene.attach(o);
-    FX.push({ o, v, spin: spin || V3(rr(-6, 6), rr(-3, 3), rr(-6, 6)), g: -18, life: 3.2, t: 0, kind: "phys", s0: o.scale.x });
+    FX.push({
+      o,
+      v,
+      spin: spin || V3(rr(-6, 6), rr(-3, 3), rr(-6, 6)),
+      g: -18,
+      life: 3.2,
+      t: 0,
+      kind: "phys",
+      s0: o.scale.x,
+    });
   }
   // a bird flying off
   function flyAway(b, v) {
     release(b.obj);
     env.scene.attach(b.obj);
-    FX.push({ o: b.obj, v, g: 2, life: 2.6, t: 0, kind: "bird", wings: b.wings, s0: b.obj.scale.x });
+    FX.push({
+      o: b.obj,
+      v,
+      g: 2,
+      life: 2.6,
+      t: 0,
+      kind: "bird",
+      wings: b.wings,
+      s0: b.obj.scale.x,
+    });
   }
   function fxUpdate(dt) {
     for (let i = FX.length - 1; i >= 0; i--) {
@@ -161,7 +214,8 @@
     el.code.querySelectorAll("button[data-k]").forEach((b) =>
       b.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        if (J.active && J.active.press && !J.active.done) J.active.press(+b.dataset.k);
+        if (J.active && J.active.press && !J.active.done)
+          J.active.press(+b.dataset.k);
       }),
     );
   }
@@ -191,7 +245,18 @@
     env = e;
     dom();
     const j = Object.create(JOBS[kind]);
-    Object.assign(j, { kind, car, t: 0, done: false, doneT: 0, onDone, round: e.round || 1, objs: [], pressed: false, ptr: null });
+    Object.assign(j, {
+      kind,
+      car,
+      t: 0,
+      done: false,
+      doneT: 0,
+      onDone,
+      round: e.round || 1,
+      objs: [],
+      pressed: false,
+      ptr: null,
+    });
     car.parts.root.updateMatrixWorld(true);
     j.init();
     J.active = j;
@@ -266,7 +331,12 @@
   J.pointer = function (type, e) {
     const j = J.active;
     if (!j) return;
-    j.ptr = type === "up" ? (e.pointerType === "mouse" ? { x: e.clientX, y: e.clientY } : null) : { x: e.clientX, y: e.clientY };
+    j.ptr =
+      type === "up"
+        ? e.pointerType === "mouse"
+          ? { x: e.clientX, y: e.clientY }
+          : null
+        : { x: e.clientX, y: e.clientY };
     if (j.done) return;
     const rc = env.ray(e.clientX, e.clientY);
     if (type === "down") {
@@ -299,7 +369,11 @@
     pos.set(c.p[0], c.p[1], c.p[2]);
     g.localToWorld(pos);
     const asp = env.camera.aspect;
-    if (asp < 1.25) pos.sub(look).multiplyScalar(Math.min(2.4, Math.pow(1.25 / asp, 0.85))).add(look);
+    if (asp < 1.25)
+      pos
+        .sub(look)
+        .multiplyScalar(Math.min(2.4, Math.pow(1.25 / asp, 0.85)))
+        .add(look);
     return 3;
   };
   function planeAt(worldPoint) {
@@ -320,7 +394,9 @@
         return TOUCH
           ? "Can't see the rest? Hold the turn arrows to look round the other side of the car!"
           : "Can't see the rest? Press Q or E to turn the camera round the car!";
-      return TOUCH ? "Rub your finger over the dirty spots to scrub them off!" : "Hold the mouse button and scrub the dirty spots off!";
+      return TOUCH
+        ? "Rub your finger over the dirty spots to scrub them off!"
+        : "Hold the mouse button and scrub the dirty spots off!";
     },
     // nothing scrubbed for five seconds: the rest of the dirt is probably round the other side
     nudge() {
@@ -339,10 +415,24 @@
       P.dirt.visible = false;
       // the dirt sits where it landed this time (actors.js lays it out afresh for every wash)
       const pr = this.car.problem,
-        spots = (pr.spots || (pr.spots = WG.dirtSpots(12))).map((d) => [d.p.x, d.p.y, d.p.z, d.n.x, d.n.y, d.n.z, d.s, d.k]);
+        spots = (pr.spots || (pr.spots = WG.dirtSpots(12))).map((d) => [
+          d.p.x,
+          d.p.y,
+          d.p.z,
+          d.n.x,
+          d.n.y,
+          d.n.z,
+          d.s,
+          d.k,
+        ]);
       this.lastClean = 0;
       this.splats = spots.map(([x, y, z, nx, ny, nz, s, k]) => {
-        const mat = lam(DIRT[k], { transparent: true, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
+        const mat = lam(DIRT[k], {
+            transparent: true,
+            polygonOffset: true,
+            polygonOffsetFactor: -3,
+            polygonOffsetUnits: -3,
+          }),
           g = new T.Group();
         g.position.set(x, y, z);
         g.quaternion.setFromUnitVectors(UP, V3(nx, ny, nz).normalize());
@@ -350,9 +440,24 @@
         for (let i = 0; i < 4; i++) {
           const a = Math.random() * 7,
             r = s * rr(0.7, 1.1);
-          meshes.push(mesh(SPH, mat, Math.cos(a) * r, 0, Math.sin(a) * r, s * rr(0.22, 0.4), 0.025, s * rr(0.22, 0.4), g));
+          meshes.push(
+            mesh(
+              SPH,
+              mat,
+              Math.cos(a) * r,
+              0,
+              Math.sin(a) * r,
+              s * rr(0.22, 0.4),
+              0.025,
+              s * rr(0.22, 0.4),
+              g,
+            ),
+          );
         }
-        if (k === 0) meshes.push(mesh(SPH, mat, 0, 0, s * 1.2, s * 0.12, 0.025, s * 0.6, g));
+        if (k === 0)
+          meshes.push(
+            mesh(SPH, mat, 0, 0, s * 1.2, s * 0.12, 0.025, s * 0.6, g),
+          );
         own(this, g, P.g);
         return { g, mat, dirt: 1, size: s, meshes };
       });
@@ -361,8 +466,28 @@
       this.hits = [P.body].concat(...this.splats.map((s) => s.meshes));
       // the sponge
       const sp = new T.Group();
-      mesh(WG.roundBox(0.36, 0.14, 0.24, 0.05, 2), lam(0xffd44a), 0, 0.09, 0, 1, 1, 1, sp);
-      mesh(WG.roundBox(0.36, 0.06, 0.24, 0.025, 2), lam(0x4fb3e8), 0, 0.02, 0, 1, 1, 1, sp);
+      mesh(
+        WG.roundBox(0.36, 0.14, 0.24, 0.05, 2),
+        lam(0xffd44a),
+        0,
+        0.09,
+        0,
+        1,
+        1,
+        1,
+        sp,
+      );
+      mesh(
+        WG.roundBox(0.36, 0.06, 0.24, 0.025, 2),
+        lam(0x4fb3e8),
+        0,
+        0.02,
+        0,
+        1,
+        1,
+        1,
+        sp,
+      );
       sp.visible = false;
       this.sponge = own(this, sp);
       this.squeak = 0;
@@ -378,13 +503,17 @@
         this.sponge.visible = false;
         return;
       }
-      const n = h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : UP.clone();
+      const n = h.face
+        ? h.face.normal.clone().transformDirection(h.object.matrixWorld)
+        : UP.clone();
       this.sponge.visible = this.pressed || !TOUCH;
       this.sponge.position.copy(h.point).addScaledVector(n, 0.02);
       this.sponge.quaternion.setFromUnitVectors(UP, n);
       this.sponge.rotateY(Math.sin(this.t * 20) * (this.pressed ? 0.3 : 0.05));
       if (this.pressed) {
-        const d = this.last ? Math.min(0.6, h.point.distanceTo(this.last)) : 0.03;
+        const d = this.last
+          ? Math.min(0.6, h.point.distanceTo(this.last))
+          : 0.03;
         this.scrub(h.point, n, d);
         this.last = h.point.clone();
       } else this.last = null;
@@ -447,7 +576,9 @@
           : "Click (or press Space) when the needle is in the green!";
     },
     progress() {
-      return this.phase === "plug" ? 0.15 * clamp(1 - this.plug.position.distanceTo(PORT) / 3, 0, 1) : 0.15 + 0.85 * this.charge;
+      return this.phase === "plug"
+        ? 0.15 * clamp(1 - this.plug.position.distanceTo(PORT) / 3, 0, 1)
+        : 0.15 + 0.85 * this.charge;
     },
     cam() {
       return { p: [-5.3, 4.8, 1.0], l: [-1.2, 0.5, 0.2] };
@@ -464,12 +595,42 @@
       const port = own(this, new T.Group(), g);
       port.position.copy(PORT);
       mesh(BOX, lam(0x2b3038), 0, 0, 0, 0.03, 0.2, 0.26, port);
-      this.glow = mesh(BOX, lam(0x36d3c4, { emissive: 0x36d3c4, emissiveIntensity: 0.6 }), -0.012, 0, 0, 0.03, 0.08, 0.08, port);
+      this.glow = mesh(
+        BOX,
+        lam(0x36d3c4, { emissive: 0x36d3c4, emissiveIntensity: 0.6 }),
+        -0.012,
+        0,
+        0,
+        0.03,
+        0.08,
+        0.08,
+        port,
+      );
       // the charging cart
       const cart = own(this, new T.Group(), g);
       cart.position.set(-2.1, 0, 2.9);
-      mesh(WG.roundBox(0.6, 1.0, 0.5, 0.08, 2), lam(0xf4f6f8), 0, 0.6, 0, 1, 1, 1, cart);
-      mesh(BOX, lam(0x36d3c4, { emissive: 0x1a8078 }), -0.31, 0.85, 0, 0.02, 0.22, 0.32, cart);
+      mesh(
+        WG.roundBox(0.6, 1.0, 0.5, 0.08, 2),
+        lam(0xf4f6f8),
+        0,
+        0.6,
+        0,
+        1,
+        1,
+        1,
+        cart,
+      );
+      mesh(
+        BOX,
+        lam(0x36d3c4, { emissive: 0x1a8078 }),
+        -0.31,
+        0.85,
+        0,
+        0.02,
+        0.22,
+        0.32,
+        cart,
+      );
       mesh(BOX, lam(0x3a3f47), -0.31, 0.5, 0.12, 0.03, 0.1, 0.1, cart);
       for (const [x, z] of [
         [-0.22, -0.18],
@@ -481,8 +642,28 @@
       this.outlet = V3(-2.42, 0.5, 3.02);
       // the plug
       const plug = own(this, new T.Group(), g);
-      mesh(WG.roundBox(0.28, 0.15, 0.15, 0.05, 2), lam(0x3a3f47), -0.05, 0, 0, 1, 1, 1, plug);
-      mesh(BOX, lam(0x36d3c4, { emissive: 0x1a8078 }), 0.1, 0, 0, 0.05, 0.08, 0.08, plug);
+      mesh(
+        WG.roundBox(0.28, 0.15, 0.15, 0.05, 2),
+        lam(0x3a3f47),
+        -0.05,
+        0,
+        0,
+        1,
+        1,
+        1,
+        plug,
+      );
+      mesh(
+        BOX,
+        lam(0x36d3c4, { emissive: 0x1a8078 }),
+        0.1,
+        0,
+        0,
+        0.05,
+        0.08,
+        0.08,
+        plug,
+      );
       this.plugHit = mesh(SPH, HIT, 0, 0, 0, 0.42, 0.42, 0.42, plug);
       this.rest = V3(-1.9, 0.75, 2.2);
       plug.position.copy(this.rest);
@@ -520,14 +701,17 @@
     up() {
       if (!this.held) return;
       this.held = false;
-      if (this.plug.position.distanceTo(PORT) < 0.8 || this.nearPort() < 60) this.snap();
+      if (this.plug.position.distanceTo(PORT) < 0.8 || this.nearPort() < 60)
+        this.snap();
     },
     // how far apart the plug and the port look on screen, in pixels
     nearPort() {
       const g = this.car.parts.g,
         a = g.localToWorld(this.plug.position.clone()).project(env.camera),
         b = g.localToWorld(PORT.clone()).project(env.camera);
-      return Math.hypot((a.x - b.x) * innerWidth, (a.y - b.y) * innerHeight) / 2;
+      return (
+        Math.hypot((a.x - b.x) * innerWidth, (a.y - b.y) * innerHeight) / 2
+      );
     },
     key(code) {
       if (code !== "Space" && code !== "Enter") return false;
@@ -540,7 +724,9 @@
       this.cool = 0.22;
       const v = Math.sin(this.m) * 0.5 + 0.5,
         d = Math.abs(v - 0.5),
-        at = this.car.parts.g.localToWorld(V3(PORT.x - 0.2, PORT.y + 0.5, PORT.z));
+        at = this.car.parts.g.localToWorld(
+          V3(PORT.x - 0.2, PORT.y + 0.5, PORT.z),
+        );
       let q, add;
       if (d < 0.045) {
         q = 2;
@@ -559,7 +745,12 @@
       this.charge = Math.min(1, this.charge + add);
       this.mv += 0.35;
       A().sfx("chargeUp", this.charge);
-      sparkle(this.car.parts.g.localToWorld(PORT.clone()), q ? 6 : 2, 1.5, 0xaaf7ef);
+      sparkle(
+        this.car.parts.g.localToWorld(PORT.clone()),
+        q ? 6 : 2,
+        1.5,
+        0xaaf7ef,
+      );
       el.meter.classList.remove("hit");
       void el.meter.offsetWidth;
       el.meter.classList.add("hit");
@@ -573,25 +764,51 @@
         this.plug.position.lerp(this.rest, Math.min(1, dt * 8));
         this.plug.position.y = this.rest.y + Math.sin(this.t * 3) * 0.04;
       }
-      this.glow.material.emissiveIntensity = this.phase === "plug" ? 0.4 + 0.6 * Math.abs(Math.sin(this.t * 5)) : 1;
+      this.glow.material.emissiveIntensity =
+        this.phase === "plug" ? 0.4 + 0.6 * Math.abs(Math.sin(this.t * 5)) : 1;
       // the cable: a sagging tube from the cart to the back of the plug
       const a = this.outlet,
         b = this.plug.position.clone().add(V3(-0.2, 0, 0)),
         mid = a.clone().lerp(b, 0.5);
-      mid.y = Math.max(0.06, mid.y - Math.max(0.15, 0.7 - a.distanceTo(b) * 0.15));
-      const geo = new T.TubeGeometry(new T.CatmullRomCurve3([a, a.clone().lerp(mid, 0.6).setY(Math.max(0.06, (a.y + mid.y) / 2 - 0.1)), mid, b]), 24, 0.035, 6);
+      mid.y = Math.max(
+        0.06,
+        mid.y - Math.max(0.15, 0.7 - a.distanceTo(b) * 0.15),
+      );
+      const geo = new T.TubeGeometry(
+        new T.CatmullRomCurve3([
+          a,
+          a
+            .clone()
+            .lerp(mid, 0.6)
+            .setY(Math.max(0.06, (a.y + mid.y) / 2 - 0.1)),
+          mid,
+          b,
+        ]),
+        24,
+        0.035,
+        6,
+      );
       if (this.cable) {
         this.cable.geometry.dispose();
         this.cable.geometry = geo;
       } else {
-        this.cable = own(this, new T.Mesh(geo, this.cableMat), this.car.parts.g);
+        this.cable = own(
+          this,
+          new T.Mesh(geo, this.cableMat),
+          this.car.parts.g,
+        );
         this.cable.castShadow = true;
       }
       // the meter and the battery
       const v = Math.sin(this.m) * 0.5 + 0.5;
       el.needle.style.left = (v * 100).toFixed(2) + "%";
       el.batt.style.transform = "scaleX(" + clamp(this.shown, 0.04, 1) + ")";
-      el.batt.style.background = this.shown > 0.5 ? "#41c45a" : this.shown > 0.25 ? "#ffbf1f" : "#ff4b3e";
+      el.batt.style.background =
+        this.shown > 0.5
+          ? "#41c45a"
+          : this.shown > 0.25
+            ? "#ffbf1f"
+            : "#ff4b3e";
       el.battT.textContent = Math.round(this.shown * 100) + "%";
       this.car.parts.ring.material.color.setHSL(this.shown * 0.36, 0.75, 0.5);
     },
@@ -615,7 +832,9 @@
         : "Someone boxed the car in! Grab each cone and fling it off the road. (Space flicks one)";
     },
     progress() {
-      return this.cones.filter((c) => c.st === "gone").length / this.cones.length;
+      return (
+        this.cones.filter((c) => c.st === "gone").length / this.cones.length
+      );
     },
     cam() {
       // high on the street side, to see the whole ring of cones round the car
@@ -639,10 +858,15 @@
         return c;
       });
       this.hits = [];
-      for (const c of this.cones) c.o.traverse((m) => m.isMesh && this.hits.push(m));
+      for (const c of this.cones)
+        c.o.traverse((m) => m.isMesh && this.hits.push(m));
     },
     down(rc) {
-      const h = rc.intersectObjects(this.hits, false).find((x) => x.object.userData.cone && x.object.userData.cone.st !== "gone");
+      const h = rc
+        .intersectObjects(this.hits, false)
+        .find(
+          (x) => x.object.userData.cone && x.object.userData.cone.st !== "gone",
+        );
       if (!h) return;
       const c = h.object.userData.cone;
       c.st = "held";
@@ -688,7 +912,9 @@
     },
     // away from the car: a gentle toss carries on outward
     out(c, k) {
-      const out = c.o.getWorldPosition(V3(0, 0, 0)).sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
+      const out = c.o
+        .getWorldPosition(V3(0, 0, 0))
+        .sub(this.car.parts.g.localToWorld(V3(0, 0, 0)));
       out.y = 0;
       return out.normalize().multiplyScalar(k);
     },
@@ -699,7 +925,11 @@
       c.st = "gone";
       launch(c.o, v);
       A().sfx("whoosh");
-      word(["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0], c.o.getWorldPosition(V3(0, 1, 0)), "orange");
+      word(
+        ["Yeet!", "Nice!", "Bye cone!", "Whee!"][(Math.random() * 4) | 0],
+        c.o.getWorldPosition(V3(0, 1, 0)),
+        "orange",
+      );
       if (this.cones.every((k) => k.st === "gone")) this.allT = 0.4;
     },
     key(code) {
@@ -714,7 +944,8 @@
           c.o.position.lerp(c.home, Math.min(1, dt * 12));
           c.o.rotation.z += (c.r - c.o.rotation.z) * Math.min(1, dt * 12);
           if (c.o.position.distanceTo(c.home) < 0.01) c.st = "on";
-        } else if (c.st === "on") c.o.rotation.z = c.r + Math.sin(this.t * 3 + c.home.z) * 0.04;
+        } else if (c.st === "on")
+          c.o.rotation.z = c.r + Math.sin(this.t * 3 + c.home.z) * 0.04;
       }
       // the boxed-in car honks now and then
       this.honk = (this.honk || 1.5) - dt;
@@ -745,7 +976,8 @@
     g.add(h);
     mesh(SPH, head, 0, 0, 0, 0.09, 0.09, 0.09, h);
     mesh(SPH, beak, 0, -0.01, -0.1, 0.03, 0.025, 0.05, h);
-    for (const s of [-1, 1]) mesh(SPH, eye, s * 0.06, 0.02, -0.06, 0.015, 0.015, 0.015, h);
+    for (const s of [-1, 1])
+      mesh(SPH, eye, s * 0.06, 0.02, -0.06, 0.015, 0.015, 0.015, h);
     mesh(BOX, wing, 0, 0.17, 0.22, 0.12, 0.03, 0.16, g);
     const wings = [-1, 1].map((s) => {
       const p = new T.Group();
@@ -754,7 +986,8 @@
       mesh(BOX, wing, s * 0.15, 0, 0, 0.3, 0.025, 0.16, p);
       return p;
     });
-    for (const s of [-1, 1]) mesh(CYL, beak, s * 0.05, 0.03, 0, 0.012, 0.07, 0.012, g);
+    for (const s of [-1, 1])
+      mesh(CYL, beak, s * 0.05, 0.03, 0, 0.012, 0.07, 0.012, g);
     return { obj: g, head: h, wings };
   }
   JOBS.birds = {
@@ -762,7 +995,9 @@
       return 1 + this.total * 0.55;
     },
     hint() {
-      return TOUCH ? "Tap the pigeons to shoo them off the sensors!" : "Click the pigeons to shoo them off the sensors! (Space shoos one)";
+      return TOUCH
+        ? "Tap the pigeons to shoo them off the sensors!"
+        : "Click the pigeons to shoo them off the sensors! (Space shoos one)";
     },
     progress() {
       return this.gone / this.total;
@@ -785,7 +1020,9 @@
       ].sort(() => Math.random() - 0.5);
       const n = 4 + Math.min(3, this.round);
       this.free = spots.slice(n);
-      this.birds = spots.slice(0, n).map((s, i) => this.mk(s, i === 0 && this.round >= 2));
+      this.birds = spots
+        .slice(0, n)
+        .map((s, i) => this.mk(s, i === 0 && this.round >= 2));
       this.extra = this.round >= 2 ? 2 : 1;
       this.extraT = 1.3;
       this.total = n + this.extra;
@@ -813,7 +1050,9 @@
       return b;
     },
     down(rc) {
-      const hs = this.birds.filter((b) => b.st === "sit" || b.st === "land").map((b) => b.hit),
+      const hs = this.birds
+          .filter((b) => b.st === "sit" || b.st === "land")
+          .map((b) => b.hit),
         h = rc.intersectObjects(hs, false)[0];
       if (h) this.shoo(h.object.userData.bird);
     },
@@ -836,7 +1075,11 @@
       b.obj.lookAt(wpos.clone().add(V3(-out.x, 0, -out.z)));
       flyAway(b, out);
       A().sfx("flap");
-      word(["Shoo!", "Bye!", "Scram!", "Off you go!"][(Math.random() * 4) | 0], wpos.add(V3(0, 0.8, 0)), "purple");
+      word(
+        ["Shoo!", "Bye!", "Scram!", "Off you go!"][(Math.random() * 4) | 0],
+        wpos.add(V3(0, 0.8, 0)),
+        "purple",
+      );
     },
     key(code) {
       if (code !== "Space" && code !== "Enter") return false;
@@ -862,7 +1105,8 @@
       for (const b of this.birds) {
         b.t += dt;
         if (b.st === "sit") {
-          b.head.rotation.x = Math.max(0, Math.sin(b.t * 2.3 + b.home.z * 5) * 1.6 - 0.6) * 0.9;
+          b.head.rotation.x =
+            Math.max(0, Math.sin(b.t * 2.3 + b.home.z * 5) * 1.6 - 0.6) * 0.9;
           let y = 0;
           if (b.hop > 0) {
             b.hop -= dt;
@@ -880,7 +1124,12 @@
           if (b.k >= 1) b.st = "sit";
         }
       }
-      if (!this.done && this.extra <= 0 && this.birds.every((b) => b.st === "fly")) finish(this);
+      if (
+        !this.done &&
+        this.extra <= 0 &&
+        this.birds.every((b) => b.st === "fly")
+      )
+        finish(this);
     },
   };
 
@@ -893,7 +1142,9 @@
       return 1 + this.code.length * 0.55;
     },
     hint() {
-      return TOUCH ? "Tap the arrows to enter the recalibration code." : "Enter the recalibration code with the arrow keys / WASD (or click the arrows).";
+      return TOUCH
+        ? "Tap the arrows to enter the recalibration code."
+        : "Enter the recalibration code with the arrow keys / WASD (or click the arrows).";
     },
     progress() {
       return this.i / this.code.length;
@@ -911,12 +1162,32 @@
       el.code.hidden = false;
       // a holographic scan ring on the street, and one that sweeps out with each good key
       const g = this.car.parts.g;
-      this.ringMat = new T.MeshBasicMaterial({ color: 0xe8508a, transparent: true, opacity: 0.55, side: T.DoubleSide, depthWrite: false });
-      this.ring = own(this, new T.Mesh(new T.RingGeometry(2.9, 3.1, 64), this.ringMat), g);
+      this.ringMat = new T.MeshBasicMaterial({
+        color: 0xe8508a,
+        transparent: true,
+        opacity: 0.55,
+        side: T.DoubleSide,
+        depthWrite: false,
+      });
+      this.ring = own(
+        this,
+        new T.Mesh(new T.RingGeometry(2.9, 3.1, 64), this.ringMat),
+        g,
+      );
       this.ring.rotation.x = -Math.PI / 2;
       this.ring.position.y = 0.06;
-      this.waveMat = new T.MeshBasicMaterial({ color: 0x36d3c4, transparent: true, opacity: 0, side: T.DoubleSide, depthWrite: false });
-      this.wave = own(this, new T.Mesh(new T.RingGeometry(0.9, 1, 64), this.waveMat), g);
+      this.waveMat = new T.MeshBasicMaterial({
+        color: 0x36d3c4,
+        transparent: true,
+        opacity: 0,
+        side: T.DoubleSide,
+        depthWrite: false,
+      });
+      this.wave = own(
+        this,
+        new T.Mesh(new T.RingGeometry(0.9, 1, 64), this.waveMat),
+        g,
+      );
       this.wave.rotation.x = -Math.PI / 2;
       this.wave.position.y = 0.07;
       this.waveT = 9;
@@ -928,9 +1199,13 @@
     },
     press(k) {
       if (this.done) return;
-      el.code.querySelector('button[data-k="' + k + '"]').classList.remove("flash");
+      el.code
+        .querySelector('button[data-k="' + k + '"]')
+        .classList.remove("flash");
       void el.code.offsetWidth;
-      el.code.querySelector('button[data-k="' + k + '"]').classList.add("flash");
+      el.code
+        .querySelector('button[data-k="' + k + '"]')
+        .classList.add("flash");
       if (k === this.code[this.i]) {
         A().sfx("beep", this.i);
         this.i++;
@@ -948,12 +1223,25 @@
         el.code.classList.remove("shake");
         void el.code.offsetWidth;
         el.code.classList.add("shake");
-        word("Oops! From the top", this.car.parts.g.localToWorld(V3(0, 3, 0)), "pink");
+        word(
+          "Oops! From the top",
+          this.car.parts.g.localToWorld(V3(0, 3, 0)),
+          "pink",
+        );
       }
       this.sync();
     },
     key(code) {
-      const m = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
+      const m = {
+        ArrowUp: 0,
+        KeyW: 0,
+        ArrowRight: 1,
+        KeyD: 1,
+        ArrowDown: 2,
+        KeyS: 2,
+        ArrowLeft: 3,
+        KeyA: 3,
+      };
       if (!(code in m)) return false;
       this.press(m[code]);
       return true;
@@ -961,7 +1249,8 @@
     update(dt) {
       const calm = this.i / this.code.length;
       this.ring.rotation.z += dt * (0.5 + calm);
-      this.ringMat.opacity = 0.35 + 0.25 * Math.abs(Math.sin(this.t * (6 - calm * 4)));
+      this.ringMat.opacity =
+        0.35 + 0.25 * Math.abs(Math.sin(this.t * (6 - calm * 4)));
       if (!this.done) this.ringMat.color.setHSL(0.93 - calm * 0.42, 0.75, 0.6);
       this.waveT += dt;
       const k = clamp(this.waveT / 0.7, 0, 1);
@@ -981,7 +1270,8 @@
     if (CUT) return CUT;
     const M = new W.Merge(),
       rb = WG.roundBox,
-      put = (geo, col, x, y, z, rx) => M.geo(geo, col, W.mat(x, y, z, 1, 1, 1, 0, rx || 0)),
+      put = (geo, col, x, y, z, rx) =>
+        M.geo(geo, col, W.mat(x, y, z, 1, 1, 1, 0, rx || 0)),
       WHITE = "#f8f9fb",
       TRIM = "#2b3038",
       SEAT = "#5f6b7d";
@@ -1006,30 +1296,80 @@
       [-0.9, 1.45],
       [0.9, 1.45],
     ]) {
-      M.geo(new T.CylinderGeometry(0.4, 0.4, 0.32, 16), "#23262b", W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2));
-      M.geo(new T.CylinderGeometry(0.22, 0.22, 0.34, 12), "#c7ccd3", W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2));
+      M.geo(
+        new T.CylinderGeometry(0.4, 0.4, 0.32, 16),
+        "#23262b",
+        W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2),
+      );
+      M.geo(
+        new T.CylinderGeometry(0.22, 0.22, 0.34, 12),
+        "#c7ccd3",
+        W.mat(x, 0.4, z, 1, 1, 1, 0, 0, Math.PI / 2),
+      );
     }
-    for (const s of [-1, 1]) M.geo(new T.BoxGeometry(0.4, 0.12, 0.06), "#e8433f", W.mat(s * 0.64, 0.98, 2.3, 1, 1, 1));
-    const m = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 40, specular: 0x333333 }));
+    for (const s of [-1, 1])
+      M.geo(
+        new T.BoxGeometry(0.4, 0.12, 0.06),
+        "#e8433f",
+        W.mat(s * 0.64, 0.98, 2.3, 1, 1, 1),
+      );
+    const m = M.mesh(
+      new T.MeshPhongMaterial({
+        vertexColors: true,
+        shininess: 40,
+        specular: 0x333333,
+      }),
+    );
     CUT = [m.geometry, m.material];
     return CUT;
   }
   const MESS = {
     crumbs(g) {
       const m = lam(0xc9a46a);
-      for (let i = 0; i < 7; i++) mesh(SPH, m, rr(-0.09, 0.09), 0.02, rr(-0.09, 0.09), rr(0.018, 0.03), 0.018, rr(0.018, 0.03), g);
+      for (let i = 0; i < 7; i++)
+        mesh(
+          SPH,
+          m,
+          rr(-0.09, 0.09),
+          0.02,
+          rr(-0.09, 0.09),
+          rr(0.018, 0.03),
+          0.018,
+          rr(0.018, 0.03),
+          g,
+        );
       return 0.45;
     },
     popcorn(g) {
       const m = lam(0xfff6dc);
       for (let i = 0; i < 4; i++) {
-        const p = mesh(ICO, m, rr(-0.1, 0.1), 0.04, rr(-0.1, 0.1), 0.045, 0.04, 0.05, g);
+        const p = mesh(
+          ICO,
+          m,
+          rr(-0.1, 0.1),
+          0.04,
+          rr(-0.1, 0.1),
+          0.045,
+          0.04,
+          0.05,
+          g,
+        );
         p.rotation.set(rr(0, 7), rr(0, 7), 0);
       }
       return 0.5;
     },
     wrapper(g) {
-      const w = mesh(BOX, lam([0xe8433f, 0xffcf3a, 0x3aa6e8, 0x8a7fd8][(Math.random() * 4) | 0]), 0, 0.01, 0, 0.2, 0.015, 0.13, g);
+      const w = mesh(
+        BOX,
+        lam([0xe8433f, 0xffcf3a, 0x3aa6e8, 0x8a7fd8][(Math.random() * 4) | 0]),
+        0,
+        0.01,
+        0,
+        0.2,
+        0.015,
+        0.13,
+        g,
+      );
       w.rotation.set(rr(-0.2, 0.2), rr(0, 7), rr(-0.2, 0.2));
       return 0.6;
     },
@@ -1063,7 +1403,9 @@
       return 1.5 + this.items.length * 0.35;
     },
     hint() {
-      return TOUCH ? "Hold your finger down and sweep the vacuum over the mess!" : "Hold the mouse button and sweep the vacuum over the mess!";
+      return TOUCH
+        ? "Hold your finger down and sweep the vacuum over the mess!"
+        : "Hold the mouse button and sweep the vacuum over the mess!";
     },
     progress() {
       return this.gone / this.items.length;
@@ -1088,7 +1430,18 @@
         () => [rr(0.2, 0.65), 0.68, rr(-0.95, -0.8)],
         () => [rr(-0.7, 0.7), 0.68, rr(0.22, 0.48)],
       ];
-      const kinds = ["crumbs", "popcorn", "wrapper", "receipt", "crumbs", "popcorn", "leaf", "wrapper", "sock", "cup"];
+      const kinds = [
+        "crumbs",
+        "popcorn",
+        "wrapper",
+        "receipt",
+        "crumbs",
+        "popcorn",
+        "leaf",
+        "wrapper",
+        "sock",
+        "cup",
+      ];
       const n = Math.min(18, 10 + this.round * 2);
       this.items = [];
       for (let i = 0; i < n; i++) {
@@ -1099,18 +1452,64 @@
         o.position.set(a[0], a[1], a[2]);
         const hp = MESS[k](o);
         own(this, o, g);
-        this.items.push({ o, hp, hp0: hp, home: o.position.clone(), gone: false });
+        this.items.push({
+          o,
+          hp,
+          hp0: hp,
+          home: o.position.clone(),
+          gone: false,
+        });
       }
       this.gone = 0;
       // the nozzle and its wand
       const nz = new T.Group();
-      mesh(WG.roundBox(0.36, 0.07, 0.14, 0.03, 2), lam(0x3a3f47), 0, 0.035, 0, 1, 1, 1, nz);
-      mesh(BOX, lam(0x36d3c4, { emissive: 0x1a8078 }), 0, 0.075, 0, 0.3, 0.012, 0.08, nz);
-      const wand = mesh(CYL, lam(0xc7ccd3), -0.16, 0.42, 0.14, 0.035, 0.8, 0.035, nz);
+      mesh(
+        WG.roundBox(0.36, 0.07, 0.14, 0.03, 2),
+        lam(0x3a3f47),
+        0,
+        0.035,
+        0,
+        1,
+        1,
+        1,
+        nz,
+      );
+      mesh(
+        BOX,
+        lam(0x36d3c4, { emissive: 0x1a8078 }),
+        0,
+        0.075,
+        0,
+        0.3,
+        0.012,
+        0.08,
+        nz,
+      );
+      const wand = mesh(
+        CYL,
+        lam(0xc7ccd3),
+        -0.16,
+        0.42,
+        0.14,
+        0.035,
+        0.8,
+        0.035,
+        nz,
+      );
       wand.rotation.set(0.35, 0, 0.4);
       nz.visible = false;
       this.noz = own(this, nz);
-      this.floor = mesh(new T.PlaneGeometry(1.9, 3.4), HIT, 0, 0.72, 0.15, 1, 1, 1, g);
+      this.floor = mesh(
+        new T.PlaneGeometry(1.9, 3.4),
+        HIT,
+        0,
+        0.72,
+        0.15,
+        1,
+        1,
+        1,
+        g,
+      );
       this.floor.rotation.x = -Math.PI / 2;
       this.objs.push(this.floor);
       this.hits = [this.cut, this.floor];
@@ -1125,7 +1524,9 @@
       }
       this.noz.visible = this.pressed || !TOUCH;
       this.noz.position.copy(h.point).add(V3(0, 0.03, 0));
-      this.noz.rotation.y = this.car.parts.root.rotation.y + Math.sin(this.t * 25) * (this.pressed ? 0.08 : 0);
+      this.noz.rotation.y =
+        this.car.parts.root.rotation.y +
+        Math.sin(this.t * 25) * (this.pressed ? 0.08 : 0);
       this.nozL = this.car.parts.g.worldToLocal(h.point.clone());
     },
     update(dt) {
@@ -1139,7 +1540,10 @@
           if (d > 0.38) continue;
           it.hp -= dt * 2.4;
           const k = Math.max(0, it.hp / it.hp0);
-          it.o.position.lerp(V3(p.x, p.y + 0.05, p.z), Math.min(1, dt * (3 + 10 * (1 - k))));
+          it.o.position.lerp(
+            V3(p.x, p.y + 0.05, p.z),
+            Math.min(1, dt * (3 + 10 * (1 - k))),
+          );
           it.o.scale.setScalar(0.25 + 0.75 * k);
           it.o.rotation.y += dt * 12;
           if (it.hp <= 0) {
@@ -1147,10 +1551,12 @@
             it.o.visible = false;
             this.gone++;
             A().sfx("thup");
-            if (this.gone % 3 === 0) sparkle(this.car.parts.g.localToWorld(it.home.clone()), 3, 1.2);
+            if (this.gone % 3 === 0)
+              sparkle(this.car.parts.g.localToWorld(it.home.clone()), 3, 1.2);
           }
         }
-        if (Math.random() < 0.3) bubble(this.noz.position.clone().add(V3(0, 0.1, 0)));
+        if (Math.random() < 0.3)
+          bubble(this.noz.position.clone().add(V3(0, 0.1, 0)));
       }
       if (!this.done && this.gone >= this.items.length) finish(this);
     },
@@ -1189,7 +1595,9 @@
     init() {
       const D = this.car.ensureDoors(),
         want = this.car.problem.doors || [0, 2];
-      this.open = want.map((i) => Object.assign(D[i], { i, shut: false, k: 0 }));
+      this.open = want.map((i) =>
+        Object.assign(D[i], { i, shut: false, k: 0 }),
+      );
       env.P.vel = V3(0, 0, 0);
       this.steer = null;
       this.phase = 0;
@@ -1203,7 +1611,8 @@
       this.steer = null;
     },
     track() {
-      if (this.pressed && this.ptr) this.steer = env.pickGround(this.ptr.x, this.ptr.y);
+      if (this.pressed && this.ptr)
+        this.steer = env.pickGround(this.ptr.x, this.ptr.y);
     },
     key(code) {
       return /^(Arrow|Key[WASD])/.test(code);
@@ -1249,14 +1658,27 @@
             b = d.pivot.localToWorld(V3(0, 0.8, 0.95));
           const abx = b.x - a.x,
             abz = b.z - a.z,
-            t = clamp(((P.pos.x - a.x) * abx + (P.pos.z - a.z) * abz) / (abx * abx + abz * abz), 0, 1),
+            t = clamp(
+              ((P.pos.x - a.x) * abx + (P.pos.z - a.z) * abz) /
+                (abx * abx + abz * abz),
+              0,
+              1,
+            ),
             cx = a.x + abx * t,
             cz = a.z + abz * t;
-          if (Math.hypot(P.pos.x - cx, P.pos.z - cz) < 0.95 * (WG.CAR_SCALE || 1) && spd > 1.2) {
+          if (
+            Math.hypot(P.pos.x - cx, P.pos.z - cz) <
+              0.95 * (WG.CAR_SCALE || 1) &&
+            spd > 1.2
+          ) {
             d.shut = true;
             d.k = 0;
             A().sfx("slam");
-            word(["SLAM!", "Shut!", "Bam!", "Hip check!"][(Math.random() * 4) | 0], b.clone().add(V3(0, 1.4, 0)), "teal");
+            word(
+              ["SLAM!", "Shut!", "Bam!", "Hip check!"][(Math.random() * 4) | 0],
+              b.clone().add(V3(0, 1.4, 0)),
+              "teal",
+            );
             sparkle(b, 5, 1.6);
             this.car.sad = 0.25;
           }
@@ -1287,7 +1709,10 @@
       if (!this.done && this.open.every((d) => d.shut)) finish(this);
     },
     cleanup(ok) {
-      if (!ok && this.car.problem) this.car.problem.doors = this.open.filter((d) => !d.shut).map((d) => d.i);
+      if (!ok && this.car.problem)
+        this.car.problem.doors = this.open
+          .filter((d) => !d.shut)
+          .map((d) => d.i);
       const mii = env.mii;
       mii.body.position.y = 0;
       mii.body.rotation.set(0, 0, 0);

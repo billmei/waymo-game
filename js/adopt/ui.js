@@ -780,8 +780,13 @@
     st.stock.forEach((e, i) => {
       const it = item(e.item),
         out = e.qty <= 0;
+      const fx = it.effect
+        ? Object.entries(it.effect)
+            .map(([k, v]) => (v > 0 ? "+" : "") + v + " " + (D.NEEDS[k] ? D.NEEDS[k].name : k))
+            .join(", ")
+        : "";
       h +=
-        '<li class="' + (out ? "out" : "") + '"><span class="ii">' + it.icon + '</span><span class="in"><b>' + esc(it.name) + "</b><small>" + esc(rarity(it.rarity)) + " · " + (out ? "sold out" : e.qty + " left") + (it.desc ? " · " + esc(it.desc) : "") + "</small></span>" +
+        '<li class="' + (out ? "out" : "") + '"><span class="ii">' + it.icon + '</span><span class="in"><b>' + esc(it.name) + "</b><small>" + esc(rarity(it.rarity)) + (fx ? " · " + esc(fx) : "") + " · " + (out ? "sold out" : e.qty + " left") + (it.desc ? " · " + esc(it.desc) : "") + "</small></span>" +
         '<span class="ip">◎' + fmt(e.price) + "</span>" +
         (out ? "" : btn("buy", "Buy", { cls: "tiny primary", data: { s: id, i }, off: S.player.fares < e.price }) + btn("haggle", "Haggle", { data: { s: id, i }, off: e.mad || S.player.fares < 1 })) +
         "</li>";
@@ -1005,7 +1010,8 @@
     A0.lots.forEach((l, i) => {
       const it = item(l.item),
         left = l.ends - h0;
-      h += "<li class='" + (l.done ? "out" : "") + "'><span class='ii'>" + it.icon + "</span><span class='in'><b>" + esc(it.name) + "</b><small>" + (l.done ? "Sold to " + esc(l.by === "you" ? "you!" : l.by) : "Top bid: " + esc(l.by === "you" ? "you" : l.by) + " · closes in " + left + " in-game hour" + (left === 1 ? "" : "s")) + "</small></span><span class='ip'>◎" + fmt(l.bid) + "</span>" + (l.done ? "" : btn("bid", "Bid ◎" + fmt(Math.ceil(l.bid * 1.05) + 1), { cls: "tiny primary", data: { i }, off: l.by === "you" })) + "</li>";
+      const fx = it.effect ? Object.entries(it.effect).map(([k, v]) => (v > 0 ? "+" : "") + v + " " + (D.NEEDS[k] ? D.NEEDS[k].name : k)).join(", ") : "";
+      h += "<li class='" + (l.done ? "out" : "") + "'><span class='ii'>" + it.icon + "</span><span class='in'><b>" + esc(it.name) + "</b><small>" + (l.done ? "Sold to " + esc(l.by === "you" ? "you!" : l.by) : (fx ? esc(fx) + " · " : "") + "Top bid: " + esc(l.by === "you" ? "you" : l.by) + " · closes in " + left + " in-game hour" + (left === 1 ? "" : "s")) + "</small></span><span class='ip'>◎" + fmt(l.bid) + "</span>" + (l.done ? "" : btn("bid", "Bid ◎" + fmt(Math.ceil(l.bid * 1.05) + 1), { cls: "tiny primary", data: { i }, off: l.by === "you" })) + "</li>";
     });
     return h + "</ul>";
   };
@@ -1130,7 +1136,8 @@
     h += "<p class='ad-hint'>Limited items: they're retired when the event ends.</p><ul class='ad-shop'>";
     for (const id of se.shop) {
       const it = item(id);
-      h += "<li><span class='ii'>" + it.icon + "</span><span class='in'><b>" + esc(it.name) + "</b><small>" + esc(rarity(it.rarity)) + "</small></span><span class='ip'>◎" + fmt(it.price) + "</span>" + btn("buySeason", "Buy", { cls: "tiny primary", data: { i: id } }) + "</li>";
+      const fx = it.effect ? Object.entries(it.effect).map(([k, v]) => (v > 0 ? "+" : "") + v + " " + (D.NEEDS[k] ? D.NEEDS[k].name : k)).join(", ") : "";
+      h += "<li><span class='ii'>" + it.icon + "</span><span class='in'><b>" + esc(it.name) + "</b><small>" + esc(rarity(it.rarity)) + (fx ? " · " + esc(fx) : "") + "</small></span><span class='ip'>◎" + fmt(it.price) + "</span>" + btn("buySeason", "Buy", { cls: "tiny primary", data: { i: id } }) + "</li>";
     }
     h += "</ul><h3>📖 Storyline <small>a chapter a day</small></h3><ol class='ad-story'>";
     se.story.forEach((ch, i) => {

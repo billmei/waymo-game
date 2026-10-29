@@ -10,7 +10,8 @@
     D = WG.adoptData,
     Sim = WG.adoptSim;
   const Traffic = WG.Traffic;
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const ease = (t) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const C = { active: null };
 
   const fleetVisible = (on) => {
@@ -31,7 +32,8 @@
       }
       C.active = null;
     }
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if (document.activeElement && document.activeElement.blur)
+      document.activeElement.blur();
     const hood = o.hood,
       zone = Sim.CARE[hood] || "lombard",
       hp = M.hoodPos(hood);
@@ -46,7 +48,10 @@
       car: null,
       street: false,
     });
-    g.camera.getWorldDirection(C.active.fromLook).multiplyScalar(400).add(g.camera.position);
+    g.camera
+      .getWorldDirection(C.active.fromLook)
+      .multiplyScalar(400)
+      .add(g.camera.position);
     g.setState("adoptCare");
     g.A.sfx("whoosh");
     g.A.duck(true);
@@ -75,7 +80,10 @@
       car.ringCol = new T.Color(pet.ring).getHex();
     } else car.ringCol = 0;
     const p = { type: a.kind, max: 1, left: 1 };
-    if (a.kind === "doors") p.doors = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, 2 + ((Math.random() * 2) | 0));
+    if (a.kind === "doors")
+      p.doors = [0, 1, 2, 3]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2 + ((Math.random() * 2) | 0));
     if (a.kind === "cone") p.n = 3 + ((Math.random() * 3) | 0);
     car.setProblem(p);
     car.pullOver();
@@ -177,7 +185,11 @@
       // high on the street side, closing in as it pulls over
       const k = Math.min(1, a.t / 2);
       look.set(c.pos.x, c.pos.y + 1.2, c.pos.z);
-      pos.set(c.pos.x + fz * 10 - fx * 12, c.pos.y + 9 + (1 - k) * 40, c.pos.z - fx * 10 - fz * 12);
+      pos.set(
+        c.pos.x + fz * 10 - fx * 12,
+        c.pos.y + 9 + (1 - k) * 40,
+        c.pos.z - fx * 10 - fz * 12,
+      );
       return 2.6;
     }
     // up: back to the map

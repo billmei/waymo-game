@@ -356,56 +356,56 @@ Hunters Point: Candlestick`;
     for (const [id, name, icon, rarity, price, o] of rows) I[id] = Object.assign({ id, name, icon, rarity, price, cat }, o || {});
   };
   add("snack", [
-    ["snack_volt_bar", "Volt Bar", "🔋", 8, 20, { effect: { charge: 20 }, desc: "A chewy bar of pure electrons." }],
-    ["snack_fry", "Seagull-Approved Fry", "🍟", 12, 15, { effect: { charge: 8, mood: 8 }, desc: "A gull let this one go. A sign of respect." }],
-    ["snack_electron_chips", "Electron Chips", "🥔", 15, 25, { effect: { charge: 15, mood: 6 }, desc: "Salt and voltage." }],
-    ["snack_dutch_crunch", "Dutch Crunch Current", "🥪", 22, 35, { effect: { charge: 25 }, desc: "The crunchiest charge in the city." }],
-    ["snack_fortune_amp", "Fortune Amp Cookie", "🥠", 28, 40, { effect: { charge: 15, mood: 10 }, desc: "Inside: 'You will reach 100%.'" }],
-    ["snack_capacitor", "Ghirardelli Capacitor", "🍫", 35, 45, { effect: { charge: 30, mood: 5 }, desc: "Dark chocolate, dark current." }],
-    ["snack_sourdough_cell", "Sourdough Battery Bowl", "🥖", 40, 60, { effect: { charge: 45 }, desc: "Chowder not included." }],
-    ["snack_dim_sum", "Dim Sum Discharge Pack", "🥟", 42, 80, { effect: { charge: 40, mood: 6 }, desc: "Four little dumplings of power." }],
-    ["snack_irish_coffee", "Buena Vista Irish Coffee (decaf, for cars)", "☕", 45, 70, { effect: { charge: 25, code: 15 }, desc: "Wakes up the processor." }],
-    ["snack_burrito_battery", "Mission Burrito Battery", "🌯", 50, 95, { effect: { charge: 70, cleanliness: -10 }, desc: "Enormous. Some of it ends up on the seats." }],
-    ["snack_cioppino_cell", "Cioppino Power Cell", "🍲", 55, 120, { effect: { charge: 60, mood: 5 }, desc: "A Wharf classic, in a can with terminals." }],
-    ["snack_its_it", "It's-It Coolant", "🍦", 60, 140, { effect: { charge: 35, mood: 15 }, desc: "Ice cream between two oatmeal cookies, dipped in chocolate. For the radiator." }],
-    ["snack_megawatt_muffin", "Mega Megawatt Muffin", "🧁", 72, 220, { effect: { charge: 60, mood: 4 }, over: true, desc: "Can push a car past 100%. It will regret nothing." }],
-    ["snack_grandma_cookie", "Grandma's Cookie", "🍪", 100, 60, { effect: { cleanliness: 10, mood: 12, charge: 10 }, desc: "Left in the back seat, still warm." }],
-    ["snack_pumpkin_cell", "Pumpkin Spice Power Cell", "🎃", 70, 90, { effect: { charge: 40, mood: 10 }, season: "halloween", desc: "Seasonal. Smells like October." }],
-    ["snack_mooncake", "Mooncake Megacell", "🥮", 70, 90, { effect: { charge: 40, mood: 10 }, season: "lunar", desc: "Rich, dense and full of lotus-paste joules." }],
-    ["snack_pan_muerto", "Pan de Muerto Pack", "🍞", 70, 90, { effect: { charge: 35, mood: 14 }, season: "muertos", desc: "Sweet bread for the season." }],
+    ["snack_volt_bar", "Volt Bar (Charge)", "🔋", 8, 20, { effect: { charge: 20 }, desc: "A chewy bar of pure electrons." }],
+    ["snack_fry", "Seagull-Approved Fry (Charge)", "🍟", 12, 15, { effect: { charge: 8, mood: 8 }, desc: "A gull let this one go. A sign of respect." }],
+    ["snack_electron_chips", "Electron Chips (Charge)", "🥔", 15, 25, { effect: { charge: 15, mood: 6 }, desc: "Salt and voltage." }],
+    ["snack_dutch_crunch", "Dutch Crunch Current (Charge)", "🥪", 22, 35, { effect: { charge: 25 }, desc: "The crunchiest charge in the city." }],
+    ["snack_fortune_amp", "Fortune Amp Cookie (Charge)", "🥠", 28, 40, { effect: { charge: 15, mood: 10 }, desc: "Inside: 'You will reach 100%.'" }],
+    ["snack_capacitor", "Ghirardelli Capacitor (Charge)", "🍫", 35, 45, { effect: { charge: 30, mood: 5 }, desc: "Dark chocolate, dark current." }],
+    ["snack_sourdough_cell", "Sourdough Battery Bowl (Charge)", "🥖", 40, 60, { effect: { charge: 45 }, desc: "Chowder not included." }],
+    ["snack_dim_sum", "Dim Sum Discharge Pack (Charge)", "🥟", 42, 80, { effect: { charge: 40, mood: 6 }, desc: "Four little dumplings of power." }],
+    ["snack_irish_coffee", "Buena Vista Irish Coffee (Charge)", "☕", 45, 70, { effect: { charge: 25, code: 15 }, desc: "Decaf, for cars. Wakes up the processor." }],
+    ["snack_burrito_battery", "Mission Burrito Battery (Charge)", "🌯", 50, 95, { effect: { charge: 70, cleanliness: -10 }, desc: "Enormous. Some of it ends up on the seats." }],
+    ["snack_cioppino_cell", "Cioppino Power Cell (Charge)", "🍲", 55, 120, { effect: { charge: 60, mood: 5 }, desc: "A Wharf classic, in a can with terminals." }],
+    ["snack_its_it", "It's-It Coolant (Charge)", "🍦", 60, 140, { effect: { charge: 35, mood: 15 }, desc: "Ice cream between two oatmeal cookies, dipped in chocolate. For the radiator." }],
+    ["snack_megawatt_muffin", "Mega Megawatt Muffin (Charge)", "🧁", 72, 220, { effect: { charge: 60, mood: 4 }, over: true, desc: "Can push a car past 100%. It will regret nothing." }],
+    ["snack_grandma_cookie", "Grandma's Cookie (All Needs)", "🍪", 100, 60, { effect: { cleanliness: 10, mood: 12, charge: 10 }, desc: "Left in the back seat, still warm." }],
+    ["snack_pumpkin_cell", "Pumpkin Spice Power Cell (Charge)", "🎃", 70, 90, { effect: { charge: 40, mood: 10 }, season: "halloween", desc: "Seasonal. Smells like October." }],
+    ["snack_mooncake", "Mooncake Megacell (Charge)", "🥮", 70, 90, { effect: { charge: 40, mood: 10 }, season: "lunar", desc: "Rich, dense and full of lotus-paste joules." }],
+    ["snack_pan_muerto", "Pan de Muerto Pack (Charge)", "🍞", 70, 90, { effect: { charge: 35, mood: 14 }, season: "muertos", desc: "Sweet bread for the season." }],
   ]);
   add("wash", [
-    ["wipe_basic", "Wet Wipes", "🧻", 5, 20, { effect: { cleanliness: 15 }, desc: "Better than nothing." }],
-    ["wipe_fog_mist", "Fog Mist Spray", "💨", 18, 40, { effect: { cleanliness: 25 }, desc: "Bottled Karl, with a squeegee." }],
-    ["wax_sea_salt", "Sea Salt Scrub", "🧂", 28, 55, { effect: { cleanliness: 30 }, desc: "Gritty, but it works." }],
-    ["wax_surf", "Surf Wax", "🏄", 35, 75, { effect: { cleanliness: 40, mood: 4 }, desc: "Made for boards. Works on robotaxis." }],
-    ["wax_showroom", "Showroom Polish", "✨", 65, 220, { effect: { cleanliness: 70 }, desc: "So shiny the gulls get confused." }],
-    ["cozy_lint", "Lint Roller", "🧽", 8, 25, { effect: { cleanliness: 15 }, desc: "Takes care of the dog hair. And the crumbs." }],
-    ["cozy_air", "Eucalyptus Air Freshener", "🌿", 24, 45, { effect: { cleanliness: 25, mood: 3 }, desc: "Smells like the Presidio after rain." }],
-    ["cozy_cushion", "Hand-Knit Seat Cushion", "🧶", 45, 110, { effect: { cleanliness: 45 }, desc: "Knitted by a grandma in the Sunset." }],
-    ["cozy_crumbvac", "Pocket Crumb-Vac", "🌀", 55, 160, { effect: { cleanliness: 60 }, desc: "A tiny vacuum with a big attitude." }],
-    ["sense_lens", "Lens Cloth", "👓", 8, 25, { effect: { cleanliness: 20 }, desc: "For lidar domes and spectacles." }],
-    ["sense_bird_sign", "Polite Bird Sign", "🪧", 30, 60, { effect: { cleanliness: 30 }, desc: "'Please roost elsewhere. Thank you.'" }],
-    ["sense_eagle_drops", "Eagle-Eye Drops", "🦅", 55, 150, { effect: { cleanliness: 55 }, desc: "Sees round corners. Almost." }],
+    ["wipe_basic", "Wet Wipes (Cleanliness)", "🧻", 5, 20, { effect: { cleanliness: 15 }, desc: "Better than nothing." }],
+    ["wipe_fog_mist", "Fog Mist Spray (Cleanliness)", "💨", 18, 40, { effect: { cleanliness: 25 }, desc: "Bottled Karl, with a squeegee." }],
+    ["wax_sea_salt", "Sea Salt Scrub (Cleanliness)", "🧂", 28, 55, { effect: { cleanliness: 30 }, desc: "Gritty, but it works." }],
+    ["wax_surf", "Surf Wax (Cleanliness)", "🏄", 35, 75, { effect: { cleanliness: 40, mood: 4 }, desc: "Made for boards. Works on robotaxis." }],
+    ["wax_showroom", "Showroom Polish (Cleanliness)", "✨", 65, 220, { effect: { cleanliness: 70 }, desc: "So shiny the gulls get confused." }],
+    ["cozy_lint", "Lint Roller (Cleanliness)", "🧽", 8, 25, { effect: { cleanliness: 15 }, desc: "Takes care of the dog hair. And the crumbs." }],
+    ["cozy_air", "Eucalyptus Air Freshener (Cleanliness)", "🌿", 24, 45, { effect: { cleanliness: 25, mood: 3 }, desc: "Smells like the Presidio after rain." }],
+    ["cozy_cushion", "Hand-Knit Seat Cushion (Cleanliness)", "🧶", 45, 110, { effect: { cleanliness: 45 }, desc: "Knitted by a grandma in the Sunset." }],
+    ["cozy_crumbvac", "Pocket Crumb-Vac (Cleanliness)", "🌀", 55, 160, { effect: { cleanliness: 60 }, desc: "A tiny vacuum with a big attitude." }],
+    ["sense_lens", "Lens Cloth (Cleanliness)", "👓", 8, 25, { effect: { cleanliness: 20 }, desc: "For lidar domes and spectacles." }],
+    ["sense_bird_sign", "Polite Bird Sign (Cleanliness)", "🪧", 30, 60, { effect: { cleanliness: 30 }, desc: "'Please roost elsewhere. Thank you.'" }],
+    ["sense_eagle_drops", "Eagle-Eye Drops (Cleanliness)", "🦅", 55, 150, { effect: { cleanliness: 55 }, desc: "Sees round corners. Almost." }],
   ]);
   add("code", [
-    ["clar_reboot_tea", "Reboot Tea", "🍵", 14, 35, { effect: { code: 20 }, desc: "Turn it off, have a cup, turn it on again." }],
-    ["clar_patch", "Weekend Patch Notes", "📄", 30, 60, { effect: { code: 35 }, desc: "Fixed a bug where the car believed it was a boat." }],
-    ["clar_defrag", "Defrag Massage", "💆", 50, 130, { effect: { code: 55, mood: 5 }, desc: "Soothing for every sector." }],
+    ["clar_reboot_tea", "Reboot Tea (Code)", "🍵", 14, 35, { effect: { code: 20 }, desc: "Turn it off, have a cup, turn it on again." }],
+    ["clar_patch", "Weekend Patch Notes (Code)", "📄", 30, 60, { effect: { code: 35 }, desc: "Fixed a bug where the car believed it was a boat." }],
+    ["clar_defrag", "Defrag Massage (Code)", "💆", 50, 130, { effect: { code: 55, mood: 5 }, desc: "Soothing for every sector." }],
   ]);
   add("toy", [
-    ["toy_tennis", "Golden Gate Tennis Ball", "🎾", 15, 30, { effect: { mood: 10 }, desc: "Bouncy. Orange. Irresistible." }],
-    ["toy_squeaky_cone", "Squeaky Cone", "🔶", 20, 45, { effect: { mood: 15 }, desc: "The only cone a robotaxi likes." }],
-    ["toy_rubber_sea_lion", "Rubber Sea Lion", "🦭", 35, 70, { effect: { mood: 20 }, desc: "Arf." }],
-    ["toy_kite", "Crissy Field Kite", "🪁", 40, 90, { effect: { mood: 25 }, desc: "It ties to the lidar." }],
-    ["toy_cable_bell", "Toy Cable Car Bell", "🛎️", 45, 100, { effect: { mood: 22 }, desc: "Ding ding!" }],
-    ["toy_karl_plush", "Karl Plushie", "☁️", 60, 180, { effect: { mood: 30 }, desc: "A soft fog cloud with a smug little face." }],
+    ["toy_tennis", "Golden Gate Tennis Ball (Mood)", "🎾", 15, 30, { effect: { mood: 10 }, desc: "Bouncy. Orange. Irresistible." }],
+    ["toy_squeaky_cone", "Squeaky Cone (Mood)", "🔶", 20, 45, { effect: { mood: 15 }, desc: "The only cone a robotaxi likes." }],
+    ["toy_rubber_sea_lion", "Rubber Sea Lion (Mood)", "🦭", 35, 70, { effect: { mood: 20 }, desc: "Arf." }],
+    ["toy_kite", "Crissy Field Kite (Mood)", "🪁", 40, 90, { effect: { mood: 25 }, desc: "It ties to the lidar." }],
+    ["toy_cable_bell", "Toy Cable Car Bell (Mood)", "🛎️", 45, 100, { effect: { mood: 22 }, desc: "Ding ding!" }],
+    ["toy_karl_plush", "Karl Plushie (Mood)", "☁️", 60, 180, { effect: { mood: 30 }, desc: "A soft fog cloud with a smug little face." }],
   ]);
   add("treat", [
-    ["treat_birdseed", "Bird Seed", "🌾", 10, 20, { effect: { mood: 8 }, pet: true, desc: "For dashpets with beaks." }],
-    ["treat_kelp", "Kelp Crisp", "🌿", 25, 40, { effect: { mood: 12 }, pet: true, desc: "Sea lion pups go wild for it." }],
-    ["treat_cracker", "Parrot Cracker", "🍘", 30, 45, { effect: { mood: 12 }, pet: true, desc: "Polly would like one." }],
-    ["treat_dew", "Morning Dew Drop", "💧", 40, 60, { effect: { mood: 15 }, pet: true, desc: "Mini Karl's favourite." }],
+    ["treat_birdseed", "Bird Seed (Mood)", "🌾", 10, 20, { effect: { mood: 8 }, pet: true, desc: "For dashpets with beaks." }],
+    ["treat_kelp", "Kelp Crisp (Mood)", "🌿", 25, 40, { effect: { mood: 12 }, pet: true, desc: "Sea lion pups go wild for it." }],
+    ["treat_cracker", "Parrot Cracker (Mood)", "🍘", 30, 45, { effect: { mood: 12 }, pet: true, desc: "Polly would like one." }],
+    ["treat_dew", "Morning Dew Drop (Mood)", "💧", 40, 60, { effect: { mood: 15 }, pet: true, desc: "Mini Karl's favourite." }],
   ]);
   // map packs and podcasts: +Smarts, once per car (Neopets' books)
   add("read", [
@@ -481,12 +481,12 @@ Hunters Point: Candlestick`;
   ]);
   // rare finds: prizes and quest rewards, never on a shop shelf
   add("rare", [
-    ["rare_golden_ticket", "Golden Cable Car Ticket", "🎫", 101, 5000, { effect: { mood: 40 }, desc: "Free rides for life. For whom is unclear." }],
+    ["rare_golden_ticket", "Golden Cable Car Ticket (Mood)", "🎫", 101, 5000, { effect: { mood: 40 }, desc: "Free rides for life. For whom is unclear." }],
     ["rare_sea_glass", "Sutro Sea Glass", "🔹", 100, 2500, { desc: "Worn smooth by a hundred years of tides. Sell it, or keep it as a treasure." }],
     ["rare_old_token", "Old Muni Token", "🪙", 100, 1800, { desc: "From before the Clipper card. A collector's dream." }],
-    ["rare_bison_hair", "Lucky Bison Hair", "🦬", 100, 1500, { effect: { mood: 25, charge: 25, cleanliness: 50, code: 25 }, desc: "Freely given. Very lucky." }],
-    ["rare_fog_jar", "Jar of Karl", "🫙", 101, 4000, { effect: { code: 100 }, desc: "A whole morning of fog, in a jar. Handle gently." }],
-    ["rare_starter_loaf", "Sourdough Mother Loaf", "🍞", 101, 6000, { effect: { charge: 100, mood: 30 }, desc: "Grown from a Sourdough Starter over thirty days." }],
+    ["rare_bison_hair", "Lucky Bison Hair (All Needs)", "🦬", 100, 1500, { effect: { mood: 25, charge: 25, cleanliness: 50, code: 25 }, desc: "Freely given. Very lucky." }],
+    ["rare_fog_jar", "Jar of Karl (Code)", "🫙", 101, 4000, { effect: { code: 100 }, desc: "A whole morning of fog, in a jar. Handle gently." }],
+    ["rare_starter_loaf", "Sourdough Mother Loaf (Charge)", "🍞", 101, 6000, { effect: { charge: 100, mood: 30 }, desc: "Grown from a Sourdough Starter over thirty days." }],
   ]);
   // paint wraps: used up when applied (Neopets' paint brushes)
   for (const [id, name, rarity, price, o] of [
@@ -527,15 +527,15 @@ Hunters Point: Candlestick`;
   // dashpet-pets: tiny cosmetic hangers-on
   D.MITES = { crumb_mite: { name: "Crumb Mite", icon: "🦠" }, dust_bunny: { name: "Dust Bunny", icon: "🐰" }, fog_droplet: { name: "Fog Droplet", icon: "💧" } };
   D.CAT_NAMES = {
-    snack: "Snacks",
+    snack: "Charge (Snacks)",
     wash: "Cleanliness",
     code: "Code",
     cleanliness: "Cleanliness",
     cozy: "Cleanliness",
     senses: "Cleanliness",
     clarity: "Code",
-    toy: "Toys",
-    treat: "Dashpet treats",
+    toy: "Mood (Toys)",
+    treat: "Mood (Dashpet treats)",
     read: "Map packs & podcasts",
     chip: "Firmware chips",
     gear: "Accessories",
@@ -846,7 +846,7 @@ Hunters Point: Candlestick`;
       shop: ["wrap_haunted", "topper_witch", "roof_pumpkin", "snack_pumpkin_cell", "song_spooky", "furn_jack_o"],
       story: [
         { title: "Something in the Garage", text: "Dispatch swears the garage lights flickered on their own last night. Give a car a reboot to check its sensors weren't imagining it.", ask: { job: "reboot" } },
-        { title: "The Pumpkin Patch", text: "The Corner Store is out of pumpkins. Bring a Pumpkin Spice Power Cell to the garage to start the decorations.", ask: { item: "snack_pumpkin_cell" } },
+        { title: "The Pumpkin Patch", text: "The Corner Store is out of pumpkins. Bring a Pumpkin Spice Power Cell (Charge) to the garage to start the decorations.", ask: { item: "snack_pumpkin_cell" } },
         { title: "Phantom Fares", text: "Riders keep asking for a ride to 'the old baths'. Send a car to Ocean Beach to see what's out there.", ask: { visit: "Ocean Beach" } },
         { title: "Cobweb Clean-up", text: "Somebody spun cobwebs all over a cabin. Vacuum it out before the trick-or-treaters arrive.", ask: { job: "vacuum" } },
         { title: "The Ghost of Lombard Street", text: "It was a pigeon in a sheet all along. Shoo it (gently) and it'll haunt someone else.", ask: { job: "birds" } },
@@ -863,7 +863,7 @@ Hunters Point: Candlestick`;
       shop: ["wrap_calavera", "topper_marigold", "snack_pan_muerto"],
       story: [
         { title: "Marigolds", text: "The Mission is building ofrendas. Take a car to the Mission to help carry marigolds.", ask: { visit: "Mission" } },
-        { title: "Sweet Bread", text: "Bring Pan de Muerto for the altar at the garage.", ask: { item: "snack_pan_muerto" } },
+        { title: "Sweet Bread", text: "Bring a Pan de Muerto Pack (Charge) for the altar at the garage.", ask: { item: "snack_pan_muerto" } },
         { title: "The Procession", text: "Give a car a wash so it shines for the evening procession down 24th Street.", ask: { job: "dirty" } },
       ],
       reward: { avatar: "calavera", item: "topper_marigold", fares: 600 },

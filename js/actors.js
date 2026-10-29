@@ -66,9 +66,17 @@
 
   /* ---------- the robotaxi ---------- */
   const MAT = {
-    body: new T.MeshPhongMaterial({ color: 0xf8f9fb, shininess: 70, specular: 0x666666 }),
+    body: new T.MeshPhongMaterial({
+      color: 0xf8f9fb,
+      shininess: 70,
+      specular: 0x666666,
+    }),
     trim: new T.MeshLambertMaterial({ color: 0x2b3038 }),
-    glass: new T.MeshPhongMaterial({ color: 0x1c2734, shininess: 110, specular: 0x9ab }),
+    glass: new T.MeshPhongMaterial({
+      color: 0x1c2734,
+      shininess: 110,
+      specular: 0x9ab,
+    }),
     tire: new T.MeshLambertMaterial({ color: 0x23262b }),
     hub: new T.MeshPhongMaterial({ color: 0xc7ccd3, shininess: 50 }),
     tail: new T.MeshLambertMaterial({ color: 0xe8433f, emissive: 0x330000 }),
@@ -128,13 +136,21 @@
 
   // every robotaxi shares three merged, vertex-coloured meshes: the car, the spinning lidar head and the headlights
   let CAR = null;
-  const HEAD_MAT = new T.MeshLambertMaterial({ color: 0xfffbe8, emissive: 0x333322 });
+  const HEAD_MAT = new T.MeshLambertMaterial({
+    color: 0xfffbe8,
+    emissive: 0x333322,
+  });
   function carGeo() {
     if (CAR) return CAR;
     const M = new W.Merge(),
       S = new W.Merge(),
       Hd = new W.Merge(),
-      put = (m, geo, col, x, y, z, sx, sy, sz, rz) => m.geo(geo, col, W.mat(x, y, z, sx || 1, sy || 1, sz || 1, 0, 0, rz || 0));
+      put = (m, geo, col, x, y, z, sx, sy, sz, rz) =>
+        m.geo(
+          geo,
+          col,
+          W.mat(x, y, z, sx || 1, sy || 1, sz || 1, 0, 0, rz || 0),
+        );
     const WHITE = "#f8f9fb",
       TRIM = "#2b3038";
     put(M, GEO.skirt, TRIM, 0, 0.5, 0);
@@ -162,10 +178,20 @@
     }
     put(S, GEO.domeT, TRIM, 0, 0, 0);
     put(S, GEO.box, "#36d3c4", 0.3, 0.02, 0, 0.12, 0.1, 0.06);
-    const bm = M.mesh(new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: 0x555555 })),
+    const bm = M.mesh(
+        new T.MeshPhongMaterial({
+          vertexColors: true,
+          shininess: 70,
+          specular: 0x555555,
+        }),
+      ),
       sm = S.mesh(new T.MeshLambertMaterial({ vertexColors: true })),
       hm = Hd.mesh(HEAD_MAT);
-    CAR = { body: [bm.geometry, bm.material], spin: [sm.geometry, sm.material], head: [hm.geometry, hm.material] };
+    CAR = {
+      body: [bm.geometry, bm.material],
+      spin: [sm.geometry, sm.material],
+      head: [hm.geometry, hm.material],
+    };
     return CAR;
   }
   WG.CAR_HEAD = HEAD_MAT;
@@ -214,7 +240,14 @@
     const cv = document.createElement("canvas");
     cv.width = cv.height = 128;
     const tex = new T.CanvasTexture(cv);
-    const sprite = new T.Sprite(new T.SpriteMaterial({ map: tex, depthTest: false, transparent: true, fog: false }));
+    const sprite = new T.Sprite(
+      new T.SpriteMaterial({
+        map: tex,
+        depthTest: false,
+        transparent: true,
+        fog: false,
+      }),
+    );
     sprite.scale.set(3.4, 3.4, 1);
     sprite.position.set(0, 4.2, 0);
     sprite.renderOrder = 10;
@@ -224,7 +257,21 @@
     root.traverse((o) => {
       if (o.isMesh) o.receiveShadow = false;
     });
-    return { root, g, body, spin, ring, wheels, headMat, dirt, cone, birds, sprite, cv, tex };
+    return {
+      root,
+      g,
+      body,
+      spin,
+      ring,
+      wheels,
+      headMat,
+      dirt,
+      cone,
+      birds,
+      sprite,
+      cv,
+      tex,
+    };
   }
   WG.makeCar = makeCar;
 
@@ -236,7 +283,10 @@
   function dirtSpots(n) {
     if (!_probe) {
       const C = carGeo();
-      _probe = new T.Mesh(C.body[0], new T.MeshBasicMaterial({ side: T.FrontSide }));
+      _probe = new T.Mesh(
+        C.body[0],
+        new T.MeshBasicMaterial({ side: T.FrontSide }),
+      );
       _probe.updateMatrixWorld(true);
     }
     const out = [],
@@ -245,18 +295,36 @@
     for (let k = 0; out.length < n && k < 600; k++) {
       const a = Math.random() * Math.PI * 2,
         e = Math.random() * 1.2;
-      o.set(Math.cos(a) * Math.cos(e) * 6, 0.8 + Math.sin(e) * 6, Math.sin(a) * Math.cos(e) * 7);
-      at.set((Math.random() - 0.5) * 1.2, 0.7 + Math.random() * 1.1, (Math.random() - 0.5) * 4);
+      o.set(
+        Math.cos(a) * Math.cos(e) * 6,
+        0.8 + Math.sin(e) * 6,
+        Math.sin(a) * Math.cos(e) * 7,
+      );
+      at.set(
+        (Math.random() - 0.5) * 1.2,
+        0.7 + Math.random() * 1.1,
+        (Math.random() - 0.5) * 4,
+      );
       _ray.set(o, at.sub(o).normalize());
       const h = _ray.intersectObject(_probe, false)[0];
       if (!h || !h.face) continue;
       const p = h.point,
         nr = h.face.normal.clone();
       if (p.y < 0.55 || p.y > 2.05) continue;
-      if (Math.abs(p.x) > 0.9 && p.y < 0.9 && Math.abs(Math.abs(p.z) - 1.45) < 0.55) continue;
+      if (
+        Math.abs(p.x) > 0.9 &&
+        p.y < 0.9 &&
+        Math.abs(Math.abs(p.z) - 1.45) < 0.55
+      )
+        continue;
       if (out.some((q) => q.p.distanceTo(p) < 0.62)) continue;
       const q = Math.random();
-      out.push({ p: p.clone().addScaledVector(nr, 0.01), n: nr, s: 0.15 + Math.random() * 0.12, k: q < 0.22 ? 1 : q < 0.5 ? 2 : 0 });
+      out.push({
+        p: p.clone().addScaledVector(nr, 0.01),
+        n: nr,
+        s: 0.15 + Math.random() * 0.12,
+        k: q < 0.22 ? 1 : q < 0.5 ? 2 : 0,
+      });
     }
     return out;
   }
@@ -277,11 +345,18 @@
     // always one ahead and one behind, so the car really is stuck; the rest anywhere round it
     const front = [0, 1, 2].sort(() => Math.random() - 0.5),
       back = [6, 7, 8].sort(() => Math.random() - 0.5),
-      rest = front.slice(1).concat(back.slice(1), [3, 4, 5]).sort(() => Math.random() - 0.5),
+      rest = front
+        .slice(1)
+        .concat(back.slice(1), [3, 4, 5])
+        .sort(() => Math.random() - 0.5),
       pick = [front[0], back[0]].concat(rest).slice(0, n);
     return pick.map((i) => {
       const [x, z] = CONE_RING[i];
-      return [x + (Math.random() - 0.5) * 0.3, z + (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3];
+      return [
+        x + (Math.random() - 0.5) * 0.3,
+        z + (Math.random() - 0.5) * 0.3,
+        (Math.random() - 0.5) * 0.3,
+      ];
     });
   }
   WG.coneSpots = coneSpots;
@@ -711,10 +786,13 @@
       });
     }
     // red for a flat battery; otherwise the car's own colour (teal, or an adopted car's signature colour, ringCol)
-    P.ring.material.color.set(p && p.type === "charge" ? 0xff4b3e : this.ringCol || 0x36d3c4);
+    P.ring.material.color.set(
+      p && p.type === "charge" ? 0xff4b3e : this.ringCol || 0x36d3c4,
+    );
     if (p && p.type === "charge") P.ring.material.emissive.set(0x551010);
     else if (!this.ringCol) P.ring.material.emissive.set(0x0b4a44);
-    else P.ring.material.emissive.copy(P.ring.material.color).multiplyScalar(0.3);
+    else
+      P.ring.material.emissive.copy(P.ring.material.color).multiplyScalar(0.3);
     this.bubbleT = 0;
   };
   Car.prototype.showDirt = function (spots) {
@@ -724,7 +802,17 @@
       const g = new T.Group();
       g.position.copy(s.p);
       g.quaternion.setFromUnitVectors(UP, s.n);
-      add(g, GEO.sph, s.k === 1 ? MAT.poop : s.k === 2 ? MAT.dust : MAT.mud, 0, 0, 0, s.s, 0.03, s.s * 0.8);
+      add(
+        g,
+        GEO.sph,
+        s.k === 1 ? MAT.poop : s.k === 2 ? MAT.dust : MAT.mud,
+        0,
+        0,
+        0,
+        s.s,
+        0.03,
+        s.s * 0.8,
+      );
       D.add(g);
     }
   };
@@ -769,7 +857,13 @@
     return this.doorParts;
   };
   Car.prototype.canPull = function () {
-    if (this.state !== "drive" || this.piece !== "line" || this.s < END + 1 || this.s > this.seg.len - END - 15) return false;
+    if (
+      this.state !== "drive" ||
+      this.piece !== "line" ||
+      this.s < END + 1 ||
+      this.s > this.seg.len - END - 15
+    )
+      return false;
     // keep clear of the street trees along the curb where it would stop
     const p = [0, 0];
     for (const ds of [4.8, 7, 9.2]) {
@@ -798,7 +892,9 @@
       const used = new Set(),
         N = W.graph.nodes;
       for (let k = 0; k < n; k++) {
-        let a, b, tries = 0;
+        let a,
+          b,
+          tries = 0;
         do {
           a = (Math.random() * N.length) | 0;
           b = N[a].nb[(Math.random() * N[a].nb.length) | 0];
@@ -806,7 +902,14 @@
         } while (used.has(a + ">" + b) && tries < 200);
         used.add(a + ">" + b);
         const len = segOf(a, b).len;
-        this.cars.push(new Car(scene, a, b, END + 2 + Math.random() * Math.max(1, len - 2 * END - 10)));
+        this.cars.push(
+          new Car(
+            scene,
+            a,
+            b,
+            END + 2 + Math.random() * Math.max(1, len - 2 * END - 10),
+          ),
+        );
       }
     },
     update(dt, t, player, look) {
@@ -862,8 +965,13 @@
           if (c.piece === "line" && c.seg.len - END - c.s < 7) {
             const key = c.b,
               L = locks[key];
-            if (!L || L.car === c || t - L.t > 5) locks[key] = { car: c, t: L && L.car === c ? L.t : t };
-            else want = Math.min(want, Math.max(0, c.seg.len - END - c.s - 0.6) * 1.5);
+            if (!L || L.car === c || t - L.t > 5)
+              locks[key] = { car: c, t: L && L.car === c ? L.t : t };
+            else
+              want = Math.min(
+                want,
+                Math.max(0, c.seg.len - END - c.s - 0.6) * 1.5,
+              );
           }
         }
         const acc = want > c.speed ? 5 : 14;
@@ -896,7 +1004,14 @@
         // animation
         const P = c.parts;
         // a car that needs nothing looks like it
-        if (!c.problem && (P.dirt.visible || P.cone.visible || P.birds.visible || P.sprite.visible)) c.setProblem(null);
+        if (
+          !c.problem &&
+          (P.dirt.visible ||
+            P.cone.visible ||
+            P.birds.visible ||
+            P.sprite.visible)
+        )
+          c.setProblem(null);
         let spin = 7;
         if (c.problem && c.problem.type === "reboot") {
           const calm = c.problem.calm || 0;
@@ -918,7 +1033,11 @@
             c.bubbleT = 0.15;
             drawBubble(c, clamp(c.problem.left / c.problem.max, 0, 1), t);
           }
-          const pulse = 1 + Math.sin(t * 6) * 0.06 * (c.problem.left / c.problem.max < 0.3 ? 2 : 1);
+          const pulse =
+            1 +
+            Math.sin(t * 6) *
+              0.06 *
+              (c.problem.left / c.problem.max < 0.3 ? 2 : 1);
           P.sprite.scale.set(3.4 * pulse, 3.4 * pulse, 1);
           P.sprite.position.y = 4.2 + Math.sin(t * 2.5 + c.id) * 0.15;
           if (c.problem.type === "birds")
@@ -959,7 +1078,8 @@
       body = new T.Group();
     root.add(body);
     root.add(BLOB(1.1, 1.1));
-    const S = (geo, m, x, y, z, sx, sy, sz, p) => add(p || body, geo, m, x, y, z, sx, sy, sz);
+    const S = (geo, m, x, y, z, sx, sy, sz, p) =>
+      add(p || body, geo, m, x, y, z, sx, sy, sz);
     // legs (pivot at the hips)
     const legs = [];
     for (const s of [-1, 1]) {
@@ -971,7 +1091,10 @@
       legs.push(hip);
     }
     // torso
-    const torso = new T.Mesh(new T.CylinderGeometry(0.25, 0.32, 0.62, 16), shirt);
+    const torso = new T.Mesh(
+      new T.CylinderGeometry(0.25, 0.32, 0.62, 16),
+      shirt,
+    );
     torso.position.y = 0.95;
     torso.castShadow = true;
     body.add(torso);
@@ -998,16 +1121,40 @@
     for (const s of [-1, 1]) {
       S(GEO.sph, skin, s * 0.39, -0.02, 0.02, 0.07, 0.1, 0.06, head);
       S(GEO.sph, dark, s * 0.14, 0.04, -0.36, 0.055, 0.08, 0.03, head);
-      S(GEO.sph, white, s * 0.14 + 0.015, 0.07, -0.385, 0.018, 0.022, 0.01, head);
-      const br = S(GEO.box, hair, s * 0.15, 0.17, -0.355, 0.12, 0.03, 0.03, head);
+      S(
+        GEO.sph,
+        white,
+        s * 0.14 + 0.015,
+        0.07,
+        -0.385,
+        0.018,
+        0.022,
+        0.01,
+        head,
+      );
+      const br = S(
+        GEO.box,
+        hair,
+        s * 0.15,
+        0.17,
+        -0.355,
+        0.12,
+        0.03,
+        0.03,
+        head,
+      );
       br.rotation.z = -s * 0.15;
     }
     S(GEO.sph, skin, 0, -0.06, -0.4, 0.05, 0.045, 0.04, head);
     const mo = S(GEO.sph, mouth, 0, -0.19, -0.35, 0.09, 0.03, 0.03, head);
     // hair and the crew cap
     S(GEO.sph, hair, 0, 0.02, 0.06, 0.41, 0.36, 0.38, head);
-    for (const s of [-1, 1]) S(GEO.sph, hair, s * 0.33, 0.08, 0.02, 0.1, 0.18, 0.2, head);
-    const capTop = new T.Mesh(new T.SphereGeometry(0.43, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), cap);
+    for (const s of [-1, 1])
+      S(GEO.sph, hair, s * 0.33, 0.08, 0.02, 0.1, 0.18, 0.2, head);
+    const capTop = new T.Mesh(
+      new T.SphereGeometry(0.43, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      cap,
+    );
     capTop.position.set(0, 0.1, 0.01);
     capTop.scale.set(1, 0.85, 1);
     capTop.castShadow = true;

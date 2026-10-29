@@ -93,9 +93,15 @@
 
   /* ---------- renderer and scene ---------- */
   const cv = $("#gl");
-  const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: "high-performance" });
+  const renderer = new T.WebGLRenderer({
+    canvas: cv,
+    antialias: true,
+    powerPreference: "high-performance",
+  });
   const LOW = /[?&]low\b/.test(location.search);
-  renderer.setPixelRatio(LOW ? 0.6 : Math.min(TOUCH ? 1.5 : 2, window.devicePixelRatio || 1));
+  renderer.setPixelRatio(
+    LOW ? 0.6 : Math.min(TOUCH ? 1.5 : 2, window.devicePixelRatio || 1),
+  );
   // Slop Skies' island draws its own shading and blob shadows, so the game's toys use blob shadows too
   const scene = new T.Scene();
   const camera = new T.PerspectiveCamera(40, 1, 0.5, 9000);
@@ -107,9 +113,16 @@
   // an x-ray silhouette, so the crew member never gets lost behind a row of houses. It draws after the city but before
   // the crew member (render order 0.5 vs 1), only where the city's depth is in front of it, and writes no depth
   {
-    const ghost = new T.MeshBasicMaterial({ color: 0x36d3c4, depthWrite: false, depthFunc: T.GreaterDepth, fog: false });
+    const ghost = new T.MeshBasicMaterial({
+      color: 0x36d3c4,
+      depthWrite: false,
+      depthFunc: T.GreaterDepth,
+      fog: false,
+    });
     const list = [];
-    mii.root.traverse((o) => o.isMesh && o.geometry.type !== "PlaneGeometry" && list.push(o));
+    mii.root.traverse(
+      (o) => o.isMesh && o.geometry.type !== "PlaneGeometry" && list.push(o),
+    );
     for (const o of list) {
       o.renderOrder = 1;
       const g = new T.Mesh(o.geometry, ghost);
@@ -132,7 +145,12 @@
   // click marker
   const marker = new T.Mesh(
     new T.RingGeometry(0.55, 0.85, 32),
-    new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }),
+    new T.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    }),
   );
   marker.rotation.x = -Math.PI / 2;
   scene.add(marker);
@@ -145,9 +163,15 @@
   const board = new T.Group();
   {
     const lam = (c) => new T.MeshLambertMaterial({ color: c });
-    const deck = new T.Mesh(WG.roundBox(0.32, 0.05, 1.0, 0.024, 2), lam(0xff5a7a));
+    const deck = new T.Mesh(
+      WG.roundBox(0.32, 0.05, 1.0, 0.024, 2),
+      lam(0xff5a7a),
+    );
     deck.position.y = 0.12;
-    const grip = new T.Mesh(WG.roundBox(0.3, 0.012, 0.92, 0.006, 1), lam(0x2b3038));
+    const grip = new T.Mesh(
+      WG.roundBox(0.3, 0.012, 0.92, 0.006, 1),
+      lam(0x2b3038),
+    );
     grip.position.y = 0.15;
     board.add(deck, grip);
     const wg = new T.CylinderGeometry(0.05, 0.05, 0.05, 12),
@@ -193,19 +217,31 @@
     GN = NX;
     grid = new Uint8Array(NX * NZ);
     for (let j = 0; j < NZ; j++)
-      for (let i = 0; i < NX; i++) grid[j * NX + i] = W.isBlocked(X0 + i + 0.5, Z0 + j + 0.5, 0.45) ? 1 : 0;
+      for (let i = 0; i < NX; i++)
+        grid[j * NX + i] = W.isBlocked(X0 + i + 0.5, Z0 + j + 0.5, 0.45)
+          ? 1
+          : 0;
     gScore = new Float32Array(NX * NZ);
     from = new Int32Array(NX * NZ);
     seen = new Uint32Array(NX * NZ);
   }
   buildGrid();
-  const cellOf = (x, z) => [clamp(Math.floor(x - X0), 0, NX - 1), clamp(Math.floor(z - Z0), 0, NZ - 1)];
-  const free = (i, j) => i >= 0 && j >= 0 && i < NX && j < NZ && !grid[j * NX + i];
+  const cellOf = (x, z) => [
+    clamp(Math.floor(x - X0), 0, NX - 1),
+    clamp(Math.floor(z - Z0), 0, NZ - 1),
+  ];
+  const free = (i, j) =>
+    i >= 0 && j >= 0 && i < NX && j < NZ && !grid[j * NX + i];
   function nearestFree(i, j) {
     if (free(i, j)) return [i, j];
     for (let r = 1; r < 12; r++)
       for (let dj = -r; dj <= r; dj++)
-        for (let di = -r; di <= r; di++) if (Math.max(Math.abs(di), Math.abs(dj)) === r && free(i + di, j + dj)) return [i + di, j + dj];
+        for (let di = -r; di <= r; di++)
+          if (
+            Math.max(Math.abs(di), Math.abs(dj)) === r &&
+            free(i + di, j + dj)
+          )
+            return [i + di, j + dj];
     return null;
   }
   function los(ax, az, bx, bz) {
@@ -296,7 +332,8 @@
     }
     if (!found) return [];
     const pts = [];
-    for (let n = ti; n !== -1; n = from[n]) pts.push([X0 + (n % GN) + 0.5, Z0 + ((n / GN) | 0) + 0.5]);
+    for (let n = ti; n !== -1; n = from[n])
+      pts.push([X0 + (n % GN) + 0.5, Z0 + ((n / GN) | 0) + 0.5]);
     pts.reverse();
     if (free(...cellOf(tx, tz))) pts[pts.length - 1] = [tx, tz];
     // string-pull
@@ -349,7 +386,8 @@
   const active = () => Traffic.cars.filter((c) => c.problem);
   // Adopt-a-Waymo's states; a hands-on job there plays like a job in a shift
   const adopting = () => G.state === "adopt" || G.state === "adoptCare";
-  const onStreet = () => G.state === "play" || (G.state === "adoptCare" && !!JOB.active);
+  const onStreet = () =>
+    G.state === "play" || (G.state === "adoptCare" && !!JOB.active);
 
   // show a state's screen. The list is the arcade's screens: any other state (the Adopt states) just hides them all,
   // and Adopt-a-Waymo shows its own DOM by watching body[data-state]
@@ -361,7 +399,12 @@
       const e = document.getElementById(id);
       if (e) e.hidden = id !== s;
     }
-    $("#hud").hidden = !(s === "play" || s === "ready" || s === "timeup" || s === "pause");
+    $("#hud").hidden = !(
+      s === "play" ||
+      s === "ready" ||
+      s === "timeup" ||
+      s === "pause"
+    );
   }
 
   function resetRun() {
@@ -385,7 +428,13 @@
     W.setLook(s.look);
     clearProblems();
     moveDistrict(s.zone);
-    $("#br-n").textContent = "Shift " + (G.round + 1) + " of " + SHIFTS.length + " · " + (W.zone.label || W.zone.name);
+    $("#br-n").textContent =
+      "Shift " +
+      (G.round + 1) +
+      " of " +
+      SHIFTS.length +
+      " · " +
+      (W.zone.label || W.zone.name);
     $("#br-t").textContent = s.name;
     $("#br-p").textContent = s.blurb;
     const jobs = $("#br-jobs");
@@ -456,7 +505,13 @@
     G.spawnT = 0.8;
     G.spawn2 = 2.6;
     const r = G.round;
-    setTimeout(() => G.state === "play" && G.round === r && VOX.say("disp.start." + W.zoneKey), 700);
+    setTimeout(
+      () =>
+        G.state === "play" &&
+        G.round === r &&
+        VOX.say("disp.start." + W.zoneKey),
+      700,
+    );
   }
   function timeUp() {
     // the shift ends now, even mid-job
@@ -484,11 +539,17 @@
     $("#rs-combo").textContent = G.bestCombo;
     $("#rs-score").textContent = fmt(G.roundScore);
     $("#rs-total").textContent = fmt(G.score);
-    $("#rs-next").textContent = G.round + 1 < SHIFTS.length ? "Next shift" : "Final results";
+    $("#rs-next").textContent =
+      G.round + 1 < SHIFTS.length ? "Next shift" : "Final results";
     setState("result");
     A.music("results");
     const ok = G.done >= Math.max(3, G.missed * 3);
-    setTimeout(() => G.state === "result" && VOX.say(ok ? "disp.result.good" : "disp.result.ok"), 1200);
+    setTimeout(
+      () =>
+        G.state === "result" &&
+        VOX.say(ok ? "disp.result.good" : "disp.result.ok"),
+      1200,
+    );
     A.sfx("chime", 1);
     focusFirst("#result");
   }
@@ -512,13 +573,22 @@
     const rate = G.rateSum / G.rateN;
     $("#fn-rate").textContent = rate.toFixed(1);
     $("#fn-stars").style.setProperty("--r", rate / 5);
-    const nextM = MEDALS.slice().reverse().find((m) => G.score < m.at);
-    $("#fn-next").textContent = nextM ? fmt(nextM.at - G.score) + " more points for " + nextM.name : "You are a legend of the fleet!";
+    const nextM = MEDALS.slice()
+      .reverse()
+      .find((m) => G.score < m.at);
+    $("#fn-next").textContent = nextM
+      ? fmt(nextM.at - G.score) + " more points for " + nextM.name
+      : "You are a legend of the fleet!";
     setState("final");
     // a run of the arcade pays into the Adopt-a-Waymo garage, once a day
     if (WG.adopt) WG.adopt.arcadeRun(G.score);
     W.setLook("dusk");
-    setTimeout(() => G.state === "final" && VOX.say("disp.final." + (medal ? medal.name.toLowerCase() : "none")), 1400);
+    setTimeout(
+      () =>
+        G.state === "final" &&
+        VOX.say("disp.final." + (medal ? medal.name.toLowerCase() : "none")),
+      1400,
+    );
     A.music("results");
     setTimeout(() => A.sfx("medal"), 400);
     updateBest();
@@ -526,14 +596,18 @@
   }
   function updateBest() {
     const m = MEDALS.find((k) => best >= k.at);
-    $("#t-best").textContent = best ? "Best: " + fmt(best) + (m ? " · " + m.name : "") : "";
+    $("#t-best").textContent = best
+      ? "Best: " + fmt(best) + (m ? " · " + m.name : "")
+      : "";
   }
   const fmt = (n) => Math.round(n).toLocaleString("en-US");
 
   /* ---------- problems ---------- */
   function spawnProblem() {
     const s = shift(),
-      cand = Traffic.cars.filter((c) => c.canPull() && !c.problem && c.coolT === undefined);
+      cand = Traffic.cars.filter(
+        (c) => c.canPull() && !c.problem && c.coolT === undefined,
+      );
     if (!cand.length) return false;
     // prefer cars a short jog away (the longer patches, from Lombard to Coit or along Ocean Beach, still send you across
     // now and then)
@@ -541,7 +615,9 @@
       bw = -1;
     for (const c of cand) {
       const d = Math.hypot(c.pos.x - P.pos.x, c.pos.z - P.pos.z),
-        w = (d < 14 ? 0.3 : d < 95 ? 1 : 1 / (1 + ((d - 95) / 120) ** 2)) * rr(0.5, 1.5);
+        w =
+          (d < 14 ? 0.3 : d < 95 ? 1 : 1 / (1 + ((d - 95) / 120) ** 2)) *
+          rr(0.5, 1.5);
       if (w > bw) {
         bw = w;
         best = c;
@@ -552,17 +628,21 @@
     if (!G.bag || !G.bag.length) {
       const last = G.lastKind;
       G.bag = s.kinds.slice().sort(() => Math.random() - 0.5);
-      if (G.bag.length > 1 && G.bag[G.bag.length - 1] === last) G.bag.unshift(G.bag.pop());
+      if (G.bag.length > 1 && G.bag[G.bag.length - 1] === last)
+        G.bag.unshift(G.bag.pop());
     }
     const type = G.bag.pop();
     G.lastKind = type;
     const prob = { type, max: s.patience, left: s.patience };
     if (type === "doors") {
       const n = Math.min(4, 2 + G.round + (Math.random() < 0.4 ? 1 : 0) - 1);
-      prob.doors = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.max(2, n));
+      prob.doors = [0, 1, 2, 3]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.max(2, n));
     }
     // more cones boxing the car in as the day goes on
-    if (type === "cone") prob.n = Math.min(6, 3 + G.round + (Math.random() < 0.4 ? 1 : 0));
+    if (type === "cone")
+      prob.n = Math.min(6, 3 + G.round + (Math.random() < 0.4 ? 1 : 0));
     best.setProblem(prob);
     best.pullOver();
     VOX.say("disp.call." + type);
@@ -570,7 +650,9 @@
       G.tipped = true;
       tip(
         "<b>A robotaxi needs help!</b> " +
-          (TOUCH ? "Tap it (or its bubble)" : "Click it, or walk over with WASD and press Space,") +
+          (TOUCH
+            ? "Tap it (or its bubble)"
+            : "Click it, or walk over with WASD and press Space,") +
           " to run over and fix it. Arrows at the edge point to cars off screen.",
         7,
       );
@@ -588,7 +670,8 @@
     G.combo++;
     G.bestCombo = Math.max(G.bestCombo, G.combo);
     const mult = [1, 1, 1.2, 1.4, 1.6, 1.8, 2][Math.min(G.combo, 6)];
-    const pts = Math.round(((100 + [0, 50, 100][q] + 60 * frac) * mult) / 10) * 10;
+    const pts =
+      Math.round(((100 + [0, 50, 100][q] + 60 * frac) * mult) / 10) * 10;
     G.score += pts;
     G.roundScore += pts;
     G.done++;
@@ -601,7 +684,13 @@
     }
     A.sfx("chime", q);
     A.sfx("carHappy", 0);
-    VOX.say(G.combo >= 3 && G.combo % 3 === 0 ? "disp.combo" : q === 2 ? "disp.perfect" : "disp.good");
+    VOX.say(
+      G.combo >= 3 && G.combo % 3 === 0
+        ? "disp.combo"
+        : q === 2
+          ? "disp.perfect"
+          : "disp.good",
+    );
     car.setProblem(null);
     car.state = "leaving";
     car.hop = 1;
@@ -630,7 +719,8 @@
   // opt (Adopt-a-Waymo's hands-on care): { round, done(res) } in place of the shift's scoring
   function startJob(car, opt) {
     if (!car.problem || JOB.active) return;
-    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    if (document.activeElement && document.activeElement.blur)
+      document.activeElement.blur();
     P.path = [];
     P.target = car;
     G.mini = car;
@@ -642,17 +732,31 @@
     holding = null;
     CAM.jobYaw = CAM.jobPitch = 0;
     if (!opt) VOX.say("rider." + car.problem.type);
-    JOB.start(car.problem.type, car, { scene, camera, P, mii, round: opt ? opt.round : G.round + 1, big, ray: rayAt, pickGround }, (res) => {
-      A.duck(false);
-      G.mini = null;
-      if (car.problem) {
-        car.problem.busy = false;
-        car.parts.sprite.visible = true;
-      }
-      if (opt) opt.done(res);
-      else if (res && car.problem) jobDone(car, res);
-      P.target = null;
-    });
+    JOB.start(
+      car.problem.type,
+      car,
+      {
+        scene,
+        camera,
+        P,
+        mii,
+        round: opt ? opt.round : G.round + 1,
+        big,
+        ray: rayAt,
+        pickGround,
+      },
+      (res) => {
+        A.duck(false);
+        G.mini = null;
+        if (car.problem) {
+          car.problem.busy = false;
+          car.parts.sprite.visible = true;
+        }
+        if (opt) opt.done(res);
+        else if (res && car.problem) jobDone(car, res);
+        P.target = null;
+      },
+    );
   }
 
   /* ---------- HUD ---------- */
@@ -679,12 +783,21 @@
     shownScore += (G.score - shownScore) * Math.min(1, dt * 8);
     if (Math.abs(G.score - shownScore) < 1) shownScore = G.score;
     hud.score.textContent = fmt(shownScore);
-    hud.combo.textContent = G.combo >= 2 ? G.combo + " in a row · x" + [1, 1, 1.2, 1.4, 1.6, 1.8, 2][Math.min(G.combo, 6)].toFixed(1) : "";
+    hud.combo.textContent =
+      G.combo >= 2
+        ? G.combo +
+          " in a row · x" +
+          [1, 1, 1.2, 1.4, 1.6, 1.8, 2][Math.min(G.combo, 6)].toFixed(1)
+        : "";
     const s = Math.max(0, Math.ceil(G.left)),
       m = Math.floor(s / 60);
     hud.time.textContent = m + ":" + String(s % 60).padStart(2, "0");
-    hud.time.parentNode.classList.toggle("hurry", G.left <= 10 && G.state === "play");
-    hud.shift.textContent = "Shift " + (G.round + 1) + " · " + (W.zone.label || W.zone.name);
+    hud.time.parentNode.classList.toggle(
+      "hurry",
+      G.left <= 10 && G.state === "play",
+    );
+    hud.shift.textContent =
+      "Shift " + (G.round + 1) + " · " + (W.zone.label || W.zone.name);
     const r = G.rateSum / G.rateN;
     hud.rate.textContent = r.toFixed(1);
     hud.stars.style.setProperty("--r", r / 5);
@@ -701,8 +814,15 @@
       if (!e) {
         e = document.createElement("div");
         e.className = "job";
-        e.innerHTML = '<canvas width="64" height="64"></canvas><div><b></b><i><u></u></i></div><span></span>';
-        WG.drawIcon(e.querySelector("canvas").getContext("2d"), car.problem.type, 32, 34, 1);
+        e.innerHTML =
+          '<canvas width="64" height="64"></canvas><div><b></b><i><u></u></i></div><span></span>';
+        WG.drawIcon(
+          e.querySelector("canvas").getContext("2d"),
+          car.problem.type,
+          32,
+          34,
+          1,
+        );
         e.querySelector("b").textContent = KIND[car.problem.type].label;
         e.addEventListener("click", () => {
           if (G.state === "play" && !JOB.active) goTo(car);
@@ -713,8 +833,10 @@
       const f = clamp(car.problem.left / car.problem.max, 0, 1);
       const u = e.querySelector("u");
       u.style.transform = "scaleX(" + f + ")";
-      u.style.background = f > 0.5 ? "#41c45a" : f > 0.25 ? "#ffbf1f" : "#ff4b3e";
-      e.querySelector("span").textContent = Math.round(Math.hypot(car.pos.x - P.pos.x, car.pos.z - P.pos.z)) + "m";
+      u.style.background =
+        f > 0.5 ? "#41c45a" : f > 0.25 ? "#ffbf1f" : "#ff4b3e";
+      e.querySelector("span").textContent =
+        Math.round(Math.hypot(car.pos.x - P.pos.x, car.pos.z - P.pos.z)) + "m";
       e.classList.toggle("on", P.target === car);
       e.classList.toggle("low", f < 0.25);
     }
@@ -737,12 +859,16 @@
         sy = h - sy;
       }
       const m2 = 46;
-      if (!behind && sx > m2 && sx < w - m2 && sy > m2 + 70 && sy < h - m2) continue;
+      if (!behind && sx > m2 && sx < w - m2 && sy > m2 + 70 && sy < h - m2)
+        continue;
       const cx = w / 2,
         cy = h / 2,
         dx = sx - cx,
         dy = sy - cy,
-        k = Math.min((w / 2 - m2) / Math.abs(dx || 1e-3), (h / 2 - m2) / Math.abs(dy || 1e-3)),
+        k = Math.min(
+          (w / 2 - m2) / Math.abs(dx || 1e-3),
+          (h / 2 - m2) / Math.abs(dy || 1e-3),
+        ),
         ex = cx + dx * k,
         ey = cy + dy * k,
         a = Math.atan2(dy, dx),
@@ -789,10 +915,13 @@
     $("#floaters").appendChild(e);
     e._p = pos.clone().add(new T.Vector3(0, 4.5, 0));
     floaters.push(e);
-    setTimeout(() => {
-      e.remove();
-      floaters.splice(floaters.indexOf(e), 1);
-    }, 1600 + (delay || 0) * 1000);
+    setTimeout(
+      () => {
+        e.remove();
+        floaters.splice(floaters.indexOf(e), 1);
+      },
+      1600 + (delay || 0) * 1000,
+    );
   }
   const floaters = [];
   // the shift's landmarks, named over the city (in the briefing, the one the camera is touring)
@@ -806,7 +935,14 @@
       e.style.opacity = 0;
       $("#tags").appendChild(e);
       // over its top, or over its foot when the top is out of the frame
-      tags.push({ e, m, p: [new T.Vector3(m.x, m.y + m.h + 4, m.z), new T.Vector3(m.x, m.y + Math.min(m.h, 12), m.z)] });
+      tags.push({
+        e,
+        m,
+        p: [
+          new T.Vector3(m.x, m.y + m.h + 4, m.z),
+          new T.Vector3(m.x, m.y + Math.min(m.h, 12), m.z),
+        ],
+      });
     }
   }
   makeTags();
@@ -819,10 +955,18 @@
       if (street || t.m === tour)
         for (const q of t.p) {
           v.copy(q).project(camera);
-          if (!(v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05)) continue;
-          o = t.m === tour ? 1 : clamp((1700 - camera.position.distanceTo(q)) / 600, 0, 1);
+          if (!(v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05))
+            continue;
+          o =
+            t.m === tour
+              ? 1
+              : clamp((1700 - camera.position.distanceTo(q)) / 600, 0, 1);
           t.e.style.transform =
-            "translate(" + ((v.x * 0.5 + 0.5) * innerWidth).toFixed(1) + "px," + ((-v.y * 0.5 + 0.5) * innerHeight - 14).toFixed(1) + "px) translate(-50%,-100%)";
+            "translate(" +
+            ((v.x * 0.5 + 0.5) * innerWidth).toFixed(1) +
+            "px," +
+            ((-v.y * 0.5 + 0.5) * innerHeight - 14).toFixed(1) +
+            "px) translate(-50%,-100%)";
           break;
         }
       if (+t.e.style.opacity !== o) t.e.style.opacity = o;
@@ -879,8 +1023,16 @@
       }
       if (e.code === "Escape" || e.code === "KeyP") pause();
       if (/^Arrow/.test(e.code) || e.code === "Space") e.preventDefault();
-    } else if (G.state === "pause" && (e.code === "Escape" || e.code === "KeyP")) resume();
-    else if (G.state === "title" && !document.activeElement.closest("button") && (e.code === "Enter" || e.code === "Space")) {
+    } else if (
+      G.state === "pause" &&
+      (e.code === "Escape" || e.code === "KeyP")
+    )
+      resume();
+    else if (
+      G.state === "title" &&
+      !document.activeElement.closest("button") &&
+      (e.code === "Enter" || e.code === "Space")
+    ) {
       e.preventDefault();
       A.sfx("select");
       resetRun();
@@ -967,7 +1119,11 @@
   const touches = new Map();
   cv.addEventListener("contextmenu", (e) => e.preventDefault());
   function turnStart(e) {
-    if (e.pointerType === "mouse" ? e.button === 1 || e.button === 2 : touches.size >= 2) {
+    if (
+      e.pointerType === "mouse"
+        ? e.button === 1 || e.button === 2
+        : touches.size >= 2
+    ) {
       if (JOB.active && e.pointerType !== "mouse") JOB.pointer("up", e);
       holding = null;
       turning = { x: e.clientX, y: e.clientY };
@@ -991,14 +1147,18 @@
       }
       e = { clientX: mx, clientY: my };
     }
-    turnCamera(-(e.clientX - turning.x) * 0.006, (e.clientY - turning.y) * 0.004);
+    turnCamera(
+      -(e.clientX - turning.x) * 0.006,
+      (e.clientY - turning.y) * 0.004,
+    );
     turning.x = e.clientX;
     turning.y = e.clientY;
     return true;
   }
   cv.addEventListener("pointerdown", (e) => {
     A.init();
-    if (e.pointerType !== "mouse") touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (e.pointerType !== "mouse")
+      touches.set(e.pointerId, [e.clientX, e.clientY]);
     if (adopting() && !JOB.active) {
       if (WG.adopt) WG.adopt.pointer("down", e);
       return;
@@ -1029,7 +1189,8 @@
     if (!h) return;
     if (h.car) {
       A.sfx("select");
-      if (Math.hypot(h.car.pos.x - P.pos.x, h.car.pos.z - P.pos.z) < 4.6) startJob(h.car);
+      if (Math.hypot(h.car.pos.x - P.pos.x, h.car.pos.z - P.pos.z) < 4.6)
+        startJob(h.car);
       else goTo(h.car);
       return;
     }
@@ -1043,7 +1204,8 @@
     } catch (_) {}
   });
   cv.addEventListener("pointermove", (e) => {
-    if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touches.has(e.pointerId))
+      touches.set(e.pointerId, [e.clientX, e.clientY]);
     if (adopting() && !JOB.active) {
       if (WG.adopt) WG.adopt.pointer("move", e);
       return;
@@ -1110,7 +1272,9 @@
   );
   function focusFirst(sel) {
     if (TOUCH) return;
-    const b = document.querySelector(sel + " button.primary") || document.querySelector(sel + " button");
+    const b =
+      document.querySelector(sel + " button.primary") ||
+      document.querySelector(sel + " button");
     if (b) setTimeout(() => b.focus({ preventScroll: true }), 50);
   }
   function toTitle() {
@@ -1199,7 +1363,8 @@
         b.setPointerCapture(e.pointerId);
       } catch (_) {}
     });
-    for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, () => (turnHold = 0));
+    for (const ev of ["pointerup", "pointercancel", "lostpointercapture"])
+      b.addEventListener(ev, () => (turnHold = 0));
     b.addEventListener("click", (e) => e.preventDefault());
   }
   on("pz-go", () => resume());
@@ -1270,7 +1435,11 @@
       CAM.pitch = clamp(CAM.pitch + ((dpitch || 0) * 180) / Math.PI, 24, 78);
     }
   }
-  const camPos = new T.Vector3((420 + Math.sin(0.6) * 2300) * S, 640 * S, (-620 + Math.cos(0.6) * 2300) * S),
+  const camPos = new T.Vector3(
+      (420 + Math.sin(0.6) * 2300) * S,
+      640 * S,
+      (-620 + Math.cos(0.6) * 2300) * S,
+    ),
     camLook = new T.Vector3(420 * S, 60 * S, -620 * S),
     wantPos = new T.Vector3(),
     wantLook = new T.Vector3(),
@@ -1284,7 +1453,8 @@
         x = a.x + (b.x - a.x) * t,
         y = a.y + (b.y - a.y) * t,
         z = a.z + (b.z - a.z) * t;
-      if (y < W.height(x, z) + 0.6 || (houses && W.hitsAt(x, y, z, 0.8))) return true;
+      if (y < W.height(x, z) + 0.6 || (houses && W.hitsAt(x, y, z, 0.8)))
+        return true;
     }
     return false;
   }
@@ -1298,7 +1468,11 @@
       hz = _o.z / h,
       p = new T.Vector3();
     for (let a = minA; a < 1.52; a += 0.06) {
-      p.set(look.x + hx * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + hz * Math.cos(a) * L);
+      p.set(
+        look.x + hx * Math.cos(a) * L,
+        look.y + Math.sin(a) * L,
+        look.z + hz * Math.cos(a) * L,
+      );
       if (!blockedLine(look, p, houses)) return a;
     }
     return 1.52;
@@ -1307,43 +1481,65 @@
     _o.subVectors(pos, look);
     const L = _o.length(),
       h = Math.hypot(_o.x, _o.z) || 1e-3;
-    pos.set(look.x + (_o.x / h) * Math.cos(a) * L, look.y + Math.sin(a) * L, look.z + (_o.z / h) * Math.cos(a) * L);
+    pos.set(
+      look.x + (_o.x / h) * Math.cos(a) * L,
+      look.y + Math.sin(a) * L,
+      look.z + (_o.z / h) * Math.cos(a) * L,
+    );
   }
   function clearShot(look, pos, houses) {
     _o.subVectors(pos, look);
     const a0 = Math.atan2(_o.y, Math.hypot(_o.x, _o.z));
-    if (blockedLine(look, pos, houses)) setElevation(look, pos, clearAngle(look, pos, a0, houses));
+    if (blockedLine(look, pos, houses))
+      setElevation(look, pos, clearAngle(look, pos, a0, houses));
   }
   // the briefing tours the shift's landmarks, a few seconds on each, circling it with the landmark to the right of the
   // briefing card on a wide screen
   const TOUR = 6;
-  const tourMark = () => (W.marks.length ? W.marks[Math.floor(G.stateT / TOUR) % W.marks.length] : null);
+  const tourMark = () =>
+    W.marks.length
+      ? W.marks[Math.floor(G.stateT / TOUR) % W.marks.length]
+      : null;
   function cameraUpdate(dt) {
     let k = 2.2;
     if (onStreet()) {
-      const q = (keys.has("KeyQ") ? 1 : 0) - (keys.has("KeyE") ? 1 : 0) + turnHold;
+      const q =
+        (keys.has("KeyQ") ? 1 : 0) - (keys.has("KeyE") ? 1 : 0) + turnHold;
       if (q) turnCamera(q * 1.9 * dt);
     }
     if (adopting() && !JOB.active) {
       // Adopt-a-Waymo's bird's-eye map, and its swoops down to a Care Spot and back
       k = WG.adopt.camera(dt, wantPos, wantLook);
-    } else if (G.state === "title" || G.state === "howto" || G.state === "final") {
+    } else if (
+      G.state === "title" ||
+      G.state === "howto" ||
+      G.state === "final"
+    ) {
       // a slow orbit over Slop Skies' San Francisco, around the downtown end of the city
       const a = 0.6 + G.t * 0.025;
       wantLook.set(420 * S, 60 * S, -620 * S);
-      wantPos.set((420 + Math.sin(a) * 2300) * S, 640 * S, (-620 + Math.cos(a) * 2300) * S);
+      wantPos.set(
+        (420 + Math.sin(a) * 2300) * S,
+        640 * S,
+        (-620 + Math.cos(a) * 2300) * S,
+      );
       k = 1.2;
     } else if (G.state === "brief" && tourMark()) {
       const m = tourMark(),
         a = G.t * 0.07 + W.marks.indexOf(m) * 1.9,
         r = clamp(m.h * 1.5 + 30, 50, 650);
       wantLook.set(m.x, m.y + m.h * 0.45, m.z);
-      wantPos.set(m.x + Math.sin(a) * r, m.y + m.h * 0.55 + r * 0.3, m.z + Math.cos(a) * r);
+      wantPos.set(
+        m.x + Math.sin(a) * r,
+        m.y + m.h * 0.55 + r * 0.3,
+        m.z + Math.cos(a) * r,
+      );
       clearShot(wantLook, wantPos, false);
       if (camera.aspect > 1.3) {
         // aim left of the landmark, so it stands in the right-hand part of the frame
         const d = wantLook.distanceTo(wantPos),
-          side = d * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect * 0.42;
+          side =
+            d * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect * 0.42;
         _o.subVectors(wantLook, wantPos).normalize();
         wantLook.x += _o.z * side;
         wantLook.z -= _o.x * side;
@@ -1352,7 +1548,11 @@
     } else if (G.state === "brief" || G.state === "result") {
       const a = G.t * 0.06;
       wantLook.set(P.pos.x, P.pos.y + 2, P.pos.z);
-      wantPos.set(P.pos.x + Math.sin(a) * 26, P.pos.y + 16, P.pos.z + Math.cos(a) * 26);
+      wantPos.set(
+        P.pos.x + Math.sin(a) * 26,
+        P.pos.y + 16,
+        P.pos.z + Math.cos(a) * 26,
+      );
       clearShot(wantLook, wantPos, true);
       k = 1.5;
     } else if (JOB.active) {
@@ -1366,8 +1566,16 @@
           z = -_o.x * sn + _o.z * c,
           h = Math.hypot(x, z) || 1e-3,
           L = _o.length(),
-          a = clamp(Math.atan2(_o.y, Math.hypot(_o.x, _o.z)) + CAM.jobPitch, 0.08, 1.45);
-        wantPos.set(wantLook.x + (x / h) * Math.cos(a) * L, wantLook.y + Math.sin(a) * L, wantLook.z + (z / h) * Math.cos(a) * L);
+          a = clamp(
+            Math.atan2(_o.y, Math.hypot(_o.x, _o.z)) + CAM.jobPitch,
+            0.08,
+            1.45,
+          );
+        wantPos.set(
+          wantLook.x + (x / h) * Math.cos(a) * L,
+          wantLook.y + Math.sin(a) * L,
+          wantLook.z + (z / h) * Math.cos(a) * L,
+        );
       }
       clearShot(wantLook, wantPos, false);
     } else {
@@ -1377,7 +1585,11 @@
         sy = Math.sin(CAM.yaw),
         cy = Math.cos(CAM.yaw);
       wantLook.set(P.pos.x - sy, P.pos.y + 1.6, P.pos.z - cy);
-      wantPos.set(wantLook.x + sy * Math.cos(pitch) * zoom, wantLook.y + Math.sin(pitch) * zoom, wantLook.z + cy * Math.cos(pitch) * zoom);
+      wantPos.set(
+        wantLook.x + sy * Math.cos(pitch) * zoom,
+        wantLook.y + Math.sin(pitch) * zoom,
+        wantLook.z + cy * Math.cos(pitch) * zoom,
+      );
       const need = clearAngle(wantLook, wantPos, pitch, false);
       CAM.lift = need > CAM.lift ? need : Math.max(need, CAM.lift - dt * 0.35);
       if (CAM.lift > pitch) setElevation(wantLook, wantPos, CAM.lift);
@@ -1390,9 +1602,15 @@
     camera.position.copy(camPos);
     camera.lookAt(camLook);
     // the houses between the camera and the crew member (or, in a job, the car) go see-through
-    const street = G.state === "play" || G.state === "ready" || G.state === "timeup" || G.state === "pause" || (G.state === "adoptCare" && JOB.active);
+    const street =
+      G.state === "play" ||
+      G.state === "ready" ||
+      G.state === "timeup" ||
+      G.state === "pause" ||
+      (G.state === "adoptCare" && JOB.active);
     if (!street) W.see(null);
-    else if (JOB.active) W.see(_o.set(camLook.x, Math.min(camLook.y, P.pos.y), camLook.z));
+    else if (JOB.active)
+      W.see(_o.set(camLook.x, Math.min(camLook.y, P.pos.y), camLook.z));
     else W.see(P.pos);
     // the aerial views need Slop Skies' long depth range, the street needs a near one
     const far = camPos.y - W.height(camPos.x, camPos.z) > 220,
@@ -1443,14 +1661,22 @@
       if (P.target && !JOB.active) {
         if (!P.target.problem) P.target = null;
         else {
-          const d = Math.hypot(P.target.pos.x - P.pos.x, P.target.pos.z - P.pos.z);
+          const d = Math.hypot(
+            P.target.pos.x - P.pos.x,
+            P.target.pos.z - P.pos.z,
+          );
           if (d < 3.7) {
             startJob(P.target);
           } else {
             P.repath -= dt;
             if (P.repath <= 0 || !P.path.length) {
               P.repath = 0.6;
-              P.path = findPath(P.pos.x, P.pos.z, P.target.pos.x, P.target.pos.z);
+              P.path = findPath(
+                P.pos.x,
+                P.pos.z,
+                P.target.pos.x,
+                P.target.pos.z,
+              );
             }
           }
         }
@@ -1474,7 +1700,10 @@
       }
     }
     // hold Shift (or flip the board button) to ride the skateboard: faster, and it coasts
-    const riding = onStreet() && !JOB.active && (keys.has("ShiftLeft") || keys.has("ShiftRight") || boardOn);
+    const riding =
+      onStreet() &&
+      !JOB.active &&
+      (keys.has("ShiftLeft") || keys.has("ShiftRight") || boardOn);
     if (riding !== P.riding) {
       P.riding = riding;
       if (riding) A.sfx("ollie");
@@ -1482,7 +1711,8 @@
     }
     const want = dx || dz ? (riding ? RIDE : WALK) : 0;
     if (drives) JOB.active.drive(dt, ix, iz);
-    else if (riding) P.speed += clamp(want - P.speed, -(want ? 30 : 9) * dt, 21 * dt);
+    else if (riding)
+      P.speed += clamp(want - P.speed, -(want ? 30 : 9) * dt, 21 * dt);
     else P.speed += clamp(want - P.speed, -40 * dt, 38 * dt);
     if (P.speed > 0.05 && !drives) {
       if (dx || dz) P.dir = [dx, dz];
@@ -1582,7 +1812,9 @@
       mii.arms[0].rotation.x = -sw * 0.9;
       mii.arms[1].rotation.x = sw * 0.9;
     }
-    mii.body.position.y = Math.abs(Math.sin(P.phase)) * 0.09 * sp + (sp < 0.1 ? Math.sin(G.t * 2) * 0.012 : 0);
+    mii.body.position.y =
+      Math.abs(Math.sin(P.phase)) * 0.09 * sp +
+      (sp < 0.1 ? Math.sin(G.t * 2) * 0.012 : 0);
     mii.body.rotation.x = -0.12 * sp;
     mii.head.rotation.z = sp < 0.1 && !P.work ? Math.sin(G.t * 1.3) * 0.05 : 0;
     const stepI = Math.floor(P.phase / Math.PI);
@@ -1630,7 +1862,8 @@
         G.spawnT -= dt;
         if (G.spawn2 !== undefined) {
           G.spawn2 -= dt;
-          if (G.spawn2 <= 0 && active().length < s.max && spawnProblem()) G.spawn2 = undefined;
+          if (G.spawn2 <= 0 && active().length < s.max && spawnProblem())
+            G.spawn2 = undefined;
         }
         if (G.spawnT <= 0) {
           if (active().length < s.max) {
@@ -1652,7 +1885,9 @@
       const n = !JOB.active && nearProblem();
       if (n) {
         hud.prompt.hidden = false;
-        hud.prompt.innerHTML = TOUCH ? "Tap the car to help!" : "<kbd>Space</kbd> Help this car";
+        hud.prompt.innerHTML = TOUCH
+          ? "Tap the car to help!"
+          : "<kbd>Space</kbd> Help this car";
       } else hud.prompt.hidden = true;
     } else hud.prompt.hidden = true;
   }
@@ -1668,9 +1903,17 @@
     G.stateT += dt;
     const paused = G.state === "pause";
     if (!paused) {
-      Traffic.update(dt, G.t, G.state === "play" || G.state === "ready" || G.state === "adoptCare" ? P.pos : null, W.look);
+      Traffic.update(
+        dt,
+        G.t,
+        G.state === "play" || G.state === "ready" || G.state === "adoptCare"
+          ? P.pos
+          : null,
+        W.look,
+      );
       for (const c of Traffic.cars)
-        if (c.beeped === G.t) A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
+        if (c.beeped === G.t)
+          A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
       // the Adopt map has no crew member to walk and no shift clock; its hands-on jobs do walk the crew member
       if (G.state !== "adopt") playerUpdate(dt);
       if (!adopting()) playUpdate(dt);
@@ -1723,7 +1966,29 @@
   WG.G = G;
   WG.P = P;
   // what Adopt-a-Waymo (js/adopt/) builds on
-  WG.game = { G, scene, camera, renderer, P, mii, CAM, keys, setState, big, tip, rayAt, pickGround, moveDistrict, startJob, toTitle, focusFirst, restPose, A, VOX, snap: () => (snapCamera = true) };
+  WG.game = {
+    G,
+    scene,
+    camera,
+    renderer,
+    P,
+    mii,
+    CAM,
+    keys,
+    setState,
+    big,
+    tip,
+    rayAt,
+    pickGround,
+    moveDistrict,
+    startJob,
+    toTitle,
+    focusFirst,
+    restPose,
+    A,
+    VOX,
+    snap: () => (snapCamera = true),
+  };
   WG.debug = {
     scene,
     camera,

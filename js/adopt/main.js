@@ -51,7 +51,8 @@
         G.A.sfx("select");
         U.panel("hood", n);
       };
-      M.onCarDrop = (id, hood) => U.act(Sim.sendTo(AD.S, id, hood), { icon: "🗺️" });
+      M.onCarDrop = (id, hood) =>
+        U.act(Sim.sendTo(AD.S, id, hood), { icon: "🗺️" });
       Sim.on = onEvent;
       AD.booted = true;
     }
@@ -79,12 +80,35 @@
     look();
     U.update();
     U.coach();
-    if (S.recovered) U.toast("🛟", "Your save couldn't be read, so the last good copy was restored.", "bad");
+    if (S.recovered)
+      U.toast(
+        "🛟",
+        "Your save couldn't be read, so the last good copy was restored.",
+        "bad",
+      );
     if (!S.cars.length) setTimeout(() => !S.cars.length && U.welcome(), 600);
     else if (away && away.minutes >= 30)
       U.modal(
         "While you were away",
-        "<p class='lead'>You were gone about " + (away.realHours < 1 ? Math.round(away.realHours * 60) + " minutes" : away.realHours.toFixed(1) + " hours") + ". The fleet carried on gently: <b>" + away.rides + " ride" + (away.rides === 1 ? "" : "s") + "</b> and <b>◎" + away.fares.toLocaleString("en-US") + "</b>" + (away.days ? ", and " + away.days + " night" + (away.days > 1 ? "s" : "") + " at home" : "") + ".</p>",
+        "<p class='lead'>While you were away for " +
+          (away.realHours < 1
+            ? Math.round(away.realHours * 60) + " minutes"
+            : away.realHours.toFixed(1) + " hours") +
+          ". The fleet continued: <b>" +
+          away.rides +
+          " ride" +
+          (away.rides === 1 ? "" : "s") +
+          "</b> and <b>◎" +
+          away.fares.toLocaleString("en-US") +
+          "</b>" +
+          (away.days
+            ? ", and " +
+              away.days +
+              " night" +
+              (away.days > 1 ? "s" : "") +
+              " at home"
+            : "") +
+          ".</p>",
         { buttons: [["close", "Welcome back!", "primary"]] },
       );
     nightNext = 0;
@@ -141,7 +165,13 @@
     // a postcard a frame, never during a swoop
     if (postcards.length && !C.active) postcard(postcards.shift());
     // midnight: once everybody's home, the diary and bed (again a little later if it was closed without sleeping)
-    if (S.clock.night && S.clock.sleepReady && AD.t > nightNext && !U.modalOpen && !C.active) {
+    if (
+      S.clock.night &&
+      S.clock.sleepReady &&
+      AD.t > nightNext &&
+      !U.modalOpen &&
+      !C.active
+    ) {
       nightNext = AD.t + 20;
       U.night();
     }
@@ -167,7 +197,9 @@
   AD.camera = function (dt, pos, look) {
     if (C.active) return C.camera(dt, pos, look);
     const K = g().keys,
-      typing = document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+      typing =
+        document.activeElement &&
+        /INPUT|TEXTAREA/.test(document.activeElement.tagName);
     if (!typing && !U.modalOpen) {
       let dx = 0,
         dy = 0;
@@ -202,9 +234,20 @@
       } catch (_) {}
       if (ptrs.size === 2) {
         const [a, b] = Array.from(ptrs.values());
-        pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), a: Math.atan2(b[1] - a[1], b[0] - a[0]) };
+        pinch = {
+          d: Math.hypot(a[0] - b[0], a[1] - b[1]),
+          a: Math.atan2(b[1] - a[1], b[0] - a[0]),
+        };
         drag = null;
-      } else drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, turn: e.button === 2 || e.button === 1, moved: false };
+      } else
+        drag = {
+          x: e.clientX,
+          y: e.clientY,
+          sx: e.clientX,
+          sy: e.clientY,
+          turn: e.button === 2 || e.button === 1,
+          moved: false,
+        };
       return;
     }
     if (type === "move") {
@@ -223,7 +266,8 @@
       if (!drag) return;
       const dx = e.clientX - drag.x,
         dy = e.clientY - drag.y;
-      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) drag.moved = true;
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6)
+        drag.moved = true;
       if (drag.moved) {
         if (drag.turn) M.rotate(-dx * 0.006);
         else M.pan(dx, dy, cam);
@@ -249,8 +293,13 @@
   /* ---------- keys ---------- */
   let lastSpeed = 1;
   AD.key = function (e) {
-    const typing = document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName),
-      onBtn = document.activeElement && document.activeElement.closest && document.activeElement.closest("button");
+    const typing =
+        document.activeElement &&
+        /INPUT|TEXTAREA/.test(document.activeElement.tagName),
+      onBtn =
+        document.activeElement &&
+        document.activeElement.closest &&
+        document.activeElement.closest("button");
     if (e.code === "Escape") {
       if (typing) document.activeElement.blur();
       if (U.closeModal() || U.close()) return true;
@@ -274,8 +323,14 @@
       }
       return false;
     }
-    if (U.modalOpen && (e.code === "Space" || e.code === "Enter") && (!onBtn || document.getElementById("ad-timing"))) {
-      const b = document.querySelector("#ad-modal .panel-f .btn.primary") || document.querySelector("#ad-modal .panel-f button");
+    if (
+      U.modalOpen &&
+      (e.code === "Space" || e.code === "Enter") &&
+      (!onBtn || document.getElementById("ad-timing"))
+    ) {
+      const b =
+        document.querySelector("#ad-modal .panel-f .btn.primary") ||
+        document.querySelector("#ad-modal .panel-f button");
       if (b) b.click();
       return true;
     }
@@ -300,7 +355,9 @@
     }
     // the menus: arrow keys move between buttons when a panel or modal is open
     if ((U.modalOpen || U.open) && /^Arrow(Up|Down)$/.test(e.code)) {
-      const box = U.modalOpen ? document.getElementById("ad-modal") : document.getElementById("ad-panel"),
+      const box = U.modalOpen
+          ? document.getElementById("ad-modal")
+          : document.getElementById("ad-panel"),
         bs = Array.from(box.querySelectorAll("button:not([disabled])"));
       if (bs.length) {
         const i = bs.indexOf(document.activeElement),
@@ -332,7 +389,12 @@
     if (!car || (C.active && C.active.phase !== "up")) return;
     const incident = kind === "doors" || kind === "cone",
       hood = Sim.careSpot(car) ? car.sim.at : Sim.nearestCare(car);
-    if (!incident && !Sim.careSpot(car)) return U.toast("📍", "Call " + Sim.nameOf(car) + " to a Care Spot first.", "bad");
+    if (!incident && !Sim.careSpot(car))
+      return U.toast(
+        "📍",
+        "Call " + Sim.nameOf(car) + " to a Care Spot first.",
+        "bad",
+      );
     const prevTask = car.sim.task;
     if (!incident) car.sim.task = "care";
     M.cam.follow = id;
@@ -343,12 +405,35 @@
       onEnd: (res) => {
         if (res) {
           const r = Sim.careDone(S, id, kind, res.q);
-          U.toast("💖", Sim.nameOf(car) + " feels " + (r && r.need ? Sim.label(r.need, car.needs[r.need]).toLowerCase() : "free to go") + "! +" + (r ? r.bond.toFixed(1) : "0.3") + " bond", "good", id);
+          U.toast(
+            "💖",
+            Sim.nameOf(car) +
+              " feels " +
+              (r && r.need
+                ? Sim.label(r.need, car.needs[r.need]).toLowerCase()
+                : "free to go") +
+              "! +" +
+              (r ? r.bond.toFixed(1) : "0.3") +
+              " bond",
+            "good",
+            id,
+          );
           g().VOX.say("adopt.care");
           M.hop(id);
         } else {
-          if (!incident && car.sim.task === "care") car.sim.task = prevTask === "care" ? "care" : car.sim.at === Sim.HOME ? "garage" : "idle";
-          U.toast("🙂", "Maybe later. " + Sim.nameOf(car) + " doesn't mind.", "", id);
+          if (!incident && car.sim.task === "care")
+            car.sim.task =
+              prevTask === "care"
+                ? "care"
+                : car.sim.at === Sim.HOME
+                  ? "garage"
+                  : "idle";
+          U.toast(
+            "🙂",
+            "Maybe later. " + Sim.nameOf(car) + " doesn't mind.",
+            "",
+            id,
+          );
         }
         AD.changed();
         save();
@@ -373,7 +458,14 @@
   AD.rideAlong = function (id) {
     M.cam.ride = id;
     M.cam.follow = id;
-    U.toast("🎥", "Ride Along with " + Sim.nameOf(Sim.find(AD.S, id)) + ". Drag the map or press Esc to fly back up.", "good", id);
+    U.toast(
+      "🎥",
+      "Ride Along with " +
+        Sim.nameOf(Sim.find(AD.S, id)) +
+        ". Drag the map or press Esc to fly back up.",
+      "good",
+      id,
+    );
   };
   AD.adopted = function (car) {
     const S = AD.S,
@@ -408,7 +500,8 @@
     save();
     if (f) {
       const e = document.getElementById("fn-next");
-      if (e) e.textContent += " · Adopt-a-Waymo: +◎" + f + " paid into your garage.";
+      if (e)
+        e.textContent += " · Adopt-a-Waymo: +◎" + f + " paid into your garage.";
     }
     return f;
   };
@@ -420,7 +513,8 @@
       V = G.VOX;
     switch (ev.type) {
       case "pickup":
-        if (ev.rider && M.cam.follow === ev.carId) V.say("rider.pickup." + ev.rider.toLowerCase());
+        if (ev.rider && M.cam.follow === ev.carId)
+          V.say("rider.pickup." + ev.rider.toLowerCase());
         return;
       case "request":
         U.toast(ev.icon, ev.text, "", null);
@@ -477,9 +571,15 @@
         G.A.sfx("alert", 0);
         break;
       case "event":
-        U.toast(ev.icon, ev.text, ev.tone === "bad" ? "bad" : ev.tone === "good" ? "good" : "", ev.carId);
+        U.toast(
+          ev.icon,
+          ev.text,
+          ev.tone === "bad" ? "bad" : ev.tone === "good" ? "good" : "",
+          ev.carId,
+        );
         if (ev.tone === "bad" && Math.random() < 0.4) V.say("adopt.event.bad");
-        if (M.cam.follow === ev.carId) G.A.sfx(ev.tone === "bad" ? "carSad" : "carHappy", 0);
+        if (M.cam.follow === ev.carId)
+          G.A.sfx(ev.tone === "bad" ? "carSad" : "carHappy", 0);
         break;
       case "sleepReady":
         return;
@@ -505,11 +605,15 @@
   // stamps found while away get their postcards on the next visit
   function backfill() {
     const S = AD.S;
-    for (const [name, st] of Object.entries(S.album.stamps)) if (!st.img) postcards.push({ stamp: name, mark: st.mark });
+    for (const [name, st] of Object.entries(S.album.stamps))
+      if (!st.img) postcards.push({ stamp: name, mark: st.mark });
   }
 
   /* ---------- saving when the tab goes away ---------- */
-  addEventListener("visibilitychange", () => document.hidden && AD.active && save());
+  addEventListener(
+    "visibilitychange",
+    () => document.hidden && AD.active && save(),
+  );
   addEventListener("pagehide", () => AD.active && save());
 
   /* ---------- debug hooks ---------- */
@@ -530,7 +634,8 @@
       Sim.syncUnlocks(AD.S);
       AD.changed();
     },
-    event: (id, carId) => Sim.forceEvent(AD.S, Sim.find(AD.S, carId) || AD.S.cars[0], id),
+    event: (id, carId) =>
+      Sim.forceEvent(AD.S, Sim.find(AD.S, carId) || AD.S.cars[0], id),
     newDay: () => {
       const S = AD.S;
       if (!S.clock.night) Sim.run(S, 1440 - S.clock.minute);
@@ -554,7 +659,8 @@
   WG.adopt = AD;
   // ?mode=adopt: straight in
   if (Q.get("mode") === "adopt") {
-    const go = () => (WG.game && WG.game.G.state === "title" ? AD.enter() : setTimeout(go, 100));
+    const go = () =>
+      WG.game && WG.game.G.state === "title" ? AD.enter() : setTimeout(go, 100);
     setTimeout(go, 50);
   }
 })();

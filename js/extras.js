@@ -34,8 +34,10 @@
       ["sunset", -28, -3],
     ],
   };
-  for (let i = 17; i <= 20; i++) for (let j = -8; j <= -5; j++) PLAN.downtown.push(["towers", i, j]);
-  for (let i = 3; i <= 6; i++) for (let j = -6; j <= -4; j++) PLAN.ladies.push(["rows", i, j]);
+  for (let i = 17; i <= 20; i++)
+    for (let j = -8; j <= -5; j++) PLAN.downtown.push(["towers", i, j]);
+  for (let i = 3; i <= 6; i++)
+    for (let j = -6; j <= -4; j++) PLAN.ladies.push(["rows", i, j]);
   // play areas whose new houses may stand on parkland (the windmills are in Golden Gate Park)
   const PARKLAND = new Set(["windmills"]);
 
@@ -47,7 +49,14 @@
       hitsB = WG.isle.hitsBuilding;
     K.reseed(8808);
     const { R, RR, PK, hex } = K;
-    const ROOFS = ["#7c706a", "#8b9099", "#b86f4f", "#56608f", "#5b7a6c", "#a75f45"].map(hex);
+    const ROOFS = [
+      "#7c706a",
+      "#8b9099",
+      "#b86f4f",
+      "#56608f",
+      "#5b7a6c",
+      "#a75f45",
+    ].map(hex);
 
     // a block of a zone's grid: its middle, angle and size
     function block(z, i, j) {
@@ -56,10 +65,23 @@
         s = Math.sin(a),
         lx = (i + 0.5) * z.u,
         lz = (j + 0.5) * z.v;
-      return { x: lx * c - lz * s, z: lx * s + lz * c, a, c, s, u: z.u, v: z.v, W: z.u - 13, D: z.v - 13 };
+      return {
+        x: lx * c - lz * s,
+        z: lx * s + lz * c,
+        a,
+        c,
+        s,
+        u: z.u,
+        v: z.v,
+        W: z.u - 13,
+        D: z.v - 13,
+      };
     }
     // block-local to island coordinates
-    const at = (B, lx, lz) => [B.x + lx * B.c - lz * B.s, B.z + lx * B.s + lz * B.c];
+    const at = (B, lx, lz) => [
+      B.x + lx * B.c - lz * B.s,
+      B.z + lx * B.s + lz * B.c,
+    ];
     // free ground for a footprint: above the sea, off the roads (Market Street, the Great Highway), off parks (unless
     // park), and clear of every house, tower, tree and landmark already standing
     function free(x, z, sx, sz, rot, park) {
@@ -72,14 +94,19 @@
             gy = K.terrainY(px, pz);
           if (gy < 2.5 || K.occAt(px, pz) === 2) return false;
           if (!park && K.parkAt(px, pz) > 0.35) return false;
-          if (hitsB(px, gy + 3, pz, 1) || hitsB(px, gy + 10, pz, 1)) return false;
+          if (hitsB(px, gy + 3, pz, 1) || hitsB(px, gy + 10, pz, 1))
+            return false;
         }
       return true;
     }
     // ...and not on a cliff
     function buildable(x, z, sx, sz, rot, steep, park) {
       const f = K.footG(x, z, sx, sz, rot);
-      return f.lo > 2.5 && f.hi - f.lo < Math.max(sx, sz) * (steep || 0.36) && free(x, z, sx, sz, rot, park);
+      return (
+        f.lo > 2.5 &&
+        f.hi - f.lo < Math.max(sx, sz) * (steep || 0.36) &&
+        free(x, z, sx, sz, rot, park)
+      );
     }
     function pad(key, B, i, j, yard) {
       K.blockPad(HG, B.x, B.z, B.a, B.W, B.D, yard, yard === 0);
@@ -123,7 +150,7 @@
             : () => {
                 const q = R();
                 return q < 0.4 ? 0 : q < 0.85 ? 1 : 2;
-              }
+              },
         );
       }
       if (!n) return;
@@ -134,15 +161,31 @@
     // a house of its own, stood level on a footing: painted walls, a gabled or hipped roof, its front to the street
     function cottage(x, z, rot, w, d, park) {
       const f = K.footG(x, z, w + 2, d + 2, rot);
-      if (f.lo < 2.5 || f.hi - f.lo > 12 || !free(x, z, w, d, rot, park)) return false;
+      if (f.lo < 2.5 || f.hi - f.lo > 12 || !free(x, z, w, d, rot, park))
+        return false;
       const yB = f.lo - 1,
         y0 = f.hi + 0.2,
         h = RR(6.5, 9.5),
         wall = hex(PK(K.HCOL)),
         roof = PK(ROOFS);
-      if (y0 - yB > 0.4) K.cbox(G, x, yB, z, w + 0.6, y0 - yB, d + 0.6, rot, K.LMC.concD, K.LMC.concD, 0.2, 0);
+      if (y0 - yB > 0.4)
+        K.cbox(
+          G,
+          x,
+          yB,
+          z,
+          w + 0.6,
+          y0 - yB,
+          d + 0.6,
+          rot,
+          K.LMC.concD,
+          K.LMC.concD,
+          0.2,
+          0,
+        );
       K.cbox(G, x, y0, z, w, h, d, rot, wall, false, 0.1, 0, 1, 1);
-      if (R() < 0.6) K.gable(G, x, y0 + h, z, w, d, RR(2.6, 4), rot, roof, wall);
+      if (R() < 0.6)
+        K.gable(G, x, y0 + h, z, w, d, RR(2.6, 4), rot, roof, wall);
       else K.hip(G, x, y0 + h, z, w, d, RR(2.2, 3.2), rot, roof);
       K.addColl(x, z, w / 2, d / 2, rot, yB, y0 + h + 3.5);
       K.occRect(x, z, w, d, rot, 1);
@@ -170,7 +213,21 @@
           const h = R() < 0.35 ? RR(80, 150) : RR(34, 80),
             crown = h > 60 ? 1 + ((R() * 4) | 0) : 0,
             k = h > 110 ? 0.84 : 1;
-          if (K.lot(HG, p[0], p[1], lw * k, ld * k, B.a, h, PK(K.TOWERC), PK(K.ROOFC), crown)) n++;
+          if (
+            K.lot(
+              HG,
+              p[0],
+              p[1],
+              lw * k,
+              ld * k,
+              B.a,
+              h,
+              PK(K.TOWERC),
+              PK(K.ROOFC),
+              crown,
+            )
+          )
+            n++;
         }
       if (n) pad(key, B, i, j, 0);
     }
@@ -206,7 +263,15 @@
     // the ground under a footprint: build from below its low side to above its high side
     function base(x, zz, sx, sz, rot) {
       const f = K.footG(x, zz, sx + 2, sz + 2, rot);
-      return { yB: f.lo - 1, y0: f.hi + 0.2, ok: f.lo > 2.5 && f.hi - f.lo < 10 && K.rectFree(x, zz, sx, sz, rot, 0) && free(x, zz, sx, sz, rot, true) };
+      return {
+        yB: f.lo - 1,
+        y0: f.hi + 0.2,
+        ok:
+          f.lo > 2.5 &&
+          f.hi - f.lo < 10 &&
+          K.rectFree(x, zz, sx, sz, rot, 0) &&
+          free(x, zz, sx, sz, rot, true),
+      };
     }
     function claim(x, zz, sx, sz, rot, yB, top) {
       K.addColl(x, zz, sx / 2, sz / 2, rot, yB, top);
@@ -215,7 +280,21 @@
     }
     // a building's plinth, so it sits level on a slope
     function plinth(x, zz, sx, sz, rot, b, col) {
-      if (b.y0 - b.yB > 0.3) K.cbox(G, x, b.yB, zz, sx + 1, b.y0 - b.yB, sz + 1, rot, col || K.LMC.concD, col || K.LMC.concD, 0.3, 0);
+      if (b.y0 - b.yB > 0.3)
+        K.cbox(
+          G,
+          x,
+          b.yB,
+          zz,
+          sx + 1,
+          b.y0 - b.yB,
+          sz + 1,
+          rot,
+          col || K.LMC.concD,
+          col || K.LMC.concD,
+          0.3,
+          0,
+        );
     }
     // a barracks: three storeys of red brick, hipped slate roof, a white two-storey porch along the front (facing +x)
     function barracks(x, zz, rot, sz) {
@@ -225,7 +304,20 @@
       if (!b.ok) return false;
       plinth(x, zz, sx, sz, rot, b, BRICKD);
       K.cbox(G, x, b.y0, zz, sx, h, sz, rot, BRICK, false, 0.2, 0, 1, 1);
-      K.cbox(G, x, b.y0 + h, zz, sx + 1, 0.6, sz + 1, rot, WHITE, WHITE, 0.2, 0);
+      K.cbox(
+        G,
+        x,
+        b.y0 + h,
+        zz,
+        sx + 1,
+        0.6,
+        sz + 1,
+        rot,
+        WHITE,
+        WHITE,
+        0.2,
+        0,
+      );
       K.hip(G, x, b.y0 + h + 0.6, zz, sx, sz, 4.2, rot, SLATE);
       // the porch: a deck at each floor on white posts, under a flat roof
       const c = Math.cos(rot),
@@ -234,7 +326,8 @@
         pw = 3.2,
         pl = sz - 6,
         [px, pz] = P(sx / 2 + pw / 2, 0);
-      for (const y of [b.y0 + 0.2, b.y0 + 4.2, b.y0 + 8.2]) K.cbox(G, px, y, pz, pw, 0.4, pl, rot, WHITE, WHITE, 0, 0);
+      for (const y of [b.y0 + 0.2, b.y0 + 4.2, b.y0 + 8.2])
+        K.cbox(G, px, y, pz, pw, 0.4, pl, rot, WHITE, WHITE, 0, 0);
       for (let lz = -pl / 2 + 0.3; lz <= pl / 2; lz += pl / 8) {
         const [qx, qz] = P(sx / 2 + pw - 0.3, lz);
         K.stick(G, qx, b.y0, qz, qx, b.y0 + 8.6, qz, 0.35, 0.35, WHITE);
@@ -276,11 +369,35 @@
           [fx - 0.6, fx + 5],
         ]) {
           const mid = P(m, y1, 0);
-          K.fc(G, [P(d, y1 - 0.5, l0), P(d, y1 - 0.5, l1), P(d, t1, l1), P(d, t0, l0)], STUCCO, mid[0], mid[1], mid[2]);
+          K.fc(
+            G,
+            [
+              P(d, y1 - 0.5, l0),
+              P(d, y1 - 0.5, l1),
+              P(d, t1, l1),
+              P(d, t0, l0),
+            ],
+            STUCCO,
+            mid[0],
+            mid[1],
+            mid[2],
+          );
         }
       }
       const top = prof.slice(1, -1).map(([lz, y]) => P(fx - 0.3, y + 0.2, lz));
-      for (let k = 0; k < top.length - 1; k++) K.stick(G, top[k][0], top[k][1], top[k][2], top[k + 1][0], top[k + 1][1], top[k + 1][2], 0.9, 0.4, TILE);
+      for (let k = 0; k < top.length - 1; k++)
+        K.stick(
+          G,
+          top[k][0],
+          top[k][1],
+          top[k][2],
+          top[k + 1][0],
+          top[k + 1][1],
+          top[k + 1][2],
+          0.9,
+          0.4,
+          TILE,
+        );
       // an arched porch: a white colonnade along the front
       const pl = sz * 0.6;
       for (let lz = -pl / 2; lz <= pl / 2 + 0.01; lz += pl / 6) {
@@ -288,7 +405,20 @@
         K.stick(G, q[0], b.y0, q[2], q[0], b.y0 + 3.6, q[2], 0.6, 0.6, STUCCO);
       }
       const pc = P(sx / 2 + 1.2, 0, 0);
-      K.cbox(G, pc[0], b.y0 + 3.6, pc[2], 2.8, 0.7, pl + 1, rot, STUCCO, TILE, 0, 0);
+      K.cbox(
+        G,
+        pc[0],
+        b.y0 + 3.6,
+        pc[2],
+        2.8,
+        0.7,
+        pl + 1,
+        rot,
+        STUCCO,
+        TILE,
+        0,
+        0,
+      );
       claim(x, zz, sx + 5, sz, rot, b.yB, y1 + 4.2);
       return true;
     }
@@ -306,16 +436,55 @@
         s = Math.sin(rot),
         px = x + (sx / 2 + 1.2) * c,
         pz = zz + (sx / 2 + 1.2) * s;
-      K.cbox(G, px, b.y0 + 2.8, pz, 2.4, 0.4, sz * 0.7, rot, WHITE, GREEN, 0, 0);
+      K.cbox(
+        G,
+        px,
+        b.y0 + 2.8,
+        pz,
+        2.4,
+        0.4,
+        sz * 0.7,
+        rot,
+        WHITE,
+        GREEN,
+        0,
+        0,
+      );
       claim(x, zz, sx + 3, sz, rot, b.yB, b.y0 + h + 4.2);
       return true;
     }
     // the Parade Ground's flagpole
     function flag(x, zz) {
       const y = K.terrainY(x, zz);
-      K.cbox(G, x, y - 0.5, zz, 2.4, 1.1, 2.4, 0, K.LMC.conc, K.LMC.conc, 0.4, 0);
+      K.cbox(
+        G,
+        x,
+        y - 0.5,
+        zz,
+        2.4,
+        1.1,
+        2.4,
+        0,
+        K.LMC.conc,
+        K.LMC.conc,
+        0.4,
+        0,
+      );
       K.stick(G, x, y, zz, x, y + 22, zz, 0.35, 0.35, WHITE);
-      K.cbox(G, x + 2.6, y + 18.4, zz, 4.6, 3, 0.15, 0, hex("#3d5aa8"), false, 0, 0);
+      K.cbox(
+        G,
+        x + 2.6,
+        y + 18.4,
+        zz,
+        4.6,
+        3,
+        0.15,
+        0,
+        hex("#3d5aa8"),
+        false,
+        0,
+        0,
+      );
       K.addColl(x, zz, 1.2, 1.2, 0, y - 0.5, y + 22);
     }
 

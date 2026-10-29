@@ -31,7 +31,12 @@
     lombard: {
       name: "Russian Hill",
       label: "Lombard to Coit Tower",
-      names: ["Russian Hill", "North Beach", "Telegraph Hill", "Fisherman's Wharf"],
+      names: [
+        "Russian Hill",
+        "North Beach",
+        "Telegraph Hill",
+        "Fisherman's Wharf",
+      ],
       ang: -8,
       u: 56,
       v: 76,
@@ -91,7 +96,13 @@
     windmills: {
       name: "Ocean Beach",
       label: "The windmills",
-      names: ["Ocean Beach", "Sunset", "Golden Gate Park", "Richmond", "Lands End"],
+      names: [
+        "Ocean Beach",
+        "Sunset",
+        "Golden Gate Park",
+        "Richmond",
+        "Lands End",
+      ],
       ang: 0,
       u: 60,
       v: 66,
@@ -109,11 +120,18 @@
     ZS = 0;
   const HALF_ST = 4; // the streets are the 8-unit gaps between the block pads
   // grid-local island units <-> game metres
-  const toWorld = (lx, lz) => [(lx * ZC - lz * ZS) * SCALE, (lx * ZS + lz * ZC) * SCALE];
-  const toLocal = (x, z) => [(x * ZC + z * ZS) / SCALE, (-x * ZS + z * ZC) / SCALE];
+  const toWorld = (lx, lz) => [
+    (lx * ZC - lz * ZS) * SCALE,
+    (lx * ZS + lz * ZC) * SCALE,
+  ];
+  const toLocal = (x, z) => [
+    (x * ZC + z * ZS) / SCALE,
+    (-x * ZS + z * ZC) / SCALE,
+  ];
   // the island's functions, in game metres
   const terrainY = (x, z) => I.ISL.terrainY(x / SCALE, z / SCALE) * SCALE;
-  const hitsAt = (x, y, z, r) => I.hitsBuilding(x / SCALE, y / SCALE, z / SCALE, r / SCALE);
+  const hitsAt = (x, y, z, r) =>
+    I.hitsBuilding(x / SCALE, y / SCALE, z / SCALE, r / SCALE);
   const zoneAt = (x, z) => I.zoneName(x / SCALE, z / SCALE);
   const AREA = { lx0: 0, lx1: 0, lz0: 0, lz1: 0 };
   function useZone(z) {
@@ -131,7 +149,12 @@
   const inArea = (x, z, m) => {
     const [lx, lz] = toLocal(x, z);
     m = (m || 0) / SCALE;
-    return lx > AREA.lx0 - m && lx < AREA.lx1 + m && lz > AREA.lz0 - m && lz < AREA.lz1 + m;
+    return (
+      lx > AREA.lx0 - m &&
+      lx < AREA.lx1 + m &&
+      lz > AREA.lz0 - m &&
+      lz < AREA.lz1 + m
+    );
   };
 
   const height = (x, z) => I.groundH(x / SCALE, z / SCALE) * SCALE;
@@ -163,7 +186,10 @@
       else if (row && row[6])
         for (let a = -2; a <= 2 && !p; a++)
           for (let b = -2; b <= 2 && !p; b++) {
-            const [sx, sz] = toWorld((i + 0.5 + a * 0.18) * ZONE.u, (j + 0.5 + b * 0.18) * ZONE.v);
+            const [sx, sz] = toWorld(
+              (i + 0.5 + a * 0.18) * ZONE.u,
+              (j + 0.5 + b * 0.18) * ZONE.v,
+            );
             p = hits(sx, sz, 0);
           }
       PADS.set(k, p);
@@ -179,7 +205,10 @@
 
   /* ---------- the street graph ---------- */
   // ground the zone keeps clear of streets (island units: x, z, radius), so a landmark like Lombard's bricks stays on show
-  const avoids = (x, z) => (ZONE.avoid || []).some(([ax, az, r]) => Math.hypot(x / SCALE - ax, z / SCALE - az) < r);
+  const avoids = (x, z) =>
+    (ZONE.avoid || []).some(
+      ([ax, az, r]) => Math.hypot(x / SCALE - ax, z / SCALE - az) < r,
+    );
   function buildGraph() {
     const { u, v, i0, i1, j0, j1 } = ZONE,
       names = ZONE.names || [ZONE.name],
@@ -190,7 +219,13 @@
       for (let i = i0; i <= i1; i++) {
         const [x, z] = toWorld(i * u, j * v),
           g = terrainY(x, z);
-        if (g < 2.5 * SCALE || !names.includes(zoneAt(x, z)) || avoids(x, z) || hitsAt(x, g + 1.5, z, 1.5 * SCALE)) continue;
+        if (
+          g < 2.5 * SCALE ||
+          !names.includes(zoneAt(x, z)) ||
+          avoids(x, z) ||
+          hitsAt(x, g + 1.5, z, 1.5 * SCALE)
+        )
+          continue;
         const n = { id: nodes.length, i, j, x, z, nb: [] };
         nodes.push(n);
         byKey[key(i, j)] = n;
@@ -203,8 +238,18 @@
           x = a.x + (b.x - a.x) * t,
           z = a.z + (b.z - a.z) * t,
           g = terrainY(x, z);
-        if (g < 2.5 * SCALE || avoids(x, z) || hitsAt(x, g + 1.5, z, 1.0 * SCALE)) return false;
-        if (prev !== null && Math.abs(g - prev) / (Math.hypot(b.x - a.x, b.z - a.z) / 16) > (ZONE.slope || 0.32)) return false;
+        if (
+          g < 2.5 * SCALE ||
+          avoids(x, z) ||
+          hitsAt(x, g + 1.5, z, 1.0 * SCALE)
+        )
+          return false;
+        if (
+          prev !== null &&
+          Math.abs(g - prev) / (Math.hypot(b.x - a.x, b.z - a.z) / 16) >
+            (ZONE.slope || 0.32)
+        )
+          return false;
         prev = g;
       }
       return true;
@@ -246,7 +291,14 @@
     const keep = nodes.filter((n) => comp[n.id] === best && n.nb.length),
       remap = {};
     keep.forEach((n, k) => (remap[n.id] = k));
-    const out = keep.map((n) => ({ id: remap[n.id], i: n.i, j: n.j, x: n.x, z: n.z, nb: n.nb.filter((m) => m in remap).map((m) => remap[m]) }));
+    const out = keep.map((n) => ({
+      id: remap[n.id],
+      i: n.i,
+      j: n.j,
+      x: n.x,
+      z: n.z,
+      nb: n.nb.filter((m) => m in remap).map((m) => remap[m]),
+    }));
     let edges = 0;
     for (const n of out) edges += n.nb.length;
     return { nodes: out, edges: edges / 2 };
@@ -305,7 +357,17 @@
       [ex, ez] = [ZC, ZS],
       [nx, nz] = [-ZS, ZC];
     // the intersections: a square of asphalt on the grid's axes
-    for (const n of nodes) strip(n.x - ex * (WIDTH / 2), n.z - ez * (WIDTH / 2), n.x + ex * (WIDTH / 2), n.z + ez * (WIDTH / 2), WIDTH, 0.06, ASPHALT, 6);
+    for (const n of nodes)
+      strip(
+        n.x - ex * (WIDTH / 2),
+        n.z - ez * (WIDTH / 2),
+        n.x + ex * (WIDTH / 2),
+        n.z + ez * (WIDTH / 2),
+        WIDTH,
+        0.06,
+        ASPHALT,
+        6,
+      );
     for (const n of nodes)
       for (const m of n.nb) {
         if (m < n.id) continue;
@@ -316,9 +378,28 @@
           px = -uz,
           pz = ux,
           h = WIDTH / 2;
-        strip(n.x + ux * h, n.z + uz * h, o.x - ux * h, o.z - uz * h, WIDTH, 0.06, ASPHALT, 6);
+        strip(
+          n.x + ux * h,
+          n.z + uz * h,
+          o.x - ux * h,
+          o.z - uz * h,
+          WIDTH,
+          0.06,
+          ASPHALT,
+          6,
+        );
         // the double yellow line
-        for (const s2 of [-0.16, 0.16]) strip(n.x + ux * (h + 3.6) + px * s2, n.z + uz * (h + 3.6) + pz * s2, o.x - ux * (h + 3.6) + px * s2, o.z - uz * (h + 3.6) + pz * s2, 0.14, 0.09, YELLOW, 1);
+        for (const s2 of [-0.16, 0.16])
+          strip(
+            n.x + ux * (h + 3.6) + px * s2,
+            n.z + uz * (h + 3.6) + pz * s2,
+            o.x - ux * (h + 3.6) + px * s2,
+            o.z - uz * (h + 3.6) + pz * s2,
+            0.14,
+            0.09,
+            YELLOW,
+            1,
+          );
         // zebra crossings at both ends
         for (const [cx, cz, sg] of [
           [n.x, n.z, 1],
@@ -327,7 +408,16 @@
           for (let q = -h + 0.9; q <= h - 0.9; q += 1.25) {
             const mx = cx + ux * sg * (h + 1.7) + px * q,
               mz = cz + uz * sg * (h + 1.7) + pz * q;
-            strip(mx - ux * 1.3, mz - uz * 1.3, mx + ux * 1.3, mz + uz * 1.3, 0.6, 0.1, WHITE, 1);
+            strip(
+              mx - ux * 1.3,
+              mz - uz * 1.3,
+              mx + ux * 1.3,
+              mz + uz * 1.3,
+              0.6,
+              0.1,
+              WHITE,
+              1,
+            );
           }
       }
     void nx;
@@ -336,7 +426,10 @@
     g.setAttribute("position", new T.Float32BufferAttribute(P, 3));
     g.setAttribute("normal", new T.Float32BufferAttribute(N, 3));
     g.setAttribute("aCol", new T.Float32BufferAttribute(C, 4));
-    g.setAttribute("uv", new T.Float32BufferAttribute(new Float32Array((P.length / 3) * 2), 2));
+    g.setAttribute(
+      "uv",
+      new T.Float32BufferAttribute(new Float32Array((P.length / 3) * 2), 2),
+    );
     g.setIndex(idx);
     const m = I.mat(2);
     m.uniforms.uStripe.value = 0;
@@ -370,7 +463,9 @@
       const j = idx ? idx[i] : i;
       _v.set(p[3 * j], p[3 * j + 1], p[3 * j + 2]).applyMatrix4(m);
       this.p.push(_v.x, _v.y, _v.z);
-      _v.set(nr[3 * j], nr[3 * j + 1], nr[3 * j + 2]).applyMatrix3(_m3).normalize();
+      _v.set(nr[3 * j], nr[3 * j + 1], nr[3 * j + 2])
+        .applyMatrix3(_m3)
+        .normalize();
       this.n.push(_v.x, _v.y, _v.z);
       this.c.push(_c.r, _c.g, _c.b);
     }
@@ -396,12 +491,47 @@
   /* ---------- the looks: Slop's own grade for the day (and a low eastern sun on it for the morning), and two more in its
      format ---------- */
   const LOOKS = {
-    morning: { grade: "promo", sun: [15, 112], fogK: 1, light: ["#ffe2bd", 0.74, "#d9ebff", "#8f7f5f", 0.62], puffs: 0, karl: 0 },
-    day: { grade: "promo", sun: [26, 222], fogK: 1, light: ["#fff1d6", 0.78, "#d7ecff", "#8f7f5f", 0.6], puffs: 0, karl: 0 },
-    fog: { grade: "karl", sun: [40, 200], fogK: 1, light: ["#eef3f7", 0.42, "#e6eef4", "#8d8f86", 0.78], puffs: 1, karl: 1 },
-    dusk: { grade: "golden", sun: [9, 262], fogK: 1, light: ["#ffb27a", 0.72, "#9a8ad0", "#6b5040", 0.52], puffs: 0, karl: 0 },
+    morning: {
+      grade: "promo",
+      sun: [15, 112],
+      fogK: 1,
+      light: ["#ffe2bd", 0.74, "#d9ebff", "#8f7f5f", 0.62],
+      puffs: 0,
+      karl: 0,
+    },
+    day: {
+      grade: "promo",
+      sun: [26, 222],
+      fogK: 1,
+      light: ["#fff1d6", 0.78, "#d7ecff", "#8f7f5f", 0.6],
+      puffs: 0,
+      karl: 0,
+    },
+    fog: {
+      grade: "karl",
+      sun: [40, 200],
+      fogK: 1,
+      light: ["#eef3f7", 0.42, "#e6eef4", "#8d8f86", 0.78],
+      puffs: 1,
+      karl: 1,
+    },
+    dusk: {
+      grade: "golden",
+      sun: [9, 262],
+      fogK: 1,
+      light: ["#ffb27a", 0.72, "#9a8ad0", "#6b5040", 0.52],
+      puffs: 0,
+      karl: 0,
+    },
     // Adopt-a-Waymo's evenings: moonlight, a deep blue sky and the street lights' warm haze
-    night: { grade: "night", sun: [16, 300], fogK: 1, light: ["#a9bcff", 0.38, "#4a5a96", "#262a3a", 0.46], puffs: 0, karl: 0 },
+    night: {
+      grade: "night",
+      sun: [16, 300],
+      fogK: 1,
+      light: ["#a9bcff", 0.38, "#4a5a96", "#262a3a", 0.46],
+      puffs: 0,
+      karl: 0,
+    },
   };
   function addGrades() {
     const G = I.LOOK_GRADES;
@@ -511,7 +641,11 @@
         out = "gl_FragColor=vec4(c,a);",
         at = fs.lastIndexOf(out);
       if (at < 0) continue;
-      m.fragmentShader = "uniform vec3 uSeeP; uniform vec4 uSeeK;\n" + fs.slice(0, at) + SEE_GLSL + fs.slice(at + out.length);
+      m.fragmentShader =
+        "uniform vec3 uSeeP; uniform vec4 uSeeK;\n" +
+        fs.slice(0, at) +
+        SEE_GLSL +
+        fs.slice(at + out.length);
       m.uniforms.uSeeP = { value: SEE.p };
       m.uniforms.uSeeK = { value: SEE.k };
       if (msaa) m.alphaToCoverage = true;
@@ -565,13 +699,24 @@
     W.sun = new T.DirectionalLight(0xfff1d6, 0.78);
     scene.add(W.hemi, W.sun, W.sun.target);
 
-    W.puffMat = new T.SpriteMaterial({ map: puffTex(), transparent: true, opacity: 0, depthWrite: false, fog: false, color: 0xeef2f4 });
+    W.puffMat = new T.SpriteMaterial({
+      map: puffTex(),
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      fog: false,
+      color: 0xeef2f4,
+    });
     W.puffs = new T.Group();
     for (let i = 0; i < 46; i++) {
       const s = new T.Sprite(W.puffMat),
         sz = 26 + Math.random() * 24;
       s.scale.set(sz, sz * 0.55, 1);
-      s.position.set(W.center.x + (Math.random() - 0.5) * 300, 0, W.center.z + (Math.random() - 0.5) * 300);
+      s.position.set(
+        W.center.x + (Math.random() - 0.5) * 300,
+        0,
+        W.center.z + (Math.random() - 0.5) * 300,
+      );
       s.userData = { v: 1.5 + Math.random() * 2.5, y: 5 + Math.random() * 12 };
       W.puffs.add(s);
     }
@@ -610,13 +755,22 @@
       W.streets.geometry.dispose();
     }
     W.streets = streets(W.scene);
-    const [cx, cz] = toWorld(((z.i0 + z.i1) / 2) * z.u, ((z.j0 + z.j1) / 2) * z.v);
+    const [cx, cz] = toWorld(
+      ((z.i0 + z.i1) / 2) * z.u,
+      ((z.j0 + z.j1) / 2) * z.v,
+    );
     W.center = new T.Vector3(cx, height(cx, cz), cz);
     // the shift's landmarks, in game metres: where they stand, their foot and their height
     W.marks = (z.marks || [])
       .map((n) => I.MARKS.find((m) => m.name === n))
       .filter(Boolean)
-      .map((m) => ({ name: m.name, x: m.x * SCALE, z: m.z * SCALE, y: m.y * SCALE, h: m.h * SCALE }));
+      .map((m) => ({
+        name: m.name,
+        x: m.x * SCALE,
+        z: m.z * SCALE,
+        y: m.y * SCALE,
+        h: m.h * SCALE,
+      }));
     // the crew starts on a street corner just outside the first landmark's grounds, facing it, so its foot is in the frame
     const m0 = W.marks[0] || { x: cx, z: cz, h: 0 },
       D = clamp(footprint(m0.x, m0.z) + 8, 30, 60),
@@ -647,8 +801,23 @@
     W.sunDir = new T.Vector3(d[0], d[1], d[2]);
     // a golden key for the dusk shift: the island relights its baked buildings by the ratio of the two rigs
     const sunC =
-        name === "dusk" ? [1.0, 0.7, 0.46] : name === "fog" ? [0.78, 0.8, 0.84] : name === "morning" ? [1.0, 0.88, 0.72] : name === "night" ? [0.4, 0.48, 0.82] : I.LIGHT.sun,
-      sky = name === "dusk" ? [0.56, 0.54, 0.7] : name === "fog" ? [0.62, 0.66, 0.72] : name === "night" ? [0.22, 0.27, 0.46] : I.LIGHT.sky;
+        name === "dusk"
+          ? [1.0, 0.7, 0.46]
+          : name === "fog"
+            ? [0.78, 0.8, 0.84]
+            : name === "morning"
+              ? [1.0, 0.88, 0.72]
+              : name === "night"
+                ? [0.4, 0.48, 0.82]
+                : I.LIGHT.sun,
+      sky =
+        name === "dusk"
+          ? [0.56, 0.54, 0.7]
+          : name === "fog"
+            ? [0.62, 0.66, 0.72]
+            : name === "night"
+              ? [0.22, 0.27, 0.46]
+              : I.LIGHT.sky;
     I.U.uLSun.value.set(sunC[0], sunC[1], sunC[2]);
     I.U.uLSky.value.set(sky[0], sky[1], sky[2]);
     I.U.uRelight.value = name === "day" ? 0 : 1;
@@ -664,7 +833,14 @@
     W.scene.fog = new T.FogExp2(G.haze, G.hazeK / SCALE);
     W.puffs.visible = !!L.puffs;
     W.puffMat.opacity = L.puffs ? 0.55 : 0;
-    if (WG.CAR_HEAD) WG.CAR_HEAD.emissive.set(name === "dusk" || name === "night" ? 0xfff2b0 : name === "fog" ? 0xbbb38a : 0x333322);
+    if (WG.CAR_HEAD)
+      WG.CAR_HEAD.emissive.set(
+        name === "dusk" || name === "night"
+          ? 0xfff2b0
+          : name === "fog"
+            ? 0xbbb38a
+            : 0x333322,
+      );
   };
 
   // what the camera follows, so the houses in the way go see-through (null: nothing, as in the aerial views)
@@ -685,7 +861,11 @@
         s.position.y = height(s.position.x, s.position.z) + s.userData.y;
       }
     const d = W.sunDir;
-    W.sun.position.set(focus.x + d.x * 100, focus.y + d.y * 100, focus.z + d.z * 100);
+    W.sun.position.set(
+      focus.x + d.x * 100,
+      focus.y + d.y * 100,
+      focus.z + d.z * 100,
+    );
     W.sun.target.position.copy(focus);
     I.frame(camera, dt, vw, vh);
   };

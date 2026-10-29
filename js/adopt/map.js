@@ -18,7 +18,13 @@
     NPC_MS = 7,
     ROAD_W = 9; // road width, island units
 
-  const M = { cars: new Map(), npcs: [], onCarTap: null, onHoodTap: null, onCarDrop: null };
+  const M = {
+    cars: new Map(),
+    npcs: [],
+    onCarTap: null,
+    onHoodTap: null,
+    onCarDrop: null,
+  };
   let scene = null,
     group = null,
     roadY = new Map(),
@@ -40,7 +46,8 @@
   // how high a road runs at an island point: over the ground, and over the roofs of whatever stands there
   function surfaceAt(x, z) {
     let y = Math.max(I.groundH(x, z), 0.4);
-    for (let k = 0; k < 10 && I.hitsBuilding(x, y + 1, z, ROAD_W * 0.4); k++) y += 3;
+    for (let k = 0; k < 10 && I.hitsBuilding(x, y + 1, z, ROAD_W * 0.4); k++)
+      y += 3;
     return y;
   }
 
@@ -58,8 +65,16 @@
           b = pts[i + 1],
           base = pos.length / 3;
         for (const p of [a, b]) {
-          pos.push((p.x - p.nz * half) * K, p.y * K + lift, (p.z + p.nx * half) * K);
-          pos.push((p.x + p.nz * half) * K, p.y * K + lift, (p.z - p.nx * half) * K);
+          pos.push(
+            (p.x - p.nz * half) * K,
+            p.y * K + lift,
+            (p.z + p.nx * half) * K,
+          );
+          pos.push(
+            (p.x + p.nz * half) * K,
+            p.y * K + lift,
+            (p.z - p.nx * half) * K,
+          );
           col.push(c.r, c.g, c.b, c.r, c.g, c.b);
         }
         idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
@@ -71,16 +86,30 @@
         pts = [];
       for (let i = 0; i <= n; i++) {
         Sim.edgePoint(e, e.a, i / n, pt);
-        pts.push({ x: pt.x, z: pt.z, nx: pt.dx, nz: pt.dz, y: surfaceAt(pt.x, pt.z) });
+        pts.push({
+          x: pt.x,
+          z: pt.z,
+          nx: pt.dx,
+          nz: pt.dz,
+          y: surfaceAt(pt.x, pt.z),
+        });
       }
       // smooth the heights: a road eases over a roof rather than stepping
       const ys = pts.map((p) => p.y);
       for (let i = 0; i < pts.length; i++) {
         let m = 0;
-        for (let j = Math.max(0, i - 2); j <= Math.min(pts.length - 1, i + 2); j++) m = Math.max(m, ys[j]);
+        for (
+          let j = Math.max(0, i - 2);
+          j <= Math.min(pts.length - 1, i + 2);
+          j++
+        )
+          m = Math.max(m, ys[j]);
         pts[i].y = (m * 2 + ys[i]) / 3;
       }
-      roadY.set(e, pts.map((p) => p.y * K));
+      roadY.set(
+        e,
+        pts.map((p) => p.y * K),
+      );
       strip(pts, ROAD_W * 0.62, 0.6, "#eef3f7");
       strip(pts, ROAD_W * 0.5, 1.0, "#5a6270");
       strip(pts, ROAD_W * 0.06, 1.4, "#ffd23a", true);
@@ -89,7 +118,13 @@
     g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     g.setAttribute("color", new T.Float32BufferAttribute(col, 3));
     g.setIndex(idx);
-    const m = new T.MeshBasicMaterial({ vertexColors: true, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const m = new T.MeshBasicMaterial({
+      vertexColors: true,
+      side: T.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
     const mesh = new T.Mesh(g, m);
     mesh.renderOrder = 2;
     group.add(mesh);
@@ -98,9 +133,21 @@
     const disc = new T.CircleGeometry(ROAD_W * 1.6 * K, 28);
     for (const name of Sim.G.names) {
       const h = Sim.G.hoods[name],
-        y = Math.max(...Sim.G.adj[name].map(([, e]) => edgeY(e, h.name === e.a ? 0 : 1)).concat([surfaceAt(h.x, h.z) * K]));
+        y = Math.max(
+          ...Sim.G.adj[name]
+            .map(([, e]) => edgeY(e, h.name === e.a ? 0 : 1))
+            .concat([surfaceAt(h.x, h.z) * K]),
+        );
       h.y = y;
-      const p = new T.Mesh(disc, new T.MeshBasicMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+      const p = new T.Mesh(
+        disc,
+        new T.MeshBasicMaterial({
+          color: 0xffffff,
+          polygonOffset: true,
+          polygonOffsetFactor: -3,
+          polygonOffsetUnits: -3,
+        }),
+      );
       p.rotation.x = -Math.PI / 2;
       p.position.set(h.x * K, y + 1.8, h.z * K);
       p.renderOrder = 3;
@@ -119,13 +166,17 @@
   }
 
   /* ---------- dressing a car: wrap (a tint on its own copy of the body material, plus decals), ring, gear, dashpet ---------- */
-  const lam = (c, o) => new T.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
+  const lam = (c, o) =>
+    new T.MeshLambertMaterial(Object.assign({ color: c }, o || {}));
   const SPH = new T.SphereGeometry(1, 12, 10),
     BOX = new T.BoxGeometry(1, 1, 1),
     CYL = new T.CylinderGeometry(1, 1, 1, 14),
     CONE = new T.ConeGeometry(1, 1, 14);
   function part(parent, geo, mat, x, y, z, sx, sy, sz, rx, ry, rz) {
-    const m = new T.Mesh(geo, typeof mat === "string" || typeof mat === "number" ? lam(mat) : mat);
+    const m = new T.Mesh(
+      geo,
+      typeof mat === "string" || typeof mat === "number" ? lam(mat) : mat,
+    );
     m.position.set(x, y, z);
     m.scale.set(sx, sy, sz);
     if (rx || ry || rz) m.rotation.set(rx || 0, ry || 0, rz || 0);
@@ -138,16 +189,47 @@
     if (d.kind === "stripe") {
       part(g, BOX, d.col, 0, 1.225, 0, 0.36, 0.02, 4.45);
       part(g, BOX, d.col, 0, 1.895, 0.25, 0.36, 0.02, 2.1);
-    } else if (d.kind === "trim") for (const s of sides) part(g, BOX, d.col, s * 0.972, 0.96, 0, 0.02, 0.1, 4.2);
-    else if (d.kind === "bands") d.cols.forEach((c, i) => sides.forEach((s) => part(g, BOX, c, s * 0.972, 0.6 + i * (0.5 / d.cols.length), 0, 0.02, 0.5 / d.cols.length, 4.1)));
+    } else if (d.kind === "trim")
+      for (const s of sides)
+        part(g, BOX, d.col, s * 0.972, 0.96, 0, 0.02, 0.1, 4.2);
+    else if (d.kind === "bands")
+      d.cols.forEach((c, i) =>
+        sides.forEach((s) =>
+          part(
+            g,
+            BOX,
+            c,
+            s * 0.972,
+            0.6 + i * (0.5 / d.cols.length),
+            0,
+            0.02,
+            0.5 / d.cols.length,
+            4.1,
+          ),
+        ),
+      );
     else if (d.kind === "spots" || d.kind === "stars" || d.kind === "clouds") {
-      const mat = d.kind === "stars" ? new T.MeshBasicMaterial({ color: d.col }) : lam(d.col);
+      const mat =
+        d.kind === "stars"
+          ? new T.MeshBasicMaterial({ color: d.col })
+          : lam(d.col);
       for (const s of sides)
         for (let k = 0; k < 6; k++) {
           const z = -1.8 + k * 0.72 + (s > 0 ? 0.3 : 0),
             y = 0.72 + ((k * 37) % 5) * 0.08;
-          const r = d.kind === "clouds" ? 0.22 : d.kind === "stars" ? 0.07 : 0.15;
-          part(g, SPH, mat, s * 0.965, y, z, 0.025, r, r * (d.kind === "clouds" ? 1.8 : 1));
+          const r =
+            d.kind === "clouds" ? 0.22 : d.kind === "stars" ? 0.07 : 0.15;
+          part(
+            g,
+            SPH,
+            mat,
+            s * 0.965,
+            y,
+            z,
+            0.025,
+            r,
+            r * (d.kind === "clouds" ? 1.8 : 1),
+          );
         }
     } else if (d.kind === "ghosts") {
       const body = lam(d.col, { emissive: 0x335533 }),
@@ -172,7 +254,17 @@
       part(g, SPH, "#ffd23a", 0, 3.18, 0.1, 0.1, 0.1, 0.1);
     },
     topper_lantern: (g) => {
-      part(g, SPH, lam("#e8433f", { emissive: 0x551010 }), 0, 2.72, 0.1, 0.36, 0.42, 0.36);
+      part(
+        g,
+        SPH,
+        lam("#e8433f", { emissive: 0x551010 }),
+        0,
+        2.72,
+        0.1,
+        0.36,
+        0.42,
+        0.36,
+      );
       part(g, CYL, "#ffd23a", 0, 3.12, 0.1, 0.16, 0.06, 0.16);
       part(g, CYL, "#ffd23a", 0, 2.32, 0.1, 0.2, 0.06, 0.2);
     },
@@ -186,7 +278,17 @@
       part(g, CYL, gold, 0, 2.48, 0.1, 0.4, 0.22, 0.4);
       for (let k = 0; k < 6; k++) {
         const a = (k / 6) * Math.PI * 2;
-        part(g, CONE, gold, Math.cos(a) * 0.34, 2.72, 0.1 + Math.sin(a) * 0.34, 0.09, 0.26, 0.09);
+        part(
+          g,
+          CONE,
+          gold,
+          Math.cos(a) * 0.34,
+          2.72,
+          0.1 + Math.sin(a) * 0.34,
+          0.09,
+          0.26,
+          0.09,
+        );
       }
       part(g, SPH, "#e8433f", 0, 2.52, -0.3, 0.07, 0.07, 0.07);
     },
@@ -198,16 +300,51 @@
     topper_marigold: (g) => {
       for (let k = 0; k < 9; k++) {
         const a = (k / 9) * Math.PI * 2;
-        part(g, SPH, k % 2 ? "#ff9a2e" : "#ffd23a", Math.cos(a) * 0.36, 2.4, 0.1 + Math.sin(a) * 0.36, 0.13, 0.11, 0.13);
+        part(
+          g,
+          SPH,
+          k % 2 ? "#ff9a2e" : "#ffd23a",
+          Math.cos(a) * 0.36,
+          2.4,
+          0.1 + Math.sin(a) * 0.36,
+          0.13,
+          0.11,
+          0.13,
+        );
       }
     },
     topper_sailor: (g) => {
       part(g, CYL, "#ffffff", 0, 2.45, 0.1, 0.4, 0.22, 0.4);
       part(g, CYL, "#1c3c8a", 0, 2.37, 0.1, 0.43, 0.06, 0.43);
     },
-    roof_box: (g) => part(g, WG.roundBox(1, 1, 1, 0.2, 2), "#3a3f47", 0, 2.05, 0.95, 1.1, 0.34, 0.7),
+    roof_box: (g) =>
+      part(
+        g,
+        WG.roundBox(1, 1, 1, 0.2, 2),
+        "#3a3f47",
+        0,
+        2.05,
+        0.95,
+        1.1,
+        0.34,
+        0.7,
+      ),
     roof_bike: (g) => {
-      for (const z of [0.6, 1.25]) part(g, new T.TorusGeometry(0.28, 0.04, 6, 16), "#2b3038", 0, 2.25, z, 1, 1, 1, 0, Math.PI / 2, 0);
+      for (const z of [0.6, 1.25])
+        part(
+          g,
+          new T.TorusGeometry(0.28, 0.04, 6, 16),
+          "#2b3038",
+          0,
+          2.25,
+          z,
+          1,
+          1,
+          1,
+          0,
+          Math.PI / 2,
+          0,
+        );
       part(g, BOX, "#e8433f", 0, 2.35, 0.92, 0.05, 0.05, 0.62);
     },
     roof_surfboard: (g) => {
@@ -216,21 +353,80 @@
     },
     roof_flowers: (g) => {
       part(g, BOX, "#7a5636", 0, 1.98, 0.95, 1.0, 0.16, 0.6);
-      ["#e8433f", "#ffd23a", "#ff7ad9", "#ffffff", "#8a5fd8", "#ff9a2e"].forEach((c, k) => part(g, SPH, c, -0.38 + (k % 3) * 0.38, 2.14, 0.8 + Math.floor(k / 3) * 0.3, 0.13, 0.11, 0.13));
+      [
+        "#e8433f",
+        "#ffd23a",
+        "#ff7ad9",
+        "#ffffff",
+        "#8a5fd8",
+        "#ff9a2e",
+      ].forEach((c, k) =>
+        part(
+          g,
+          SPH,
+          c,
+          -0.38 + (k % 3) * 0.38,
+          2.14,
+          0.8 + Math.floor(k / 3) * 0.3,
+          0.13,
+          0.11,
+          0.13,
+        ),
+      );
     },
     roof_pumpkin: (g) => {
       part(g, SPH, "#ff8a1f", 0, 2.25, 0.95, 0.5, 0.36, 0.45);
       part(g, CYL, "#3a6a2a", 0, 2.66, 0.95, 0.05, 0.14, 0.05);
     },
     mirror_dice: (g) => {
-      for (const s of [-1, 1]) part(g, BOX, "#ffffff", s * 1.1, 1.05, -0.75, 0.16, 0.16, 0.16, 0.4, 0.4, 0);
+      for (const s of [-1, 1])
+        part(
+          g,
+          BOX,
+          "#ffffff",
+          s * 1.1,
+          1.05,
+          -0.75,
+          0.16,
+          0.16,
+          0.16,
+          0.4,
+          0.4,
+          0,
+        );
     },
     mirror_lashes: (g) => {
-      for (const s of [-1, 1]) for (let k = 0; k < 4; k++) part(g, BOX, "#1c1c22", s * (0.45 + k * 0.1), 1.07, -2.33, 0.03, 0.14, 0.03, -0.5, 0, s * (k - 1.5) * 0.25);
+      for (const s of [-1, 1])
+        for (let k = 0; k < 4; k++)
+          part(
+            g,
+            BOX,
+            "#1c1c22",
+            s * (0.45 + k * 0.1),
+            1.07,
+            -2.33,
+            0.03,
+            0.14,
+            0.03,
+            -0.5,
+            0,
+            s * (k - 1.5) * 0.25,
+          );
     },
     mirror_streamers: (g) => {
       ["#e8433f", "#ffd23a", "#41c45a", "#2a9fe6"].forEach((c, k) => {
-        for (const s of [-1, 1]) part(g, BOX, c, s * (1.14 + k * 0.02), 1.22 - k * 0.04, -0.4 + k * 0.08, 0.02, 0.04, 0.7);
+        for (const s of [-1, 1])
+          part(
+            g,
+            BOX,
+            c,
+            s * (1.14 + k * 0.02),
+            1.22 - k * 0.04,
+            -0.4 + k * 0.08,
+            0.02,
+            0.04,
+            0.7,
+          );
       });
     },
     dash_bobble: (g) => {
@@ -242,11 +438,40 @@
       part(g, SPH, "#e9a77a", -0.4, 1.45, -1.25, 0.06, 0.12, 0.06);
     },
     dash_snowglobe: (g) => {
-      part(g, SPH, new T.MeshPhongMaterial({ color: 0xcfe9ff, transparent: true, opacity: 0.7, shininess: 100 }), -0.4, 1.38, -1.25, 0.14, 0.14, 0.14);
+      part(
+        g,
+        SPH,
+        new T.MeshPhongMaterial({
+          color: 0xcfe9ff,
+          transparent: true,
+          opacity: 0.7,
+          shininess: 100,
+        }),
+        -0.4,
+        1.38,
+        -1.25,
+        0.14,
+        0.14,
+        0.14,
+      );
       part(g, CYL, "#c8322e", -0.4, 1.26, -1.25, 0.12, 0.06, 0.12);
     },
-    plate_gold: (g) => part(g, BOX, lam("#ffcc3a", { emissive: 0x332200 }), 0, 0.74, 2.33, 0.62, 0.22, 0.04),
-    plate_rainbow: (g) => ["#e8433f", "#ffd23a", "#41c45a", "#2a9fe6"].forEach((c, k) => part(g, BOX, c, 0, 0.66 + k * 0.05, 2.33, 0.62, 0.05, 0.04)),
+    plate_gold: (g) =>
+      part(
+        g,
+        BOX,
+        lam("#ffcc3a", { emissive: 0x332200 }),
+        0,
+        0.74,
+        2.33,
+        0.62,
+        0.22,
+        0.04,
+      ),
+    plate_rainbow: (g) =>
+      ["#e8433f", "#ffd23a", "#41c45a", "#2a9fe6"].forEach((c, k) =>
+        part(g, BOX, c, 0, 0.66 + k * 0.05, 2.33, 0.62, 0.05, 0.04),
+      ),
   };
   // the dashpets, sitting on the roof just in front of the lidar
   const PETS = {
@@ -269,20 +494,69 @@
     },
     succulent: (g) => {
       part(g, CYL, "#c8643a", 0, 0.08, 0, 0.13, 0.16, 0.13);
-      for (let k = 0; k < 5; k++) part(g, SPH, "#5aa86a", Math.cos(k * 1.26) * 0.07, 0.2, Math.sin(k * 1.26) * 0.07, 0.07, 0.11, 0.07);
+      for (let k = 0; k < 5; k++)
+        part(
+          g,
+          SPH,
+          "#5aa86a",
+          Math.cos(k * 1.26) * 0.07,
+          0.2,
+          Math.sin(k * 1.26) * 0.07,
+          0.07,
+          0.11,
+          0.07,
+        );
     },
     starter: (g) => {
-      part(g, CYL, new T.MeshPhongMaterial({ color: 0xdff2ff, transparent: true, opacity: 0.6 }), 0, 0.15, 0, 0.12, 0.3, 0.12);
+      part(
+        g,
+        CYL,
+        new T.MeshPhongMaterial({
+          color: 0xdff2ff,
+          transparent: true,
+          opacity: 0.6,
+        }),
+        0,
+        0.15,
+        0,
+        0.12,
+        0.3,
+        0.12,
+      );
       part(g, CYL, "#efe2c0", 0, 0.12, 0, 0.1, 0.2, 0.1);
       part(g, CYL, "#c8a06a", 0, 0.31, 0, 0.13, 0.04, 0.13);
     },
     mini_bison: (g) => {
       part(g, SPH, "#5a4030", 0, 0.18, 0.04, 0.17, 0.16, 0.24);
       part(g, SPH, "#3a2a20", 0, 0.24, -0.18, 0.13, 0.13, 0.12);
-      for (const s of [-1, 1]) part(g, CONE, "#efe2c0", s * 0.1, 0.36, -0.2, 0.025, 0.08, 0.025, 0, 0, -s * 0.6);
+      for (const s of [-1, 1])
+        part(
+          g,
+          CONE,
+          "#efe2c0",
+          s * 0.1,
+          0.36,
+          -0.2,
+          0.025,
+          0.08,
+          0.025,
+          0,
+          0,
+          -s * 0.6,
+        );
     },
     bell: (g) => {
-      part(g, CONE, lam("#ffcc3a", { emissive: 0x332200 }), 0, 0.2, 0, 0.14, 0.24, 0.14);
+      part(
+        g,
+        CONE,
+        lam("#ffcc3a", { emissive: 0x332200 }),
+        0,
+        0.2,
+        0,
+        0.14,
+        0.24,
+        0.14,
+      );
       part(g, SPH, "#c8a020", 0, 0.08, 0, 0.05, 0.05, 0.05);
     },
   };
@@ -290,9 +564,23 @@
     k = k || 1;
     part(g, SPH, body, 0, 0.14 * k, 0, 0.16 * k, 0.13 * k, 0.24 * k);
     part(g, SPH, head, 0, 0.27 * k, -0.16 * k, 0.09 * k, 0.09 * k, 0.09 * k);
-    part(g, SPH, "#e9a23b", 0, 0.26 * k, -0.26 * k, 0.03 * k, 0.025 * k, 0.05 * k);
+    part(
+      g,
+      SPH,
+      "#e9a23b",
+      0,
+      0.26 * k,
+      -0.26 * k,
+      0.03 * k,
+      0.025 * k,
+      0.05 * k,
+    );
   }
-  const MITES = { crumb_mite: "#c8a06a", dust_bunny: "#d8d8e0", fog_droplet: "#bfe4ff" };
+  const MITES = {
+    crumb_mite: "#c8a06a",
+    dust_bunny: "#d8d8e0",
+    fog_droplet: "#bfe4ff",
+  };
   // dress a robotaxi (WG.makeCar()'s parts) as an adopted car. Called again whenever its look changes
   M.dress = function (parts, car) {
     const w = D.WRAPS[car.wrap] || D.WRAPS.default;
@@ -305,19 +593,33 @@
     bm.shininess = w.shiny ? 140 : 70;
     bm.specular.set(w.shiny ? 0xfff0a0 : 0x555555);
     parts.ring.material.color.set(car.ring);
-    parts.ring.material.emissive.copy(parts.ring.material.color).multiplyScalar(0.35);
+    parts.ring.material.emissive
+      .copy(parts.ring.material.color)
+      .multiplyScalar(0.35);
     if (parts.look) parts.g.remove(parts.look);
     const look = (parts.look = new T.Group());
     parts.g.add(look);
     decals(look, w.decal);
-    for (const k in car.gear) if (car.gear[k] && GEAR[car.gear[k]]) GEAR[car.gear[k]](look);
+    for (const k in car.gear)
+      if (car.gear[k] && GEAR[car.gear[k]]) GEAR[car.gear[k]](look);
     parts.pet = null;
     if (car.dashpet && PETS[car.dashpet.id]) {
       const pg = new T.Group();
       pg.position.set(0.42, 1.89, -0.45);
       pg.scale.setScalar(1.5);
       PETS[car.dashpet.id](pg);
-      if (car.dashpet.mite) part(pg, SPH, MITES[car.dashpet.mite] || "#ccc", 0.17, 0.08, 0.1, 0.05, 0.05, 0.05);
+      if (car.dashpet.mite)
+        part(
+          pg,
+          SPH,
+          MITES[car.dashpet.mite] || "#ccc",
+          0.17,
+          0.08,
+          0.1,
+          0.05,
+          0.05,
+          0.05,
+        );
       look.add(pg);
       parts.pet = pg;
     }
@@ -325,7 +627,15 @@
   };
 
   /* ---------- bubbles: the car's most urgent need (or what it's up to, or an emote) ---------- */
-  const EMO = { "♥": "#ff5a8a", "♪": "#8a7fd8", "◎": "#ffbf1f", z: "#6a7a8c", "☁": "#8a94a3", "!": "#ff8a1f", "🎓": "#2a9fe6" };
+  const EMO = {
+    "♥": "#ff5a8a",
+    "♪": "#8a7fd8",
+    "◎": "#ffbf1f",
+    z: "#6a7a8c",
+    "☁": "#8a94a3",
+    "!": "#ff8a1f",
+    "🎓": "#2a9fe6",
+  };
   function bubble(m, S, car, now) {
     const s = car.sim,
       em = s.emote && now - s.emote.at < 25 ? s.emote.k : null;
@@ -373,12 +683,21 @@
       x.stroke();
       x.strokeStyle = s.incident ? "#ff8a1f" : col;
       x.beginPath();
-      x.arc(64, 56, 38, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.04, s.incident ? 1 : frac));
+      x.arc(
+        64,
+        56,
+        38,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * Math.max(0.04, s.incident ? 1 : frac),
+      );
       x.stroke();
       WG.drawIcon(x, kind, 64, 58, 1.1);
     } else {
       x.fillStyle = EMO[txt] || "#2e3a4a";
-      x.font = "900 " + (txt.length > 1 ? 50 : 62) + "px 'M PLUS Rounded 1c', system-ui, sans-serif";
+      x.font =
+        "900 " +
+        (txt.length > 1 ? 50 : 62) +
+        "px 'M PLUS Rounded 1c', system-ui, sans-serif";
       x.textAlign = "center";
       x.textBaseline = "middle";
       x.fillText(txt === "z" ? "zzz" : txt, 64, 58);
@@ -396,7 +715,7 @@
     tag.type = "button";
     tag.className = "ad-cartag";
     tag.dataset.car = car.id;
-    tag.innerHTML = '<i></i><b></b><span></span>';
+    tag.innerHTML = "<i></i><b></b><span></span>";
     tagBox.appendChild(tag);
     // tap to follow (and again for the profile); drag onto a neighbourhood to send it there
     tag.addEventListener("pointerdown", (e) => {
@@ -415,7 +734,8 @@
         tag.style.setProperty("--dx", e.clientX - d.x + "px");
         tag.style.setProperty("--dy", e.clientY - d.y + "px");
         const over = hoodUnder(e.clientX, e.clientY);
-        for (const n in labels) labels[n].e.classList.toggle("drop", n === over);
+        for (const n in labels)
+          labels[n].e.classList.toggle("drop", n === over);
       }
     });
     const end = (e) => {
@@ -437,7 +757,18 @@
         if (M.onCarTap) M.onCarTap(car.id, true);
       }
     });
-    return { parts, tag, id: car.id, x: null, z: null, y: 0, yaw: 0, bkey: "", hop: 0, sad: 0 };
+    return {
+      parts,
+      tag,
+      id: car.id,
+      x: null,
+      z: null,
+      y: 0,
+      yaw: 0,
+      bkey: "",
+      hop: 0,
+      sad: 0,
+    };
   }
   function hoodUnder(x, y) {
     const el = document.elementFromPoint(x, y),
@@ -482,7 +813,13 @@
       group.add(parts.root);
       const a = Sim.G.names[(k * 7 + 3) % Sim.G.names.length],
         nb = Sim.G.adj[a][0];
-      M.npcs.push({ parts, from: a, to: nb[0], t: Math.random(), v: 55 + Math.random() * 25 });
+      M.npcs.push({
+        parts,
+        from: a,
+        to: nb[0],
+        t: Math.random(),
+        v: 55 + Math.random() * 25,
+      });
     }
   }
   function npcUpdate(dt, mins) {
@@ -492,13 +829,23 @@
       n.t += (n.v * mins) / e.len;
       while (n.t >= 1) {
         n.t -= 1;
-        const opts = Sim.G.adj[n.to].map(([m]) => m).filter((m) => m !== n.from);
+        const opts = Sim.G.adj[n.to]
+          .map(([m]) => m)
+          .filter((m) => m !== n.from);
         n.from = n.to;
-        n.to = opts.length ? opts[(Math.random() * opts.length) | 0] : Sim.G.adj[n.to][0][0];
+        n.to = opts.length
+          ? opts[(Math.random() * opts.length) | 0]
+          : Sim.G.adj[n.to][0][0];
         e = Sim.edgeOf(n.from, n.to);
       }
       Sim.edgePoint(e, n.from, n.t, pt);
-      place(n.parts, pt.x * K, edgeY(e, n.from === e.a ? n.t : 1 - n.t), pt.z * K, Math.atan2(-pt.dx, -pt.dz));
+      place(
+        n.parts,
+        pt.x * K,
+        edgeY(e, n.from === e.a ? n.t : 1 - n.t),
+        pt.z * K,
+        Math.atan2(-pt.dx, -pt.dz),
+      );
       n.parts.spin.rotation.y += dt * 7;
     }
   }
@@ -520,7 +867,13 @@
     gr.addColorStop(1, "rgba(255,255,255,0)");
     x.fillStyle = gr;
     x.fillRect(0, 0, 128, 128);
-    const mat = new T.SpriteMaterial({ map: new T.CanvasTexture(cv), transparent: true, depthWrite: false, opacity: 0.8, fog: false });
+    const mat = new T.SpriteMaterial({
+      map: new T.CanvasTexture(cv),
+      transparent: true,
+      depthWrite: false,
+      opacity: 0.8,
+      fog: false,
+    });
     M.karl = new T.Group();
     for (const name of Sim.G.names) {
       if (!D.HOODS[name].tags.includes("fog")) continue;
@@ -529,7 +882,13 @@
         const s = new T.Sprite(mat),
           sz = (260 + Math.random() * 260) * K;
         s.scale.set(sz, sz * 0.5, 1);
-        s.userData = { x: (h.x + (Math.random() - 0.5) * 520) * K, z: (h.z + (Math.random() - 0.5) * 520) * K, y: (60 + Math.random() * 90) * K, v: 4 + Math.random() * 6, p: Math.random() * 6 };
+        s.userData = {
+          x: (h.x + (Math.random() - 0.5) * 520) * K,
+          z: (h.z + (Math.random() - 0.5) * 520) * K,
+          y: (60 + Math.random() * 90) * K,
+          v: 4 + Math.random() * 6,
+          p: Math.random() * 6,
+        };
         M.karl.add(s);
       }
     }
@@ -551,7 +910,14 @@
       e.querySelector(".nm").textContent = name;
       e.addEventListener("click", () => M.onHoodTap && M.onHoodTap(name));
       box.appendChild(e);
-      labels[name] = { e, h, on: false, sx: 0, sy: 0, p: new T.Vector3(h.x * K, 0, h.z * K) };
+      labels[name] = {
+        e,
+        h,
+        on: false,
+        sx: 0,
+        sy: 0,
+        p: new T.Vector3(h.x * K, 0, h.z * K),
+      };
     }
   }
   // the labels' badges: locked, today's daily waiting, a Care Spot, home
@@ -564,11 +930,39 @@
       L.e.classList.toggle("locked", !open);
       L.e.classList.toggle("land", H.rank !== null);
       L.e.classList.toggle("glow", !!daily);
-      L.e.classList.toggle("ev", Sim.season().some((s) => s.hub === name));
-      L.e.querySelector("b").textContent = !open ? "🔒" : H.home ? "🏠" : H.care ? "🔧" : daily ? "★" : "";
-      L.e.setAttribute("aria-label", name + (!open ? ", locked until Crew Rank " + H.rank : "") + (H.care ? ", a Care Spot" : "") + (daily ? ", today's daily is waiting" : ""));
+      L.e.classList.toggle(
+        "ev",
+        Sim.season().some((s) => s.hub === name),
+      );
+      L.e.querySelector("b").textContent = !open
+        ? "🔒"
+        : H.home
+          ? "🏠"
+          : H.care
+            ? "🔧"
+            : daily
+              ? "★"
+              : "";
+      L.e.setAttribute(
+        "aria-label",
+        name +
+          (!open ? ", locked until Crew Rank " + H.rank : "") +
+          (H.care ? ", a Care Spot" : "") +
+          (daily ? ", today's daily is waiting" : ""),
+      );
       const pl = M.plazas[name];
-      if (pl) pl.material.color.set(!open ? 0xb7c0c8 : H.home ? 0xffd23a : H.care ? 0x36d3c4 : H.rank !== null ? 0x7fdcff : 0xffffff);
+      if (pl)
+        pl.material.color.set(
+          !open
+            ? 0xb7c0c8
+            : H.home
+              ? 0xffd23a
+              : H.care
+                ? 0x36d3c4
+                : H.rank !== null
+                  ? 0x7fdcff
+                  : 0xffffff,
+        );
     }
   };
 
@@ -582,7 +976,10 @@
     tagBox = $("#ad-tags");
     Sim.setGeo(I.ISL.DIST, (x, z) => onLand(x, z));
     buildRoads();
-    for (const name of Sim.G.names) Sim.G.hoods[name].y = Sim.G.hoods[name].y || surfaceAt(Sim.G.hoods[name].x, Sim.G.hoods[name].z) * K;
+    for (const name of Sim.G.names)
+      Sim.G.hoods[name].y =
+        Sim.G.hoods[name].y ||
+        surfaceAt(Sim.G.hoods[name].x, Sim.G.hoods[name].z) * K;
     npcs();
     karl();
     makeLabels();
@@ -603,7 +1000,8 @@
     // the fleet: drawn between the sim's minute steps
     const byHood = {};
     S.cars.forEach((car) => {
-      if (!car.sim.from) (byHood[car.sim.at] = byHood[car.sim.at] || []).push(car);
+      if (!car.sim.from)
+        (byHood[car.sim.at] = byHood[car.sim.at] || []).push(car);
     });
     for (const car of S.cars) {
       const m = M.cars.get(car.id);
@@ -612,7 +1010,15 @@
       let x, y, z, yaw;
       if (s.from && s.task !== "nap") {
         const e = Sim.edgeOf(s.from, s.to);
-        const tt = Math.min(1, s.t + (paused * Sim.frac() * Sim.speedOf(S, car) * (S.clock.night ? 4 : 1)) / e.len);
+        const tt = Math.min(
+          1,
+          s.t +
+            (paused *
+              Sim.frac() *
+              Sim.speedOf(S, car) *
+              (S.clock.night ? 4 : 1)) /
+              e.len,
+        );
         Sim.edgePoint(e, s.from, tt, _p);
         x = _p.x * K;
         z = _p.z * K;
@@ -653,7 +1059,8 @@
       place(P, m.x, m.y, m.z, m.yaw);
       // the toy's moods: a hop for a fare, a shiver when grumpy, the lidar's spin
       if (m.hop > 0) m.hop = Math.max(0, m.hop - dt);
-      P.g.position.y = Math.abs(Math.sin((1 - m.hop) * Math.PI * 3)) * 0.5 * m.hop;
+      P.g.position.y =
+        Math.abs(Math.sin((1 - m.hop) * Math.PI * 3)) * 0.5 * m.hop;
       const mood = car.needs.mood;
       P.g.rotation.z = mood < 20 ? Math.sin(t * 3) * 0.03 : 0;
       if (m.dance > 0) {
@@ -661,8 +1068,16 @@
         P.g.rotation.y = Math.sin(t * 12) * 0.4;
         P.spin.rotation.y += dt * 40;
       } else P.g.rotation.y = 0;
-      P.spin.rotation.y += dt * (s.task === "nap" || s.task === "tow" ? 0.4 : car.needs.charge < 20 ? 1.5 : 3 + mood / 14);
-      if (P.pet) P.pet.position.y = 1.89 + Math.abs(Math.sin(t * 3 + car.id.length)) * 0.06;
+      P.spin.rotation.y +=
+        dt *
+        (s.task === "nap" || s.task === "tow"
+          ? 0.4
+          : car.needs.charge < 20
+            ? 1.5
+            : 3 + mood / 14);
+      if (P.pet)
+        P.pet.position.y =
+          1.89 + Math.abs(Math.sin(t * 3 + car.id.length)) * 0.06;
       bubble(m, S, car, now);
       P.sprite.position.y = 4.2 + Math.sin(t * 2.5 + m.x) * 0.15;
     }
@@ -690,13 +1105,23 @@
       const vis = _v.z < 1 && Math.abs(_v.x) < 1.1 && Math.abs(_v.y) < 1.1;
       m.tag.style.opacity = vis ? 1 : 0;
       m.tag.style.pointerEvents = vis ? "" : "none";
-      if (vis) m.tag.style.transform = "translate(" + ((_v.x * 0.5 + 0.5) * w).toFixed(1) + "px," + ((-_v.y * 0.5 + 0.5) * h).toFixed(1) + "px) translate(-50%,-100%)";
+      if (vis)
+        m.tag.style.transform =
+          "translate(" +
+          ((_v.x * 0.5 + 0.5) * w).toFixed(1) +
+          "px," +
+          ((-_v.y * 0.5 + 0.5) * h).toFixed(1) +
+          "px) translate(-50%,-100%)";
       const nm = car.nick || car.name;
-      if (m.tagName !== nm) m.tag.querySelector("b").textContent = m.tagName = nm;
+      if (m.tagName !== nm)
+        m.tag.querySelector("b").textContent = m.tagName = nm;
       const face = D.MOOD_FACE[Math.min(5, Math.floor(car.needs.mood / 18.5))];
       if (m.face !== face) m.tag.querySelector("i").textContent = m.face = face;
       m.tag.classList.toggle("follow", cam.follow === car.id);
-      m.tag.setAttribute("aria-label", nm + ": " + Sim.doing(car) + ". Tap to follow, again for its profile.");
+      m.tag.setAttribute(
+        "aria-label",
+        nm + ": " + Sim.doing(car) + ". Tap to follow, again for its profile.",
+      );
     }
     for (const name in labels) {
       const L = labels[name],
@@ -704,12 +1129,22 @@
       L.p.y = Sim.G.hoods[name].y;
       _v.copy(L.p).project(camera);
       // the plain neighbourhoods only show up close; the lands always do
-      const show = (H.rank !== null || height < 900 * K) && _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05;
+      const show =
+        (H.rank !== null || height < 900 * K) &&
+        _v.z < 1 &&
+        Math.abs(_v.x) < 1.05 &&
+        Math.abs(_v.y) < 1.05;
       L.on = show;
       L.sx = (_v.x * 0.5 + 0.5) * w;
       L.sy = (-_v.y * 0.5 + 0.5) * h;
       // just below the plaza, so a parked car's name tag (above it) stays clear
-      if (show) L.e.style.transform = "translate(" + L.sx.toFixed(1) + "px," + L.sy.toFixed(1) + "px) translate(-50%,40%)";
+      if (show)
+        L.e.style.transform =
+          "translate(" +
+          L.sx.toFixed(1) +
+          "px," +
+          L.sy.toFixed(1) +
+          "px) translate(-50%,40%)";
       if (L.e.hidden === show) L.e.hidden = !show;
     }
   };
@@ -737,7 +1172,10 @@
     for (const [id, m] of M.cars) {
       _v.set(m.x, m.y + 1.2 * MS, m.z).project(camera);
       if (_v.z > 1) continue;
-      const d = Math.hypot((_v.x * 0.5 + 0.5) * innerWidth - cx, (-_v.y * 0.5 + 0.5) * innerHeight - cy);
+      const d = Math.hypot(
+        (_v.x * 0.5 + 0.5) * innerWidth - cx,
+        (-_v.y * 0.5 + 0.5) * innerHeight - cy,
+      );
       if (d < bd) {
         bd = d;
         best = id;
@@ -761,7 +1199,11 @@
       hh = m.h * K,
       d = clamp((m.h * 2.4 + m.r * 0.35) * K, 160, 2600),
       a = 0.6 + (markName.length % 5) * 0.9;
-    cam.position.set(x + Math.sin(a) * d, y + hh * 0.6 + d * 0.32, z + Math.cos(a) * d);
+    cam.position.set(
+      x + Math.sin(a) * d,
+      y + hh * 0.6 + d * 0.32,
+      z + Math.cos(a) * d,
+    );
     cam.lookAt(x, y + hh * 0.45, z);
     cam.updateMatrixWorld(true);
     const wasVis = group.visible;
@@ -778,7 +1220,8 @@
     cv.height = 200;
     const cx = cv.getContext("2d"),
       img = cx.createImageData(320, 200);
-    for (let r = 0; r < 200; r++) img.data.set(px.subarray((199 - r) * 1280, (200 - r) * 1280), r * 1280);
+    for (let r = 0; r < 200; r++)
+      img.data.set(px.subarray((199 - r) * 1280, (200 - r) * 1280), r * 1280);
     cx.putImageData(img, 0, 0);
     // a postcard's border and greeting
     cx.strokeStyle = "#fff";
@@ -800,7 +1243,14 @@
 
   /* ---------- the map camera: target, height, heading; it can follow a car ---------- */
   const PITCH = 0.98;
-  M.cam = { x: 420 * K, z: -620 * K, h: 640 * K, yaw: 0.6, follow: null, ride: null };
+  M.cam = {
+    x: 420 * K,
+    z: -620 * K,
+    h: 640 * K,
+    yaw: 0.6,
+    follow: null,
+    ride: null,
+  };
   const BOUNDS = { x0: -1950 * K, x1: 1650 * K, z0: -1650 * K, z1: 2150 * K };
   M.camera = function (dt, pos, look, camera) {
     const c = M.cam;
@@ -830,7 +1280,11 @@
     const gy = Math.max(0, W.height(c.x, c.z)),
       dist = c.h / Math.sin(PITCH);
     look.set(c.x, gy, c.z);
-    pos.set(c.x + Math.sin(c.yaw) * Math.cos(PITCH) * dist, gy + c.h, c.z + Math.cos(c.yaw) * Math.cos(PITCH) * dist);
+    pos.set(
+      c.x + Math.sin(c.yaw) * Math.cos(PITCH) * dist,
+      gy + c.h,
+      c.z + Math.cos(c.yaw) * Math.cos(PITCH) * dist,
+    );
     return 4;
   };
   // drag to pan: screen pixels to ground metres, along the camera's heading

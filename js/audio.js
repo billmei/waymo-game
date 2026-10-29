@@ -92,15 +92,25 @@
     if (!ctx) return;
     const k = DUCK.vox ? dBg(-9) : 1;
     musBus.gain.cancelScheduledValues(ctx.currentTime);
-    musBus.gain.setTargetAtTime(musicOn ? 0.42 * k * (DUCK.job ? 0.48 : 1) : 0, ctx.currentTime, tau);
+    musBus.gain.setTargetAtTime(
+      musicOn ? 0.42 * k * (DUCK.job ? 0.48 : 1) : 0,
+      ctx.currentTime,
+      tau,
+    );
   }
 
   /* ---------- voices ---------- */
   function env(g, t, a, peak, d, sus, rel, end) {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(peak, t + a);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * sus), t + a + d);
-    g.gain.setValueAtTime(Math.max(0.0001, peak * sus), Math.max(t + a + d, end));
+    g.gain.exponentialRampToValueAtTime(
+      Math.max(0.0001, peak * sus),
+      t + a + d,
+    );
+    g.gain.setValueAtTime(
+      Math.max(0.0001, peak * sus),
+      Math.max(t + a + d, end),
+    );
     g.gain.exponentialRampToValueAtTime(0.0001, Math.max(t + a + d, end) + rel);
   }
   function osc(type, f, t, stop) {
@@ -336,7 +346,9 @@
   const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   function nn(s) {
     const m = /^([A-G])([#b]?)(\d)$/.exec(s);
-    return 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0);
+    return (
+      12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0)
+    );
   }
   // "E5:3 D5 C5:2 r:2" -> [{s, d, n}] in eighth-note steps
   function seq(str) {
@@ -378,7 +390,11 @@
   function prog(str) {
     return str.split("|").map((bar) => {
       const cs = bar.trim().split(/\s+/);
-      return cs.map((c, i) => ({ c: chord(c), at: (i * 8) / cs.length, len: 8 / cs.length }));
+      return cs.map((c, i) => ({
+        c: chord(c),
+        at: (i * 8) / cs.length,
+        len: 8 / cs.length,
+      }));
     });
   }
 
@@ -402,14 +418,21 @@
     comp(bar, b, t, step, c, play) {
       // bossa comping: 1, 2&, 3&, 4 (and its mirror on even bars)
       const hits = bar % 2 ? [0, 3, 5] : [0, 2, 5, 7];
-      if (hits.includes(b)) c.notes.forEach((n, i) => play("ep", t, n, step * 1.2, 0.035, i * 0.15 - 0.2));
+      if (hits.includes(b))
+        c.notes.forEach((n, i) =>
+          play("ep", t, n, step * 1.2, 0.035, i * 0.15 - 0.2),
+        );
     },
     bass(bar, b, t, step, c, play, cs) {
       if (b === cs.at) play("bass", t, c.root, step * 2.8, 0.22);
-      else if (b === cs.at + 3 && cs.len > 4) play("bass", t, c.root + 7, step * 0.9, 0.17);
-      else if (b === cs.at + 4 && cs.len > 4) play("bass", t, c.root + 7, step * 2.8, 0.19);
-      else if (b === cs.at + 7 && cs.len > 4) play("bass", t, c.root, step * 0.9, 0.15);
-      else if (cs.len === 4 && b === cs.at + 3) play("bass", t, c.root + 7, step * 0.9, 0.16);
+      else if (b === cs.at + 3 && cs.len > 4)
+        play("bass", t, c.root + 7, step * 0.9, 0.17);
+      else if (b === cs.at + 4 && cs.len > 4)
+        play("bass", t, c.root + 7, step * 2.8, 0.19);
+      else if (b === cs.at + 7 && cs.len > 4)
+        play("bass", t, c.root, step * 0.9, 0.15);
+      else if (cs.len === 4 && b === cs.at + 3)
+        play("bass", t, c.root + 7, step * 0.9, 0.16);
     },
     drums(bar, b, t, step, d) {
       d.shaker(t, b % 2 ? 0.05 : 0.09);
@@ -424,7 +447,8 @@
     bpm: 148,
     swing: 0.16,
     chords: prog(
-      "C | Am | F | G | C | E7 | F | G7 |" + "F | G | Em | Am | Dm7 | G7 | C | G7",
+      "C | Am | F | G | C | E7 | F | G7 |" +
+        "F | G | Em | Am | Dm7 | G7 | C | G7",
     ),
     mel: seq(
       "G4 C5 E5 G5:2 E5 C5 D5  E5:2 C5 A4:3 r:2  A4 C5 F5 A5:2 G5 F5 E5  D5:3 B4 G4:2 r:2  " +
@@ -436,12 +460,22 @@
     leadV: 0.075,
     lead2: "bell",
     comp(bar, b, t, step, c, play) {
-      if (b % 2 === 1) c.notes.forEach((n, i) => play("ep", t, n + 12, step * 0.6, 0.028, i * 0.2 - 0.3));
+      if (b % 2 === 1)
+        c.notes.forEach((n, i) =>
+          play("ep", t, n + 12, step * 0.6, 0.028, i * 0.2 - 0.3),
+        );
     },
     bass(bar, b, t, step, c, play) {
       const pat = [0, null, 12, 7, 0, null, 7, 12],
         o = pat[b];
-      if (o !== null) play("bass", t, c.root + o, step * (o === 0 ? 1.6 : 0.8), o === 0 ? 0.24 : 0.17);
+      if (o !== null)
+        play(
+          "bass",
+          t,
+          c.root + o,
+          step * (o === 0 ? 1.6 : 0.8),
+          o === 0 ? 0.24 : 0.17,
+        );
     },
     drums(bar, b, t, step, d, intense) {
       if (b === 0 || b === 4 || (b === 7 && bar % 2)) d.kick(t, 0.42);
@@ -485,7 +519,10 @@
     leadV: 0.055,
     melIdx: null,
     comp(bar, b, t, step, c, play) {
-      if (b === 0 || b === 5) c.notes.forEach((n, i) => play("ep", t, n, step * 2, 0.024, i * 0.15 - 0.2));
+      if (b === 0 || b === 5)
+        c.notes.forEach((n, i) =>
+          play("ep", t, n, step * 2, 0.024, i * 0.15 - 0.2),
+        );
     },
     drums(bar, b, t, step, d) {
       if (b % 2 === 0) d.shaker(t, 0.025);
@@ -533,11 +570,20 @@
       // melody
       for (const ev of song.melIdx[s] || []) {
         play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
-        if (song.lead2 && M.step % (total * 2) >= total) play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
+        if (song.lead2 && M.step % (total * 2) >= total)
+          play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
       }
       try {
         song.comp(bar, b, t, e8, c, play);
-        song.bass(bar, b, t, e8, c, (i, tt, n, d, v) => play(i, tt, n, d, v), cs);
+        song.bass(
+          bar,
+          b,
+          t,
+          e8,
+          c,
+          (i, tt, n, d, v) => play(i, tt, n, d, v),
+          cs,
+        );
         song.drums(bar, b, t, e8, drums, M.intense);
       } catch (e) {}
       const sw = b % 2 === 0 ? 1 + song.swing : 1 - song.swing;
@@ -566,9 +612,17 @@
     const song = SONGS[name];
     if (!song.melIdx) {
       song.melIdx = {};
-      for (const ev of song.mel) (song.melIdx[ev.s] = song.melIdx[ev.s] || []).push(ev);
+      for (const ev of song.mel)
+        (song.melIdx[ev.s] = song.melIdx[ev.s] || []).push(ev);
       if (song.mel.len !== song.chords.length * 8)
-        console.warn("song", name, "melody length", song.mel.len, "vs", song.chords.length * 8);
+        console.warn(
+          "song",
+          name,
+          "melody length",
+          song.mel.len,
+          "vs",
+          song.chords.length * 8,
+        );
     }
     M.cur = song;
     M.step = 0;
@@ -591,7 +645,11 @@
     o = o || {};
     const os = osc(o.type || "sine", f, t, t + dur + 0.05),
       g = ctx.createGain();
-    if (o.to) os.frequency.exponentialRampToValueAtTime(o.to, t + dur * (o.toAt || 0.9));
+    if (o.to)
+      os.frequency.exponentialRampToValueAtTime(
+        o.to,
+        t + dur * (o.toAt || 0.9),
+      );
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(o.v || 0.1, t + (o.a || 0.004));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -630,7 +688,9 @@
   S.pop = () => tone(600, now(), 0.1, { to: 1400, v: 0.1 });
   S.open = () => {
     const t = now();
-    [1046.5, 1318.5, 1568, 2093].forEach((f, i) => tone(f, t + i * 0.045, 0.25, { v: 0.05 }));
+    [1046.5, 1318.5, 1568, 2093].forEach((f, i) =>
+      tone(f, t + i * 0.045, 0.25, { v: 0.05 }),
+    );
     nz(t, 0.3, { f: 700, to: 5000, v: 0.03 });
   };
   S.count = () => {
@@ -669,8 +729,15 @@
   S.chime = (q) => {
     // q: 0 good, 1 great, 2 perfect
     const t = now(),
-      ns = q >= 2 ? [72, 76, 79, 84, 88] : q >= 1 ? [72, 76, 79, 84] : [72, 76, 79];
-    ns.forEach((n, i) => bell(t + i * 0.07, n + 12, 0.4, 0.11, sfxBus, (i - 2) * 0.2));
+      ns =
+        q >= 2
+          ? [72, 76, 79, 84, 88]
+          : q >= 1
+            ? [72, 76, 79, 84]
+            : [72, 76, 79];
+    ns.forEach((n, i) =>
+      bell(t + i * 0.07, n + 12, 0.4, 0.11, sfxBus, (i - 2) * 0.2),
+    );
     if (q >= 2) S.cheer(1);
     else if (q >= 1) S.cheer(0.6);
   };
@@ -708,7 +775,11 @@
   S.squeak = (amt) => {
     const t = now(),
       f = 1400 + Math.random() * 900;
-    tone(f, t, 0.07, { to: f * (1.2 + Math.random() * 0.3), v: 0.02 + 0.03 * amt, type: "sine" });
+    tone(f, t, 0.07, {
+      to: f * (1.2 + Math.random() * 0.3),
+      v: 0.02 + 0.03 * amt,
+      type: "sine",
+    });
   };
   S.bubble = () => {
     const t = now(),
@@ -717,7 +788,15 @@
   };
   S.sparkle = () => {
     const t = now();
-    for (let i = 0; i < 6; i++) bell(t + i * 0.05, 96 + ((i * 5) % 12), 0.2, 0.05, sfxBus, Math.sin(i) * 0.6);
+    for (let i = 0; i < 6; i++)
+      bell(
+        t + i * 0.05,
+        96 + ((i * 5) % 12),
+        0.2,
+        0.05,
+        sfxBus,
+        Math.sin(i) * 0.6,
+      );
   };
   S.whoosh = () => nz(now(), 0.35, { f: 400, to: 3000, q: 0.8, v: 0.08 });
   S.bonk = () => {
@@ -727,7 +806,8 @@
   };
   S.flap = () => {
     const t = now();
-    for (let i = 0; i < 5; i++) nz(t + i * 0.06, 0.05, { f: 900 + i * 80, q: 0.7, v: 0.06, a: 0.01 });
+    for (let i = 0; i < 5; i++)
+      nz(t + i * 0.06, 0.05, { f: 900 + i * 80, q: 0.7, v: 0.06, a: 0.01 });
   };
   S.coo = () => {
     const t = now();
@@ -738,7 +818,8 @@
     const t = now();
     tone(900, t, 0.15, { to: 600, v: 0.05, type: "sawtooth" });
   };
-  S.beep = (i) => bell(now(), 76 + [0, 2, 4, 5, 7, 9, 11, 12][i % 8], 0.2, 0.12, sfxBus);
+  S.beep = (i) =>
+    bell(now(), 76 + [0, 2, 4, 5, 7, 9, 11, 12][i % 8], 0.2, 0.12, sfxBus);
   S.buzz = () => {
     const t = now();
     tone(140, t, 0.25, { v: 0.08, type: "square" });
@@ -760,7 +841,13 @@
       f = 300 + frac * 900;
     tone(f, t, 0.3, { to: f * 1.5, v: 0.05, type: "triangle" });
   };
-  S.step = () => nz(now(), 0.05, { f: 500 + Math.random() * 200, q: 1.2, v: 0.02, a: 0.005 });
+  S.step = () =>
+    nz(now(), 0.05, {
+      f: 500 + Math.random() * 200,
+      q: 1.2,
+      v: 0.02,
+      a: 0.005,
+    });
   S.carHappy = (p) => {
     const t = now();
     tone(1046, t, 0.09, { v: 0.07, p });
@@ -801,7 +888,11 @@
   };
   S.thup = () => {
     const t = now();
-    tone(500 + Math.random() * 300, t, 0.09, { to: 1500, v: 0.07, type: "triangle" });
+    tone(500 + Math.random() * 300, t, 0.09, {
+      to: 1500,
+      v: 0.07,
+      type: "triangle",
+    });
   };
   S.ollie = () => {
     const t = now();
@@ -861,9 +952,14 @@
       }
     }
     const v = muted ? 0 : level || 0;
-    L.g.gain.setTargetAtTime(name === "vacuum" ? v * 0.09 : v * 0.22, ctx.currentTime, 0.05);
+    L.g.gain.setTargetAtTime(
+      name === "vacuum" ? v * 0.09 : v * 0.22,
+      ctx.currentTime,
+      0.05,
+    );
     if (L.o) L.o.frequency.setTargetAtTime(110 + v * 25, ctx.currentTime, 0.1);
-    if (name === "skate") L.f.frequency.setTargetAtTime(220 + v * 500, ctx.currentTime, 0.05);
+    if (name === "skate")
+      L.f.frequency.setTargetAtTime(220 + v * 500, ctx.currentTime, 0.05);
   }
 
   function sfx(name) {
@@ -888,7 +984,8 @@
       try {
         localStorage.setItem("wc.muted", muted ? "1" : "0");
       } catch (e) {}
-      if (ctx) master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05);
+      if (ctx)
+        master.gain.setTargetAtTime(muted ? 0 : 0.8, ctx.currentTime, 0.05);
     },
     // the background music on or off (the pause menu's setting); the sound effects and voices keep playing
     get musicOn() {

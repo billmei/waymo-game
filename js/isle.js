@@ -1,7 +1,8 @@
 /* Waymo Care · the island. */
 (function () {
   "use strict";
-  if (typeof THREE === "undefined") throw new Error("load three.js r128 before isle.js");
+  if (typeof THREE === "undefined")
+    throw new Error("load three.js r128 before isle.js");
   /* ---- src/core.js ---- */
   const HYP = (a, b, c) =>
     Math.sqrt(c === undefined ? a * a + b * b : a * a + b * b + c * c);
