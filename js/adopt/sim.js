@@ -963,9 +963,8 @@
     } else if (atHome) {
       ch += charging ? 28 : -1;
       cd += 5;
-      // the garage's auto-wash, auto-vac and nap pods: +15 an hour per level for every car at home
-      cln += 15 * S.garage.wash + 15 * S.garage.vac;
-      cd += 15 * S.garage.pods;
+      // the garage's auto-wash: +15 an hour per level for every car at home
+      cln += 15 * (S.garage.wash || 0);
     } else if (s.task !== "tow") ch -= 0.5;
     if (has(car, "neat_freak") && plus(car)) cln *= 0.5;
     if (n.mood < 10 && cd < 0) cd *= 1.5;
@@ -1193,7 +1192,7 @@
     const entry = { day: c.day, lines: lines || diaryLines(S) };
     S.diary.unshift(entry);
     if (S.diary.length > 30) S.diary.length = 30;
-    // overnight in the garage (midnight to 06:00, six hours): the bays, and six hours of the auto-wash, auto-vac and nap pods
+    // overnight in the garage (midnight to 06:00, six hours): the bays, and six hours of the auto-wash
     const home = S.cars
       .filter((car) => Sim.atHome(car))
       .sort((a, b) => a.needs.charge - b.needs.charge);
@@ -1205,9 +1204,9 @@
       );
       n.cleanliness = Math.min(
         100,
-        n.cleanliness + 6 * 15 * (S.garage.wash + S.garage.vac),
+        n.cleanliness + 6 * 15 * (S.garage.wash || 0),
       );
-      n.code = Math.min(100, n.code + 6 * 15 * S.garage.pods + 10);
+      n.code = Math.min(100, n.code + 10);
       n.mood = Math.min(100, n.mood + 8);
       car.sim.task = car.training ? car.sim.task : "garage";
     });

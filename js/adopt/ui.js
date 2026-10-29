@@ -1021,7 +1021,7 @@
       e = S.show.entry,
       L = S.show.last;
     let h = "<h3>🎀 The weekly Car Show <small>this week: “" + esc(t.name) + "”</small></h3>";
-    h += "<p class='ad-hint'>Charm, Shine, wraps and accessories that suit the theme, and a pinch of luck. Results on Monday.</p>";
+    h += "<p class='ad-hint'>Charm, Cleanliness, wraps and accessories that suit the theme, and a pinch of luck. Results on Monday.</p>";
     if (e) h += "<p>Entered: <b>" + esc(e.name) + "</b>. Fingers crossed!</p>";
     else h += "<div class='ad-acts'>" + btn("showEnter", "Enter a car", { cls: "tiny primary" }) + "</div>";
     if (L) h += "<p class='ad-hint'>Last week (“" + esc((D.SHOW_THEMES.find((x) => x.id === L.theme) || {}).name || L.theme) + "”): " + L.results.slice(0, 3).map((r, i) => ["🥇", "🥈", "🥉"][i] + " " + esc(r.name)).join(" · ") + (L.place > 3 ? " · yours: #" + L.place : "") + "</p>";
@@ -1429,7 +1429,7 @@
       <ul class="ad-list">
         <li>🗺️ <b>The map</b>: drag to pan, wheel or pinch to zoom, <kbd>Q</kbd>/<kbd>E</kbd> to turn. <kbd>WASD</kbd> or the arrows pan too.</li>
         <li>🚗 <b>Cars</b>: tap a car's name tag (or its card at the bottom) to follow it; tap again for its profile. Drag a name tag onto a neighbourhood to send it there.</li>
-        <li>🔋 <b>Needs</b>: Charge, Shine, Cozy, Senses and Clarity drop as a car drives. A bubble shows the most urgent. Use items anywhere, or call the car to a Care Spot 🔧 and do the job by hand (more bond).</li>
+        <li>🔋 <b>Needs</b>: Charge, Cleanliness and Code drop as a car drives. A bubble shows the most urgent. Use items anywhere, or call the car to a Care Spot 🔧 and do the job by hand (more bond).</li>
         <li>★ <b>Lands</b>: each neighbourhood with a label is a land, with a shop, a daily freebie (★ when it's waiting) and things to do. More open as your Crew Rank rises.</li>
         <li>❤️ <b>Bond</b>: pats, items and hands-on care earn hearts. Hearts unlock a nickname, a horn, the lidar dance, Ride Along and a trait upgrade.</li>
         <li>🌙 <b>Days</b>: an in-game day is about 13 minutes. At midnight the cars drive home and Dispatch writes the diary. The lands' dailies come back every in-game morning.</li>

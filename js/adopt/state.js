@@ -98,8 +98,6 @@
       garage: {
         bays: 1,
         wash: 0,
-        vac: 0,
-        pods: 0,
         fridge: 0,
         rooms: 0,
         vault: 0,
@@ -156,6 +154,13 @@
     fill(S, fresh(now, S.log && S.log.seed));
     // (v1 is the only version so far; later versions upgrade here, one step at a time)
     S.v = 1;
+    if (S.garage) {
+      if (S.garage.vac) {
+        S.garage.wash = Math.max(S.garage.wash || 0, S.garage.vac);
+        delete S.garage.vac;
+      }
+      delete S.garage.pods;
+    }
     for (const c of S.cars.concat(S.stored)) fillCar(c);
     return S;
   }

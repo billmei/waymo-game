@@ -950,9 +950,7 @@ Hunters Point: Candlestick`;
   /* ---------- the garage: upgrades (cost per level) and furniture slots ---------- */
   D.GARAGE = {
     bays: { name: "Charger bays", icon: "🔌", max: 4, cost: [0, 800, 2500, 6000], desc: "Each bay charges one car at home (+15 Charge an hour)." },
-    wash: { name: "Auto-wash", icon: "🫧", max: 2, cost: [0, 1500, 5000], desc: "Washes every car at home: +15 Shine an hour per level." },
-    vac: { name: "Auto-vac", icon: "🌀", max: 2, cost: [0, 1500, 5000], desc: "Sweeps every car at home: +15 Cozy an hour per level." },
-    pods: { name: "Nap pods", icon: "😴", max: 2, cost: [0, 1500, 5000], desc: "Rests every car at home: +15 Clarity an hour per level." },
+    wash: { name: "Auto-wash", icon: "🫧", max: 2, cost: [0, 1500, 5000], desc: "Washes every car at home: +15 Cleanliness an hour per level." },
     fridge: { name: "Snack fridge", icon: "🧊", max: 3, cost: [0, 600, 2000, 5000], desc: "More inventory space: 40, 60, 90, then 130 items." },
     rooms: { name: "Rooms", icon: "🏠", max: 3, cost: [0, 1200, 4000, 9000], desc: "Furniture slots: 2, 4, 6, then 8." },
     vault: { name: "Credit union account", icon: "🏦", max: 3, cost: [0, 1000, 4000, 10000], desc: "Daily interest: 0.5%, 0.75%, 1%, then 1.25%." },
