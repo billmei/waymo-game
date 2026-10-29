@@ -342,8 +342,8 @@
       if (w.v < 40) {
         kind = Sim.NEED_JOB[w.need];
         frac = w.v / 100;
-        col = w.v < 20 ? "#ff4b3e" : "#ffbf1f";
-      } else if (car.needs.mood < 20) txt = "☁";
+        col = w.v < 1 ? "#ff4b3e" : w.v < 10 ? "#ffbf1f" : "#2a9fe6";
+      } else if (car.needs.mood < 10) txt = "☁";
       else if (em) txt = em;
     }
     const key = (kind || "") + "|" + (txt || "") + "|" + Math.round(frac * 20);

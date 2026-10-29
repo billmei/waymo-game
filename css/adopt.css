@@ -578,6 +578,9 @@ body:not([data-state="adopt"]) #ad-tags {
 .ad-need.low u {
   background: linear-gradient(90deg, #ffd96a, #ffbf1f);
 }
+.ad-need.low em {
+  color: #c47d00;
+}
 .ad-need.bad u {
   background: linear-gradient(90deg, #ff8a7a, #ff4b3e);
 }
@@ -1050,6 +1053,9 @@ body:not([data-state="adopt"]) #ad-tags {
 }
 .ad-pick.need.bad {
   box-shadow: 0 0 0 3px var(--bad);
+}
+.ad-pick.need.low {
+  box-shadow: 0 0 0 3px #ffbf1f;
 }
 .ad-field {
   display: flex;

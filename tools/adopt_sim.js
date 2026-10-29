@@ -92,7 +92,7 @@ for (let d = 1; d <= days; d++) {
     care();
     for (const car of S.cars) {
       lowSamples++;
-      for (const k of Object.keys(low)) if (car.needs[k] < 20) low[k]++;
+      for (const k of Object.keys(low)) if (car.needs[k] < 10) low[k]++;
     }
     if (S.clock.night) break;
   }
@@ -113,7 +113,7 @@ const avg = (k, from, to) => {
 };
 console.log("\nAverage ◎ a day: days 1–5 " + avg("fares", 1, 5) + ", days 6–15 " + avg("fares", 6, 15) + ", days 16–30 " + avg("fares", 16, 30));
 console.log("Share of ◎ from rides: " + Math.round((100 * src.rides) / Math.max(1, src.other)) + "%");
-console.log("Time spent below 20 (share of car-hours): " + Object.entries(low).map(([k, v]) => k + " " + ((100 * v) / Math.max(1, lowSamples)).toFixed(1) + "%").join(", "));
+console.log("Time spent below 10 (share of car-hours): " + Object.entries(low).map(([k, v]) => k + " " + ((100 * v) / Math.max(1, lowSamples)).toFixed(1) + "%").join(", "));
 console.log("Crew Rank milestones: " + [2, 5, 6, 9, 10, 12, 14].map((r) => "rank " + r + " day " + (milestones[r] || "—")).join(", ") + "  (targets: rank 5 ≈ day 3, rank 9 ≈ day 8, rank 10 ≈ day 10)");
 console.log("Stamps " + Object.keys(S.album.stamps).length + "/" + D.STAMPS.length + ", rider cards " + Object.keys(S.album.cards).length + ", trophies " + S.player.trophies.length);
 for (const c of S.cars) console.log("  " + c.name + ": " + c.stage + ", " + c.km.toFixed(0) + " km, " + c.rides + " rides, bond " + c.bond.toFixed(1) + ", level " + Sim.level(c) + ", needs " + Object.entries(c.needs).map(([k, v]) => k + " " + Math.round(v)).join(" "));

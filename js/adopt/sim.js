@@ -399,7 +399,7 @@
       if (h >= 20 || S.clock.night) v *= 1.15;
       else if (h < 10 && !plus(car)) v *= 0.8;
     }
-    if (car.needs.mood < 20) v *= 0.85;
+    if (car.needs.mood < 10) v *= 0.85;
     if (car.sim.task === "tow") v = 70;
     return v;
   }
@@ -547,7 +547,7 @@
     if (S.today) S.today.rides[car.id] = (S.today.rides[car.id] || 0) + 1;
     Sim.xp(S, 10);
     // the cabin after the rider
-    let mess = 2.8 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
+    let mess = 1.4 * (rd ? rd.mess : 1) * (has(car, "foodie") ? 1.5 : 1) * (1 - Math.min(0.5, e.comfort * 0.02));
     if (car.dashpet && car.dashpet.id === "succulent") mess *= 0.6;
     car.needs.cozy = clamp(car.needs.cozy - mess, AWAY ? Math.min(car.needs.cozy, 25) : 0, 100);
     s.emote = { k: "◎", at: absMin(S) };
@@ -627,13 +627,13 @@
   // the charge a trip of so many units costs this car (roughly: it doesn't know the hills ahead)
   function tripCost(S, car, units) {
     const e = Sim.eff(S, car);
-    let rate = 7.5 * (1 - Math.min(0.6, e.range * 0.02));
+    let rate = 3.75 * (1 - Math.min(0.6, e.range * 0.02));
     if (has(car, "speed_demon") && !plus(car)) rate *= 1.2;
     return ((units / speedOf(S, car)) / 60) * rate;
   }
   function findRide(S, car) {
     const here = car.sim.at,
-      sulky = car.needs.mood < 20;
+      sulky = car.needs.mood < 10;
     let best = null,
       bs = 0;
     for (const r of S.req) {
@@ -667,7 +667,7 @@
       sw = has(car, "neat_freak") ? 2 : 1;
     const base = (Math.min(100, n.charge) * 1.2 + n.shine * sw + n.cozy + n.senses + n.clarity) / (4.2 + sw);
     let t = base * 0.8 + 10 + car.bond * 2;
-    for (const k of D.NEED_KEYS) if (n[k] < 20) t -= 6;
+    for (const k of D.NEED_KEYS) if (n[k] < 10) t -= 6;
     const tags = D.HOODS[hood].tags;
     if (has(car, "hill_hater") && !tags.includes("hills")) t += 4;
     if (has(car, "fog_lover") && (hood === "Ocean Beach" || hood === "Lands End")) t += 10;
@@ -723,11 +723,12 @@
       cl += 15 * S.garage.pods;
     } else if (s.task !== "tow") ch -= 0.5;
     if (has(car, "neat_freak") && plus(car)) sh *= 0.5;
-    if (n.mood < 20 && cl < 0) cl *= 1.5;
+    if (n.mood < 10 && cl < 0) cl *= 1.5;
     const k = 1 / 60,
       floor = away ? 25 : 0,
       dec = (key, d) => {
         if (!d) return;
+        if (d < 0) d *= 0.5;
         const v = n[key] + d * k;
         if (d < 0) n[key] = Math.max(v, Math.min(n[key], floor), 0);
         else n[key] = Math.min(v, key === "charge" ? Math.max(100, n[key]) : 100);
@@ -743,8 +744,8 @@
     const tgt = moodTarget(S, car, hood, atHome),
       d = tgt - n.mood;
     n.mood = clamp(n.mood + clamp(d, -10 * k, 10 * k), Math.max(5, away ? Math.min(n.mood, 25) : 5), 100);
-    // a need left below 20 for more than two hours costs a little bond (it never goes below 0)
-    const low = D.NEED_KEYS.some((q) => n[q] < 20);
+    // a need left below 10 for more than two hours costs a little bond (it never goes below 0)
+    const low = D.NEED_KEYS.some((q) => n[q] < 10);
     car.low.total += k;
     if (low) {
       car.low.run += 1;
@@ -966,7 +967,7 @@
     let worst = null;
     for (const car of S.cars) {
       const w = Sim.worst(car);
-      if (w.v < 35 && (!worst || w.v < worst.v)) worst = { car, need: w.need, v: w.v };
+      if (w.v < 10 && (!worst || w.v < worst.v)) worst = { car, need: w.need, v: w.v };
     }
     if (worst) out.push(fill(D.DIARY.low, worst.car, { need: D.NEEDS[worst.need].name, label: Sim.label(worst.need, worst.v) }));
     else if (S.cars.length) out.push(St.pick(S, D.DIARY.good));

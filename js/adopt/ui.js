@@ -29,7 +29,7 @@
     return '<span class="ad-hearts" aria-label="' + n + ' of 10 hearts">' + "♥".repeat(n) + '<s>' + "♥".repeat(10 - n) + "</s></span>";
   };
   const bar = (v, max, cls) => '<i class="ad-bar ' + (cls || "") + '"><u style="transform:scaleX(' + Math.max(0, Math.min(1, v / (max || 100))).toFixed(3) + ')"></u></i>';
-  const needCol = (v) => (v >= 70 ? "ok" : v >= 40 ? "fine" : v >= 20 ? "low" : "bad");
+  const needCol = (v) => (v < 1 ? "bad" : v < 10 ? "low" : "fine");
   const btn = (a, label, o) => {
     o = o || {};
     const data = Object.entries(o.data || {})
@@ -188,10 +188,10 @@
       const w = Sim.worst(car),
         face = D.MOOD_FACE[Math.min(5, Math.floor(car.needs.mood / 18.5))];
       e.querySelector("b").textContent = car.nick || car.name;
-      const st = car.sim.task === "stuck" ? "⚠ " + D.INCIDENTS[car.sim.incident].name : car.training ? "🎓 At school" : w.v < 40 ? D.NEEDS[w.need].icon + " " + Sim.label(w.need, w.v) : Sim.label("mood", car.needs.mood);
+      const st = car.sim.task === "stuck" ? "⚠ " + D.INCIDENTS[car.sim.incident].name : car.training ? "🎓 At school" : w.v < 10 ? D.NEEDS[w.need].icon + " " + Sim.label(w.need, w.v) : Sim.label("mood", car.needs.mood);
       e.querySelector("small").textContent = st;
       e.querySelector(".f").innerHTML = face + "<i>" + "♥".repeat(Math.min(10, Math.floor(car.bond))) + "</i>";
-      e.classList.toggle("warn", w.v < 20 || car.sim.task === "stuck");
+      e.classList.toggle("warn", w.v < 10 || car.sim.task === "stuck");
       e.classList.toggle("on", WG.adoptMap.cam.follow === car.id);
       e.setAttribute("aria-label", (car.nick || car.name) + ": " + st + ", mood " + Sim.label("mood", car.needs.mood) + ", " + Math.floor(car.bond) + " hearts. Show on the map.");
     }
