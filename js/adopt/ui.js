@@ -243,24 +243,177 @@
     if (!force && a && a.tagName === "INPUT" && panel().contains(a)) return;
     render(false);
   };
-  // the parts of a panel that change by the second
+  // the parts of a panel or modal that change by the second
   function live() {
-    if (!U.open) return;
-    if (U.open.kind === "profile") {
-      const car = Sim.find(S, U.open.arg);
-      if (!car) return;
-      for (const k of D.NEED_KEYS.concat(["mood"])) {
-        const row = $('#ad-panel [data-need="' + k + '"]');
-        if (!row) continue;
-        const v = car.needs[k];
-        $("u", row).style.transform = "scaleX(" + Math.min(1, v / 100).toFixed(3) + ")";
-        row.className = "ad-need " + needCol(v);
-        $("em", row).textContent = Sim.label(k, v);
+    if (!U.open && !U.modalOpen) return;
+    if (U.open) {
+      if (U.open.kind === "profile") {
+        const car = Sim.find(S, U.open.arg);
+        if (car) {
+          for (const k of D.NEED_KEYS.concat(["mood"])) {
+            const row = $('#ad-panel [data-need="' + k + '"]');
+            if (!row) continue;
+            const v = car.needs[k];
+            $("u", row).style.transform = "scaleX(" + Math.min(1, v / 100).toFixed(3) + ")";
+            row.className = "ad-need " + needCol(v);
+            $("em", row).textContent = Sim.label(k, v);
+          }
+          const d = $("#ad-doing");
+          if (d) d.textContent = Sim.doing(car);
+          const kmEl = $("#ad-prof-km");
+          if (kmEl) kmEl.textContent = car.km.toFixed(1) + " km";
+          const ridesEl = $("#ad-prof-rides");
+          if (ridesEl) ridesEl.textContent = car.rides;
+          const trHint = $("#ad-prof-training");
+          if (trHint) {
+            if (!car.training) trHint.remove();
+            else trHint.textContent = "🎓 Studying " + D.STATS[car.training.stat].name + " at the Driving Academy: back " + when(car.training.endsAt) + ".";
+          }
+          const actsWrap = $("#ad-prof-actions");
+          if (actsWrap) {
+            const spot = Sim.careSpot(car),
+              busy = Sim.busy(car),
+              stuck = car.sim.task === "stuck",
+              on = S.cars.includes(car),
+              bondL = String(Math.floor(car.bond));
+            const curStuck = !!actsWrap.querySelector('[data-a="roadside"]');
+            const curOn = !!actsWrap.querySelector('[data-a="useItem"]');
+            const curBond = actsWrap.dataset.bond;
+            if (curStuck !== stuck || curOn !== on || curBond !== bondL) {
+              actsWrap.innerHTML = profileActsHtml(car);
+              actsWrap.dataset.bond = bondL;
+            } else if (on && !stuck) {
+              const careBtn = actsWrap.querySelector('[data-a="careMenu"]');
+              if (careBtn) {
+                careBtn.disabled = !spot || busy;
+                careBtn.title = spot ? "" : car.sim.task === "toCare" ? "On its way to a Care Spot" : "Call it to a Care Spot first";
+              }
+              const callCareBtn = actsWrap.querySelector('[data-a="callCare"]');
+              if (callCareBtn) {
+                const canCall = Sim.canCallToCare(car);
+                const atCare = !!spot && car.sim.task === "care";
+                const toCare = car.sim.task === "toCare";
+                callCareBtn.disabled = !canCall || atCare || toCare;
+                callCareBtn.title = atCare ? "Already at a Care Spot" : toCare ? "Already on its way to a Care Spot" : "";
+              }
+              const sendBtn = actsWrap.querySelector('[data-a="sendMenu"]');
+              if (sendBtn) sendBtn.disabled = busy;
+              const homeBtn = actsWrap.querySelector('[data-a="home"]');
+              if (homeBtn) homeBtn.disabled = busy || Sim.atHome(car);
+              const hint = actsWrap.querySelector(".ad-care-hint");
+              if (hint) hint.hidden = !!spot;
+            }
+          }
+        }
+      } else if (U.open.kind === "hood") {
+        const name = U.open.arg;
+        const here = S.cars.filter((c) => !c.sim.from && c.sim.at === name);
+        const hereEl = $("#ad-hood-here");
+        if (hereEl) {
+          hereEl.innerHTML = here.length ? "Here now: " + here.map((c) => "<b>" + nm(c) + "</b>").join(", ") : "";
+          hereEl.hidden = !here.length;
+        }
+        const callHereBtn = $('#ad-panel [data-a="callHere"]');
+        if (callHereBtn) callHereBtn.disabled = !S.cars.some((c) => Sim.canCallToCare(c));
+        const sendHereBtn = $('#ad-panel [data-a="sendHere"]');
+        if (sendHereBtn) sendHereBtn.disabled = !S.cars.some((c) => !Sim.busy(c));
+        const fishBtn = $('#ad-panel [data-a="fish"]');
+        if (fishBtn) {
+          fishBtn.disabled = S.dailies.fish >= 3;
+          fishBtn.textContent = "Cast a line (" + Math.max(0, 3 - S.dailies.fish) + " left)";
+        }
+        const karlBtn = $('#ad-panel [data-a="karl"]');
+        if (karlBtn) karlBtn.disabled = !S.quests.karl || !Sim.has(S, S.quests.karl.item);
+        const rallyBtn = $('#ad-panel [data-a="rally"]');
+        if (rallyBtn) rallyBtn.disabled = !!S.clock.night;
+        for (const btn of $$('#ad-panel [data-a="buy"][data-s]')) {
+          const st = Sim.shop(S, btn.dataset.s);
+          const e = st && st.stock[+btn.dataset.i];
+          if (e) btn.disabled = e.qty <= 0 || S.player.fares < e.price;
+        }
+        for (const btn of $$('#ad-panel [data-a="haggle"][data-s]')) {
+          const st = Sim.shop(S, btn.dataset.s);
+          const e = st && st.stock[+btn.dataset.i];
+          if (e) btn.disabled = !e || e.mad || e.qty <= 0 || S.player.fares < 1;
+        }
+        for (const btn of $$('#ad-panel [data-a="trade"][data-s]')) {
+          const num = +btn.dataset.n;
+          if (num > 0) {
+            const p = S.stocks.prices[btn.dataset.s] || 10;
+            btn.disabled = S.player.fares < p * num;
+          } else {
+            const own = S.stocks.own[btn.dataset.s] || 0;
+            btn.disabled = own < Math.abs(num);
+          }
+        }
+        for (const btn of $$('#ad-panel [data-a="bid"][data-i]')) {
+          const l = S.auction.lots[+btn.dataset.i];
+          if (l) {
+            const minBid = Math.ceil(l.bid * 1.05) + 1;
+            btn.disabled = l.by === "you" || l.done || S.player.fares < minBid;
+          }
+        }
+      } else if (U.open.kind === "garage") {
+        for (const c of S.cars) {
+          const row = $('#ad-panel [data-car="' + c.id + '"]');
+          if (row) {
+            const li = row.closest("li");
+            const small = li && li.querySelector(".in small");
+            if (small) small.textContent = Sim.doing(c);
+            const storeBtn = li && li.querySelector('[data-a="store"]');
+            if (storeBtn) storeBtn.disabled = S.cars.length < 2;
+          }
+        }
+        for (const c of S.stored) {
+          const row = $('#ad-panel [data-car="' + c.id + '"]');
+          if (row) {
+            const li = row.closest("li");
+            const actBtn = li && li.querySelector('[data-a="activate"]');
+            if (actBtn) actBtn.disabled = S.cars.length >= S.unlocked.carSlots;
+          }
+        }
+        for (const btn of $$('#ad-panel [data-a="upgrade"][data-k]')) {
+          const k = btn.dataset.k;
+          const cost = Sim.upgradeCost(S, k);
+          btn.disabled = cost == null || S.player.fares < cost;
+        }
+      } else if (U.open.kind === "lot") {
+        const fee = Sim.adoptFee(S);
+        for (const btn of $$('#ad-panel [data-a="adopt"]')) {
+          btn.disabled = S.player.fares < fee;
+        }
+      } else if (U.open.kind === "inbox") {
+        for (const btn of $$('#ad-panel [data-a="deliver"][data-r]')) {
+          const q = S.riders[btn.dataset.r] && S.riders[btn.dataset.r].request;
+          if (q) btn.disabled = !Sim.has(S, q.item);
+        }
       }
-      const d = $("#ad-doing");
-      if (d) d.textContent = Sim.doing(car);
+      if (Sim.hourIdx(S) !== U.lastHour) U.refresh();
     }
-    if (Sim.hourIdx(S) !== U.lastHour && ["hood", "profile", "garage"].includes(U.open.kind)) U.refresh();
+    if (U.modalOpen) {
+      // Care Menu modal
+      for (const b of $$('#ad-modal [data-a="care"][data-id][data-k]')) {
+        const car = Sim.find(S, b.dataset.id);
+        if (car) {
+          const k = Sim.JOB_NEED[b.dataset.k];
+          const v = car.needs[k];
+          b.className = "ad-pick need " + needCol(v);
+          const small = b.querySelector("small");
+          if (small) small.textContent = D.NEEDS[k].name + ": " + Sim.label(k, v);
+          const u = b.querySelector(".ad-bar u");
+          if (u) u.style.transform = "scaleX(" + Math.max(0, Math.min(1, v / 100)).toFixed(3) + ")";
+        }
+      }
+      // Pick a Car modal
+      for (const b of $$('#ad-modal [data-a="picked"][data-id]')) {
+        const car = Sim.find(S, b.dataset.id);
+        if (car) {
+          const small = b.querySelector("small");
+          if (small) small.textContent = Sim.doing(car);
+          if (U.pickFilter) b.disabled = !U.pickFilter(car);
+        }
+      }
+    }
   }
 
   /* ---------- modals ---------- */
@@ -316,12 +469,15 @@
       {
         buttons: [["close", "Cancel"]],
         after: (b) => $$("canvas[data-car]", b).forEach((cv) => U.portrait(cv, Sim.find(S, cv.dataset.car))),
+        onClose: () => (U.pickFilter = null),
       },
     );
     U.picked = cb;
+    U.pickFilter = filter || null;
   };
   H.picked = (ds) => {
     const cb = U.picked;
+    U.pickFilter = null;
     U.closeModal();
     if (cb) cb(ds.id);
   };
@@ -332,16 +488,46 @@
   const RENDER = {};
 
   /* ---------- the car profile card (the Neopets pet lookup) ---------- */
+  function profileActsHtml(car) {
+    const on = S.cars.includes(car),
+      id = car.id,
+      spot = Sim.careSpot(car),
+      busy = Sim.busy(car),
+      stuck = car.sim.task === "stuck";
+    let h = '<div class="ad-acts">';
+    if (on) {
+      if (stuck) {
+        h += btn("care", "🔧 Rush over and fix it", { cls: "tiny primary", data: { id, k: car.sim.incident } });
+        h += btn("roadside", "🚐 Roadside help (◎25)", { data: { id } });
+      } else {
+        h += btn("careMenu", "🔧 Care hands-on", { cls: "tiny primary", data: { id }, off: !spot || busy, title: spot ? "" : car.sim.task === "toCare" ? "On its way to a Care Spot" : "Call it to a Care Spot first" });
+        h += btn("callCare", "📍 Call to Care Spot", { data: { id }, off: !Sim.canCallToCare(car) || (!!spot && car.sim.task === "care") || car.sim.task === "toCare", title: (spot && car.sim.task === "care") ? "Already at a Care Spot" : car.sim.task === "toCare" ? "Already on its way to a Care Spot" : "" });
+        h += btn("useItem", "🎒 Use item", { data: { id } });
+        h += btn("pat", "✋ Pat", { data: { id } });
+        h += btn("sendMenu", "🗺️ Send to…", { data: { id }, off: busy });
+        h += btn("home", "🏠 Go home", { data: { id }, off: busy || Sim.atHome(car) });
+        h += btn("dress", "👒 Dress up", { data: { id } });
+        if (car.bond >= 2) h += btn("nick", "🏷️ Nickname", { data: { id } });
+        if (car.bond >= 4 && car.gear.horn) h += btn("horn", "📯 Honk", { data: { id } });
+        if (car.bond >= 6) h += btn("dance", "💃 Lidar dance", { data: { id } });
+        if (car.bond >= 8) h += btn("ride", "🎥 Ride Along", { data: { id } });
+        h += btn("share", "📤 Share card", { data: { id } });
+      }
+      h += "</div>";
+      h += '<p class="ad-hint ad-care-hint"' + (spot || stuck ? " hidden" : "") + '>Hands-on care happens at a Care Spot 🔧 (Russian Hill, the Presidio, the Financial District, Alamo Square, Ocean Beach). Items work anywhere.</p>';
+    } else {
+      h += btn("activate", "Put back on the road", { cls: "tiny primary", data: { id } }) + "</div>";
+    }
+    return h;
+  }
+
   RENDER.profile = function (id) {
     const car = Sim.find(S, id);
     if (!car) return null;
     const on = S.cars.includes(car),
       st = D.STAGES.find((s) => s.id === car.stage),
       e = Sim.eff(S, car),
-      lv = Sim.level(car),
-      spot = Sim.careSpot(car),
-      busy = Sim.busy(car),
-      stuck = car.sim.task === "stuck";
+      lv = Sim.level(car);
     let h = '<div class="ad-prof"><canvas width="240" height="150" id="ad-big" aria-hidden="true"></canvas><div>';
     h += '<p class="ad-badges"><span class="ad-badge">' + st.badge + " " + st.name + "</span>" + (car.title ? '<span class="ad-badge gold">' + esc(car.title) + "</span>" : "") + "</p>";
     h += "<p>" + esc(D.WRAPS[car.wrap].name) + " · " + esc(car.model === "cruiser" ? "Cruiser" : car.model) + ' · plate <span class="ad-plate">' + esc(car.plate) + "</span></p>";
@@ -357,26 +543,7 @@
     }
     h += "</div>";
     // actions
-    if (on) {
-      h += '<div class="ad-acts">';
-      if (stuck) {
-        h += btn("care", "🔧 Rush over and fix it", { cls: "tiny primary", data: { id, k: car.sim.incident } });
-        h += btn("roadside", "🚐 Roadside help (◎25)", { data: { id } });
-      } else h += btn("careMenu", "🔧 Care hands-on", { cls: "tiny primary", data: { id }, off: !spot || busy, title: spot ? "" : car.sim.task === "toCare" ? "On its way to a Care Spot" : "Call it to a Care Spot first" });
-      h += btn("callCare", "📍 Call to Care Spot", { data: { id }, off: !Sim.canCallToCare(car) || (!!spot && car.sim.task === "care") || car.sim.task === "toCare", title: (spot && car.sim.task === "care") ? "Already at a Care Spot" : car.sim.task === "toCare" ? "Already on its way to a Care Spot" : "" });
-      h += btn("useItem", "🎒 Use item", { data: { id } });
-      h += btn("pat", "✋ Pat", { data: { id } });
-      h += btn("sendMenu", "🗺️ Send to…", { data: { id }, off: busy });
-      h += btn("home", "🏠 Go home", { data: { id }, off: busy || Sim.atHome(car) });
-      h += btn("dress", "👒 Dress up", { data: { id } });
-      if (car.bond >= 2) h += btn("nick", "🏷️ Nickname", { data: { id } });
-      if (car.bond >= 4 && car.gear.horn) h += btn("horn", "📯 Honk", { data: { id } });
-      if (car.bond >= 6) h += btn("dance", "💃 Lidar dance", { data: { id } });
-      if (car.bond >= 8) h += btn("ride", "🎥 Ride Along", { data: { id } });
-      h += btn("share", "📤 Share card", { data: { id } });
-      h += "</div>";
-    } else h += '<div class="ad-acts">' + btn("activate", "Put back on the road", { cls: "tiny primary", data: { id } }) + "</div>";
-    if (!spot && on && !stuck) h += '<p class="ad-hint">Hands-on care happens at a Care Spot 🔧 (Russian Hill, the Presidio, the Financial District, Alamo Square, Ocean Beach). Items work anywhere.</p>';
+    h += '<div id="ad-prof-actions" data-bond="' + Math.floor(car.bond) + '">' + profileActsHtml(car) + "</div>";
     // stats
     h += '<h3>Stats <small>Car Level ' + lv + "</small></h3><div class='ad-stats'>";
     for (const k of D.STAT_KEYS) {
@@ -384,7 +551,7 @@
       h += '<div title="' + esc(D.STATS[k].desc) + '"><span>' + D.STATS[k].icon + " " + D.STATS[k].name + "</span><b>" + car.stats[k] + (bonus ? ' <small>+' + bonus + "</small>" : "") + "</b></div>";
     }
     h += "</div>";
-    if (car.training) h += '<p class="ad-hint">🎓 Studying ' + D.STATS[car.training.stat].name + " at the Driving Academy: back " + when(car.training.endsAt) + ".</p>";
+    if (car.training) h += '<p class="ad-hint" id="ad-prof-training">🎓 Studying ' + D.STATS[car.training.stat].name + " at the Driving Academy: back " + when(car.training.endsAt) + ".</p>";
     // personality
     h += "<h3>Personality</h3><ul class='ad-list'>";
     for (const t of car.traits) h += "<li>" + D.TRAITS[t].icon + " <b>" + D.TRAITS[t].name + "</b>: " + esc(car.bond >= 10 ? D.TRAIT_PLUS[t] : D.TRAITS[t].desc) + "</li>";
@@ -403,7 +570,7 @@
     h += "</ul>";
     // records
     h += "<h3>Records</h3><dl class='ad-rec'>";
-    h += "<div><dt>Odometer</dt><dd>" + car.km.toFixed(1) + " km</dd></div><div><dt>Rides given</dt><dd>" + car.rides + "</dd></div>";
+    h += '<div><dt>Odometer</dt><dd id="ad-prof-km">' + car.km.toFixed(1) + ' km</dd></div><div><dt>Rides given</dt><dd id="ad-prof-rides">' + car.rides + "</dd></div>";
     h += "<div><dt>Map packs read</dt><dd>" + car.read.length + "</dd></div><div><dt>Songs heard</dt><dd>" + car.heard.length + "</dd></div>";
     const visited = D.STAMPS.filter((st2) => S.album.stamps[st2.name] && S.album.stamps[st2.name].car === car.id).length;
     h += "<div><dt>Stamps found</dt><dd>" + visited + "</dd></div><div><dt>Favourite place</dt><dd>" + esc(topHood(car)) + "</dd></div></dl>";
@@ -572,9 +739,9 @@
       return { title: esc(name), sub: "Locked land", html: h };
     }
     const here = S.cars.filter((c) => !c.sim.from && c.sim.at === name);
-    if (here.length) h += '<p class="ad-hint">Here now: ' + here.map((c) => "<b>" + nm(c) + "</b>").join(", ") + "</p>";
-    if (care) h += '<div class="ad-acts">' + btn("callHere", "🔧 Call a car here for care", { cls: "tiny primary", data: { h: name } }) + btn("sendHere", "🗺️ Send a car to hang out", { data: { h: name } }) + "</div>";
-    else h += '<div class="ad-acts">' + btn("sendHere", "🗺️ Send a car to hang out", { data: { h: name } }) + "</div>";
+    h += '<p class="ad-hint" id="ad-hood-here"' + (here.length ? "" : " hidden") + ">" + (here.length ? 'Here now: ' + here.map((c) => "<b>" + nm(c) + "</b>").join(", ") : "") + "</p>";
+    if (care) h += '<div class="ad-acts">' + btn("callHere", "🔧 Call a car here for care", { cls: "tiny primary", data: { h: name }, off: !S.cars.some((c) => Sim.canCallToCare(c)) }) + btn("sendHere", "🗺️ Send a car to hang out", { data: { h: name }, off: !S.cars.some((c) => !Sim.busy(c)) }) + "</div>";
+    else h += '<div class="ad-acts">' + btn("sendHere", "🗺️ Send a car to hang out", { data: { h: name }, off: !S.cars.some((c) => !Sim.busy(c)) }) + "</div>";
     if (H0.daily) h += dailyHtml(H0.daily);
     for (const f of H0.feats || []) h += (FEAT[f] || (() => ""))(name);
     for (const se of Sim.season().filter((s) => s.hub === name)) h += seasonHtml(se);
@@ -616,7 +783,7 @@
       h +=
         '<li class="' + (out ? "out" : "") + '"><span class="ii">' + it.icon + '</span><span class="in"><b>' + esc(it.name) + "</b><small>" + esc(rarity(it.rarity)) + " · " + (out ? "sold out" : e.qty + " left") + (it.desc ? " · " + esc(it.desc) : "") + "</small></span>" +
         '<span class="ip">◎' + fmt(e.price) + "</span>" +
-        (out ? "" : btn("buy", "Buy", { cls: "tiny primary", data: { s: id, i } }) + btn("haggle", "Haggle", { data: { s: id, i }, off: e.mad })) +
+        (out ? "" : btn("buy", "Buy", { cls: "tiny primary", data: { s: id, i }, off: S.player.fares < e.price }) + btn("haggle", "Haggle", { data: { s: id, i }, off: e.mad || S.player.fares < 1 })) +
         "</li>";
     });
     return h + "</ul>";
