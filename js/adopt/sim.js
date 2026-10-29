@@ -366,6 +366,7 @@
      ====================================================================================================== */
   const BUSY = ["toPickup", "ride", "nap", "tow", "stuck"];
   Sim.busy = (car) => BUSY.includes(car.sim.task) || !!car.training;
+  Sim.canCallToCare = (car) => !!car && !car.training && !["stuck", "nap", "tow"].includes(car.sim.task);
   // head for a neighbourhood; arrival is handled by the task (arrive())
   function goTo(S, car, dest, task) {
     const s = car.sim,
@@ -857,9 +858,12 @@
   function finishRideHalf(S, car, r) {
     // the rider finishes on foot; half the fare
     car.sim.ride = null;
-    const f = Math.round((10 + 2 * r.km) * 0.5);
+    if (!r) return 0;
+    const f = Math.round((10 + 2 * (r.km || 0)) * 0.5);
     fares(S, f);
     car.rides++;
+    car.sim.emote = { k: "◎", at: absMin(S) };
+    return f;
   }
   function nightCar(S, car) {
     const s = car.sim;
@@ -1287,27 +1291,75 @@
     if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
     if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
     const s = car.sim;
-    if (["toPickup", "ride", "stuck", "nap", "tow"].includes(s.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    if (task === "toCare") {
+      if (["stuck", "nap", "tow"].includes(s.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    } else {
+      if (["toPickup", "ride", "stuck", "nap", "tow"].includes(s.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    }
     if (!dest) return { ok: false, msg: "Nowhere to go." };
+    let note = "";
+    if (s.task === "ride") {
+      if (s.ride) finishRideHalf(S, car, s.ride);
+      note = " dropped off its rider and";
+    } else if (s.task === "toPickup") {
+      if (s.ride && S.req) {
+        const req = S.req.find((q) => q.taken && q.from === s.ride.from && q.to === s.ride.to && q.rider === s.ride.rider);
+        if (req) req.taken = false;
+      }
+      s.ride = null;
+      note = " cancelled its pickup and";
+    }
     goTo(S, car, dest, task);
-    return { ok: true, msg: nameOf(car) + " is on its way to " + dest + "." };
+    return { ok: true, msg: nameOf(car) + note + " is on its way to " + dest + "." };
   }
   Sim.callToCare = (S, carId) => {
     const car = Sim.find(S, carId);
-    if (car && Sim.careSpot(car)) {
+    if (!car || !S.cars.includes(car)) return { ok: false, msg: "That car isn't on the map." };
+    if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
+    if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
+    if (["stuck", "nap", "tow"].includes(car.sim.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    if (Sim.careSpot(car)) {
+      let note = "";
+      if (car.sim.task === "ride") {
+        if (car.sim.ride) finishRideHalf(S, car, car.sim.ride);
+        note = " dropped off its rider and";
+      } else if (car.sim.task === "toPickup") {
+        if (car.sim.ride && S.req) {
+          const req = S.req.find((q) => q.taken && q.from === car.sim.ride.from && q.to === car.sim.ride.to && q.rider === car.sim.ride.rider);
+          if (req) req.taken = false;
+        }
+        car.sim.ride = null;
+        note = " cancelled its pickup and";
+      }
       car.sim.task = "care";
       car.sim.careT = 0;
-      return { ok: true, msg: nameOf(car) + " is already at a Care Spot." };
+      return { ok: true, msg: nameOf(car) + note + " is already at a Care Spot." };
     }
     return order(S, carId, car && Sim.nearestCare(car), "toCare");
   };
   // send a car to a particular Care Spot
   Sim.callTo = (S, carId, hood) => {
     const car = Sim.find(S, carId);
-    if (car && !car.sim.from && car.sim.at === hood) {
+    if (!car || !S.cars.includes(car)) return { ok: false, msg: "That car isn't on the map." };
+    if (car.training) return { ok: false, msg: nameOf(car) + " is at the Driving Academy until its course ends." };
+    if (S.clock.night) return { ok: false, msg: "It's night. Everybody's going home." };
+    if (["stuck", "nap", "tow"].includes(car.sim.task)) return { ok: false, msg: nameOf(car) + " is busy: " + Sim.doing(car).toLowerCase() + "." };
+    if (!car.sim.from && car.sim.at === hood) {
+      let note = "";
+      if (car.sim.task === "ride") {
+        if (car.sim.ride) finishRideHalf(S, car, car.sim.ride);
+        note = " dropped off its rider and";
+      } else if (car.sim.task === "toPickup") {
+        if (car.sim.ride && S.req) {
+          const req = S.req.find((q) => q.taken && q.from === car.sim.ride.from && q.to === car.sim.ride.to && q.rider === car.sim.ride.rider);
+          if (req) req.taken = false;
+        }
+        car.sim.ride = null;
+        note = " cancelled its pickup and";
+      }
       car.sim.task = "care";
       car.sim.careT = 0;
-      return { ok: true, msg: nameOf(car) + " is already here." };
+      return { ok: true, msg: nameOf(car) + note + " is already here." };
     }
     return order(S, carId, hood, "toCare");
   };

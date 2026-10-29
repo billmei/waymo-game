@@ -75,7 +75,7 @@ function care() {
     const item = NEED_ITEM[w.need];
     if (!Sim.has(S, item) && S.player.fares > D.ITEMS[item].price * 3) S.inventory[item] = 1 + (S.player.fares -= D.ITEMS[item].price, 0);
     if (Sim.has(S, item)) Sim.useItem(S, car.id, item);
-    else if (w.v < 25 && !Sim.busy(car)) Sim.callToCare(S, car.id);
+    else if (w.v < 25 && Sim.canCallToCare(car)) Sim.callToCare(S, car.id);
   }
 }
 

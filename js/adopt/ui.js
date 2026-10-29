@@ -362,8 +362,8 @@
       if (stuck) {
         h += btn("care", "🔧 Rush over and fix it", { cls: "tiny primary", data: { id, k: car.sim.incident } });
         h += btn("roadside", "🚐 Roadside help (◎25)", { data: { id } });
-      } else h += btn("careMenu", "🔧 Care hands-on", { cls: "tiny primary", data: { id }, off: !spot || busy, title: spot ? "" : "Call it to a Care Spot first" });
-      h += btn("callCare", "📍 Call to Care Spot", { data: { id }, off: busy || !!spot });
+      } else h += btn("careMenu", "🔧 Care hands-on", { cls: "tiny primary", data: { id }, off: !spot || busy, title: spot ? "" : car.sim.task === "toCare" ? "On its way to a Care Spot" : "Call it to a Care Spot first" });
+      h += btn("callCare", "📍 Call to Care Spot", { data: { id }, off: !Sim.canCallToCare(car) || (!!spot && car.sim.task === "care") || car.sim.task === "toCare", title: (spot && car.sim.task === "care") ? "Already at a Care Spot" : car.sim.task === "toCare" ? "Already on its way to a Care Spot" : "" });
       h += btn("useItem", "🎒 Use item", { data: { id } });
       h += btn("pat", "✋ Pat", { data: { id } });
       h += btn("sendMenu", "🗺️ Send to…", { data: { id }, off: busy });
@@ -576,7 +576,7 @@
     if (next) h += '<p class="ad-hint">Next land: ' + esc(next) + " at Crew Rank " + D.HOODS[next].rank + ".</p>";
     return { title: esc(name), sub: H0.rank === null ? "Neighbourhood" : "Land" + (H0.home ? " · home" : ""), html: h };
   };
-  H.callHere = (ds) => U.pickCar("Which car needs care?", (id) => U.act(Sim.callTo(S, id, ds.h), { icon: "🔧" }), (c) => !Sim.busy(c));
+  H.callHere = (ds) => U.pickCar("Which car needs care?", (id) => U.act(Sim.callTo(S, id, ds.h), { icon: "🔧" }), (c) => Sim.canCallToCare(c));
   H.sendHere = (ds) => U.pickCar("Who's going to " + esc(ds.h) + "?", (id) => U.act(Sim.sendTo(S, id, ds.h), { icon: "🗺️" }), (c) => !Sim.busy(c));
   function stampsHtml(name) {
     const st = D.STAMPS.filter((s) => s.hood === name);
