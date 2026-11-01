@@ -358,8 +358,9 @@
 
   /* ---------- game state ---------- */
   const G = {
-    // boot | title | howto | brief | ready | play | timeup | result | final | pause, and Adopt-a-Waymo's adopt (the
-    // bird's-eye map) and adoptCare (a hands-on job at a Care Spot), both run by js/adopt/main.js
+    // boot | title | howto | brief | ready | play | timeup | result | final | pause, Adopt-a-Waymo's adopt (the
+    // bird's-eye map) and adoptCare (a hands-on job at a Care Spot), both run by js/adopt/main.js, and Sunday Drive's
+    // sunday (its bird's-eye city) and sundayCare (a swoop down to a car), run by js/sunday/main.js
     state: "boot",
     round: 0,
     t: 0,
@@ -384,10 +385,20 @@
   } catch (e) {}
   const shift = () => SHIFTS[G.round];
   const active = () => Traffic.cars.filter((c) => c.problem);
-  // Adopt-a-Waymo's states; a hands-on job there plays like a job in a shift
-  const adopting = () => G.state === "adopt" || G.state === "adoptCare";
+  // the relaxed modes' states (Adopt-a-Waymo's, js/adopt/, and Sunday Drive's, js/sunday/): each runs its own map
+  // camera and input through a controller (WG.adopt, WG.sunday); a hands-on job there plays like a job in a shift
+  const MODES = {
+    adopt: "adopt",
+    adoptCare: "adopt",
+    sunday: "sunday",
+    sundayCare: "sunday",
+  };
+  const CARE_STATES = ["adoptCare", "sundayCare"];
+  const MAP_STATES = ["adopt", "sunday"];
+  const adopting = () => !!MODES[G.state];
+  const modeCtl = () => WG[MODES[G.state]] || null;
   const onStreet = () =>
-    G.state === "play" || (G.state === "adoptCare" && !!JOB.active);
+    G.state === "play" || (CARE_STATES.includes(G.state) && !!JOB.active);
 
   // show a state's screen. The list is the arcade's screens: any other state (the Adopt states) just hides them all,
   // and Adopt-a-Waymo shows its own DOM by watching body[data-state]
@@ -716,7 +727,8 @@
     bumpHud();
   }
 
-  // opt (Adopt-a-Waymo's hands-on care): { round, done(res) } in place of the shift's scoring
+  // opt (the relaxed modes' hands-on care): { round, done(res), word(kind) } in place of the shift's scoring (word: the
+  // finishing word to show, in place of the job's own)
   function startJob(car, opt) {
     if (!car.problem || JOB.active) return;
     if (document.activeElement && document.activeElement.blur)
@@ -744,6 +756,7 @@
         big,
         ray: rayAt,
         pickGround,
+        word: opt && opt.word,
       },
       (res) => {
         A.duck(false);
@@ -1000,10 +1013,11 @@
   const keys = new Set();
   addEventListener("keydown", (e) => {
     A.init();
-    // the Adopt map takes its own keys (a hands-on job there goes to the job, below)
+    // the Adopt and Sunday Drive maps take their own keys (a hands-on job there goes to the job, below)
     if (adopting() && !JOB.active) {
       if (!e.repeat) keys.add(e.code);
-      if (WG.adopt && WG.adopt.key(e)) e.preventDefault();
+      const m = modeCtl();
+      if (m && m.key(e)) e.preventDefault();
       return;
     }
     if (JOB.active && onStreet()) {
@@ -1160,7 +1174,7 @@
     if (e.pointerType !== "mouse")
       touches.set(e.pointerId, [e.clientX, e.clientY]);
     if (adopting() && !JOB.active) {
-      if (WG.adopt) WG.adopt.pointer("down", e);
+      if (modeCtl()) modeCtl().pointer("down", e);
       return;
     }
     if (!onStreet()) return;
@@ -1207,7 +1221,7 @@
     if (touches.has(e.pointerId))
       touches.set(e.pointerId, [e.clientX, e.clientY]);
     if (adopting() && !JOB.active) {
-      if (WG.adopt) WG.adopt.pointer("move", e);
+      if (modeCtl()) modeCtl().pointer("move", e);
       return;
     }
     if (turnMove(e)) return;
@@ -1220,7 +1234,7 @@
   const endHold = (e) => {
     touches.delete(e.pointerId);
     if (adopting() && !JOB.active) {
-      if (WG.adopt) WG.adopt.pointer("up", e);
+      if (modeCtl()) modeCtl().pointer("up", e);
       return;
     }
     if (turning) {
@@ -1236,7 +1250,7 @@
     "wheel",
     (e) => {
       if (adopting() && !JOB.active) {
-        if (WG.adopt) WG.adopt.pointer("wheel", e);
+        if (modeCtl()) modeCtl().pointer("wheel", e);
         e.preventDefault();
       } else if (G.state === "play" && !JOB.active) {
         zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 10, 60);
@@ -1308,6 +1322,10 @@
   on("t-adopt", () => {
     A.sfx("select");
     if (WG.adopt) WG.adopt.enter();
+  });
+  on("t-sunday", () => {
+    A.sfx("select");
+    if (WG.sunday) WG.sunday.enter();
   });
   on("t-how", () => {
     A.sfx("select");
@@ -1508,8 +1526,8 @@
       if (q) turnCamera(q * 1.9 * dt);
     }
     if (adopting() && !JOB.active) {
-      // Adopt-a-Waymo's bird's-eye map, and its swoops down to a Care Spot and back
-      k = WG.adopt.camera(dt, wantPos, wantLook);
+      // Adopt-a-Waymo's or Sunday Drive's bird's-eye map, and their swoops down to a car and back
+      k = modeCtl().camera(dt, wantPos, wantLook);
     } else if (
       G.state === "title" ||
       G.state === "howto" ||
@@ -1607,7 +1625,7 @@
       G.state === "ready" ||
       G.state === "timeup" ||
       G.state === "pause" ||
-      (G.state === "adoptCare" && JOB.active);
+      (CARE_STATES.includes(G.state) && JOB.active);
     if (!street) W.see(null);
     else if (JOB.active)
       W.see(_o.set(camLook.x, Math.min(camLook.y, P.pos.y), camLook.z));
@@ -1906,7 +1924,9 @@
       Traffic.update(
         dt,
         G.t,
-        G.state === "play" || G.state === "ready" || G.state === "adoptCare"
+        G.state === "play" ||
+          G.state === "ready" ||
+          CARE_STATES.includes(G.state)
           ? P.pos
           : null,
         W.look,
@@ -1914,12 +1934,12 @@
       for (const c of Traffic.cars)
         if (c.beeped === G.t)
           A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
-      // the Adopt map has no crew member to walk and no shift clock; its hands-on jobs do walk the crew member
-      if (G.state !== "adopt") playerUpdate(dt);
+      // the maps have no crew member to walk and no shift clock; their hands-on jobs do walk the crew member
+      if (!MAP_STATES.includes(G.state)) playerUpdate(dt);
       if (!adopting()) playUpdate(dt);
       JOB.update(dt);
     }
-    if (adopting() && WG.adopt) WG.adopt.update(dt);
+    if (adopting() && modeCtl()) modeCtl().update(dt);
     VOX.update(dt);
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();
@@ -1932,7 +1952,7 @@
     drawHud(dt);
     placeFloaters();
     placeTags();
-    if (adopting() && WG.adopt) WG.adopt.after();
+    if (adopting() && modeCtl()) modeCtl().after();
   }
 
   function resize() {
@@ -1965,7 +1985,7 @@
   if (TOUCH) document.body.classList.add("touch");
   WG.G = G;
   WG.P = P;
-  // what Adopt-a-Waymo (js/adopt/) builds on
+  // what Adopt-a-Waymo (js/adopt/) and Sunday Drive (js/sunday/) build on
   WG.game = {
     G,
     scene,
@@ -1988,6 +2008,8 @@
     A,
     VOX,
     snap: () => (snapCamera = true),
+    floater,
+    resize,
   };
   WG.debug = {
     scene,

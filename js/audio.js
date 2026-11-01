@@ -254,6 +254,51 @@
     lp.connect(g);
     g.connect(pan(dest, p));
   }
+  // nylon-string guitar: a bright pluck (a triangle and a saw an octave up) through a closing lowpass
+  function nylon(t, m, dur, v, dest, p) {
+    const f = mtof(m),
+      end = t + Math.max(0.12, dur);
+    const a = osc("triangle", f, t, end + 0.5),
+      b = osc("sawtooth", f * 2, t, end + 0.5),
+      gb = ctx.createGain(),
+      lp = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    gb.gain.value = 0.18;
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(3800, t);
+    lp.frequency.exponentialRampToValueAtTime(700, t + 0.35);
+    env(g, t, 0.003, v, 0.5, 0.25, 0.25, end);
+    a.connect(lp);
+    b.connect(gb);
+    gb.connect(lp);
+    lp.connect(g);
+    g.connect(pan(dest, p));
+  }
+  // mellow horn: a soft-attack saw and triangle, well filtered, with a slow vibrato (a muted flugelhorn, more or less)
+  function horn(t, m, dur, v, dest, p) {
+    const f = mtof(m),
+      end = t + dur;
+    const a = osc("sawtooth", f, t, end + 0.5),
+      b = osc("triangle", f, t, end + 0.5),
+      vib = osc("sine", 4.6, t, end + 0.5),
+      vg = ctx.createGain(),
+      lp = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    vg.gain.setValueAtTime(0, t);
+    vg.gain.linearRampToValueAtTime(f * 0.006, t + 0.4);
+    vib.connect(vg);
+    vg.connect(a.frequency);
+    vg.connect(b.frequency);
+    lp.type = "lowpass";
+    lp.Q.value = 0.7;
+    lp.frequency.setValueAtTime(400, t);
+    lp.frequency.linearRampToValueAtTime(1100, t + 0.18);
+    env(g, t, 0.09, v, 0.3, 0.75, 0.3, end);
+    a.connect(lp);
+    b.connect(lp);
+    lp.connect(g);
+    g.connect(pan(dest, p));
+  }
   // drums
   function kick(t, v, dest) {
     const o = osc("sine", 140, t, t + 0.35),
@@ -529,6 +574,83 @@
     },
   });
 
+  // Sunday Drive: the title bossa as five stems that the map's districts switch on one by one (js/sunday/). Each stem
+  // plays into its own gain, so a new one fades in over a couple of bars instead of popping in
+  const SUNDAY_STEMS = {
+    ep: true,
+    bass: false,
+    vibes: false,
+    drums: false,
+    brass: false,
+    full: false,
+  };
+  SONGS.sunday = Object.assign({}, SONGS.title, {
+    bpm: 96,
+    swing: 0.11,
+    melIdx: null,
+    stemmed: true,
+    // step through one eighth: api.play(stem, inst, t, n, d, v, p), api.on(stem), api.drums(stem)
+    stems(bar, b, t, step, c, cs, api, mel) {
+      // 1. electric piano comping, with the nylon guitar's thumb and fingers between its hits
+      if (api.on("ep")) {
+        const hits = bar % 2 ? [0, 3, 5] : [0, 2, 5, 7];
+        if (hits.includes(b))
+          c.notes.forEach((n, i) =>
+            api.play("ep", "ep", t, n, step * 1.2, 0.03, i * 0.15 - 0.25),
+          );
+        if (b === cs.at) api.play("ep", "nylon", t, c.root + 12, step * 2, 0.07, 0.3);
+        if ([1, 4, 6].includes(b))
+          c.notes
+            .slice(1)
+            .forEach((n, i) =>
+              api.play("ep", "nylon", t + i * 0.012, n, step * 0.9, 0.035, 0.35),
+            );
+      }
+      // 2. upright bass: root and fifth, the bossa's push into each chord
+      if (api.on("bass")) {
+        if (b === cs.at) api.play("bass", "bass", t, c.root, step * 2.8, 0.22);
+        else if (b === cs.at + 3 && cs.len > 4)
+          api.play("bass", "bass", t, c.root + 7, step * 0.9, 0.17);
+        else if (b === cs.at + 4 && cs.len > 4)
+          api.play("bass", "bass", t, c.root + 7, step * 2.8, 0.19);
+        else if (b === cs.at + 7 && cs.len > 4)
+          api.play("bass", "bass", t, c.root, step * 0.9, 0.15);
+        else if (cs.len === 4 && b === cs.at + 3)
+          api.play("bass", "bass", t, c.root + 7, step * 0.9, 0.16);
+      }
+      // 3. the vibraphone takes the tune (and, with the full ensemble, a bell an octave up every other time round)
+      for (const ev of mel) {
+        if (api.on("vibes"))
+          api.play("vibes", "vibes", t, ev.n, ev.d * step * 0.95, 0.1, 0.1);
+        if (api.on("full") && api.second)
+          api.play("full", "bell", t, ev.n + 12, ev.d * step, 0.04, -0.2);
+      }
+      // 4. brushes, shaker and rim clicks
+      if (api.on("drums")) {
+        const d = api.drums("drums");
+        d.shaker(t, b % 2 ? 0.045 : 0.085);
+        if ([0, 3, 6].includes(b) && bar % 2 === 0) d.rim(t, 0.08);
+        if ([2, 5].includes(b) && bar % 2 === 1) d.rim(t, 0.08);
+        if (b === 0 || b === 4) d.kick(t, 0.28);
+        if (b === 2 || b === 6) d.snare(t, 0.035);
+      }
+      // 5. a mellow horn on the chords' guide tones: the third held over the bar, a sigh down to the seventh
+      if (api.on("brass")) {
+        const third = c.notes[1] + 12,
+          sev = c.notes[c.notes.length - 1] + (c.notes.length > 3 ? 0 : 12);
+        if (b === cs.at && bar % 2 === 0)
+          api.play("brass", "horn", t, third, step * (cs.len > 4 ? 5 : 3), 0.05, -0.3);
+        if (b === 6 && bar % 2 === 1)
+          api.play("brass", "horn", t, sev, step * 2.5, 0.04, -0.3);
+      }
+      // 6. and the full ensemble's harmony: the horn doubles the tune's long notes a sixth below
+      if (api.on("full"))
+        for (const ev of mel)
+          if (ev.d >= 2)
+            api.play("full", "horn", t, ev.n - 9, ev.d * step * 0.9, 0.03, 0.25);
+    },
+  });
+
   /* ---------- sequencer ---------- */
   const M = {
     cur: null,
@@ -541,7 +663,7 @@
     intense: false,
     filter: null,
   };
-  const INST = { ep, vibes, bell, bass, brass, lead };
+  const INST = { ep, vibes, bell, bass, brass, lead, nylon, horn };
 
   function schedule() {
     if (!M.cur || !ctx) return;
@@ -567,6 +689,31 @@
         t = M.nextT;
       const cs = song.chords[bar].find((x) => b >= x.at && b < x.at + x.len),
         c = cs.c;
+      // a stemmed song (Sunday Drive's) plays each part into its own gain, skipping the ones that are off
+      if (song.stemmed) {
+        const api = {
+          second: M.step % (total * 2) >= total,
+          on: (k) => stemOn(k, t),
+          play: (k, inst, tt, n, d, v, p) =>
+            INST[inst](tt, n + tr, d, v, M.stemG[k] || out, p),
+          drums: (k) => {
+            const o = M.stemG[k] || out;
+            return {
+              kick: (tt, v) => kick(tt, v, o),
+              shaker: (tt, v) => shaker(tt, v, o),
+              snare: (tt, v) => snare(tt, v, o, true),
+              rim: (tt, v) => rim(tt, v, o),
+            };
+          },
+        };
+        try {
+          song.stems(bar, b, t, e8, c, cs, api, song.melIdx[s] || []);
+        } catch (e) {}
+        const sw = b % 2 === 0 ? 1 + song.swing : 1 - song.swing;
+        M.nextT += e8 * sw;
+        M.step++;
+        continue;
+      }
       // melody
       for (const ev of song.melIdx[s] || []) {
         play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
@@ -592,6 +739,25 @@
     }
   }
 
+  // is a stem playing at time t (on, or still fading out)?
+  function stemOn(k, t) {
+    return SUNDAY_STEMS[k] || t < (M.stemOff[k] || -1);
+  }
+  // switch Sunday Drive's stems: on ones fade in over a couple of bars, off ones fade out
+  function setStems(flags) {
+    for (const k in SUNDAY_STEMS) {
+      const on = !!flags[k];
+      if (on === SUNDAY_STEMS[k]) continue;
+      SUNDAY_STEMS[k] = on;
+      if (!ctx || !M.stemG || !M.stemG[k]) continue;
+      const g = M.stemG[k].gain,
+        t0 = ctx.currentTime;
+      g.cancelScheduledValues(t0);
+      g.setValueAtTime(Math.max(0.0001, g.value), t0);
+      g.exponentialRampToValueAtTime(on ? 1 : 0.0001, t0 + (on ? 3.5 : 2));
+      M.stemOff[k] = on ? Infinity : t0 + 2.2;
+    }
+  }
   function music(name, opts) {
     opts = opts || {};
     if (!init()) return;
@@ -633,6 +799,17 @@
     M.gain.gain.value = 0.0001;
     M.gain.gain.setTargetAtTime(1, ctx.currentTime + 0.05, 0.12);
     M.gain.connect(musBus);
+    // a stemmed song: a gain per stem, starting where its switch is
+    M.stemG = {};
+    M.stemOff = {};
+    if (song.stemmed)
+      for (const k in SUNDAY_STEMS) {
+        const g = ctx.createGain();
+        g.gain.value = SUNDAY_STEMS[k] ? 1 : 0.0001;
+        g.connect(M.gain);
+        M.stemG[k] = g;
+        M.stemOff[k] = SUNDAY_STEMS[k] ? Infinity : -1;
+      }
     M.nextT = ctx.currentTime + 0.12;
     M.timer = setInterval(schedule, 30);
     schedule();
@@ -797,6 +974,37 @@
         sfxBus,
         Math.sin(i) * 0.6,
       );
+  };
+  // the clouds parting: a long, soft gust of wind
+  S.wind = () => {
+    const t = now(),
+      dur = 2.6,
+      s = ctx.createBufferSource(),
+      f = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    s.buffer = noiseBuf;
+    s.loop = true;
+    s.start(t, Math.random());
+    s.stop(t + dur + 0.1);
+    f.type = "bandpass";
+    f.Q.value = 0.7;
+    f.frequency.setValueAtTime(320, t);
+    f.frequency.exponentialRampToValueAtTime(1500, t + dur * 0.45);
+    f.frequency.exponentialRampToValueAtTime(380, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.07, t + dur * 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f);
+    f.connect(g);
+    g.connect(sfxBus);
+  };
+  // a film camera's shutter and wind-on
+  S.shutter = () => {
+    const t = now();
+    nz(t, 0.03, { f: 2600, q: 1.2, v: 0.14, a: 0.002 });
+    nz(t + 0.07, 0.04, { f: 1800, q: 1.4, v: 0.1, a: 0.002 });
+    tone(1900, t + 0.18, 0.05, { v: 0.02, type: "square" });
+    nz(t + 0.2, 0.18, { f: 700, q: 3, v: 0.03 });
   };
   S.whoosh = () => nz(now(), 0.35, { f: 400, to: 3000, q: 0.8, v: 0.08 });
   S.bonk = () => {
@@ -1000,6 +1208,23 @@
     },
     setTempo(mul) {
       M.tempoMul = mul;
+    },
+    // Sunday Drive's stems: { ep, bass, vibes, drums, brass, full } on or off (see SONGS.sunday)
+    setStems,
+    get stems() {
+      return Object.assign({}, SUNDAY_STEMS);
+    },
+    // ...or straight from the set of unlocked district ids
+    setSundayStems(unlocked) {
+      const has = (k) => unlocked.has(k);
+      setStems({
+        ep: true,
+        bass: has("downtown"),
+        vibes: has("presidio"),
+        drums: has("ladies"),
+        brass: has("windmills"),
+        full: has("twinpeaks"),
+      });
     },
     setIntense(on) {
       M.intense = !!on;

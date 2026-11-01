@@ -1314,5 +1314,9 @@
   };
   M.K = K;
   M.MS = MS;
+  M.ROAD_W = ROAD_W;
+  // the geography's helpers, for Sunday Drive's map (js/sunday/city.js), which drives the same roads
+  M.edgeY = edgeY;
+  M.surfaceAt = surfaceAt;
   WG.adoptMap = M;
 })();
