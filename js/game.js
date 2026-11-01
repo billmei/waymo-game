@@ -406,7 +406,7 @@
     G.state = s;
     G.stateT = 0;
     document.body.dataset.state = s;
-    for (const id of ["title", "howto", "brief", "result", "final", "pause"]) {
+    for (const id of ["title", "arcade", "howto", "brief", "result", "final", "pause"]) {
       const e = document.getElementById(id);
       if (e) e.hidden = id !== s;
     }
@@ -1049,9 +1049,23 @@
     ) {
       e.preventDefault();
       A.sfx("select");
+      toArcade();
+    } else if (
+      G.state === "arcade" &&
+      !document.activeElement.closest("button") &&
+      (e.code === "Enter" || e.code === "Space")
+    ) {
+      e.preventDefault();
+      A.sfx("select");
       resetRun();
       openBrief();
-    } else if (G.state === "howto" && e.code === "Escape") toTitle();
+    } else if (G.state === "arcade" && e.code === "Escape") {
+      A.sfx("back");
+      toTitle();
+    } else if (G.state === "howto" && e.code === "Escape") {
+      A.sfx("back");
+      toArcade();
+    }
     // menus: arrow keys move focus between buttons
     const scr = document.querySelector(".screen:not([hidden])");
     if (scr && /^Arrow(Up|Down|Left|Right)$/.test(e.code)) {
@@ -1314,6 +1328,20 @@
     A.sfx("back");
     A.duck(false);
   }
+  // Arcade Mode's menu: Start Shift, How to Play, and the best score
+  function toArcade() {
+    setState("arcade");
+    updateBest();
+    focusFirst("#arcade");
+  }
+  on("t-arcade", () => {
+    A.sfx("select");
+    toArcade();
+  });
+  on("ar-back", () => {
+    A.sfx("back");
+    toTitle();
+  });
   on("t-start", () => {
     A.sfx("select");
     resetRun();
@@ -1334,7 +1362,7 @@
   });
   on("hw-back", () => {
     A.sfx("back");
-    toTitle();
+    toArcade();
   });
   on("br-go", () => {
     A.sfx("select");
@@ -1530,6 +1558,7 @@
       k = modeCtl().camera(dt, wantPos, wantLook);
     } else if (
       G.state === "title" ||
+      G.state === "arcade" ||
       G.state === "howto" ||
       G.state === "final"
     ) {

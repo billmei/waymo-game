@@ -107,6 +107,7 @@ const { chromium } = require("playwright");
   await ev(() => WG.adopt.exit());
   await p.waitForTimeout(600);
   console.log("after exit:", await ev(() => WG.G.state), "fleet", await ev(() => WG.Traffic.cars.length + "/" + WG.world.fleet));
+  await p.click("#t-arcade");
   await p.click("#t-start");
   await p.waitForTimeout(800);
   await p.click("#br-go");
