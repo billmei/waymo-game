@@ -386,8 +386,11 @@
   const active = () => Traffic.cars.filter((c) => c.problem);
   // Adopt-a-Waymo's states; a hands-on job there plays like a job in a shift
   const adopting = () => G.state === "adopt" || G.state === "adoptCare";
+  const isSunday = () => G.state === "sunday" || G.state === "sundayCare";
   const onStreet = () =>
-    G.state === "play" || (G.state === "adoptCare" && !!JOB.active);
+    G.state === "play" ||
+    (G.state === "adoptCare" && !!JOB.active) ||
+    (G.state === "sundayCare" && !!JOB.active);
 
   // show a state's screen. The list is the arcade's screens: any other state (the Adopt states) just hides them all,
   // and Adopt-a-Waymo shows its own DOM by watching body[data-state]
@@ -405,6 +408,9 @@
       s === "timeup" ||
       s === "pause"
     );
+    if (s !== "sunday" && s !== "sundayCare" && WG.sunday && WG.sunday.active) {
+      WG.sunday.exit();
+    }
   }
 
   function resetRun() {
@@ -1006,6 +1012,12 @@
       if (WG.adopt && WG.adopt.key(e)) e.preventDefault();
       return;
     }
+    // Sunday Drive takes its own keys
+    if (isSunday() && !JOB.active) {
+      if (!e.repeat) keys.add(e.code);
+      if (WG.sunday && WG.sunday.key(e)) e.preventDefault();
+      return;
+    }
     if (JOB.active && onStreet()) {
       if (!e.repeat) keys.add(e.code);
       if (e.code === "Escape") JOB.cancel();
@@ -1163,6 +1175,10 @@
       if (WG.adopt) WG.adopt.pointer("down", e);
       return;
     }
+    if (isSunday() && !JOB.active) {
+      if (WG.sunday) WG.sunday.pointer("down", e);
+      return;
+    }
     if (!onStreet()) return;
     if (turnStart(e)) {
       if (e.pointerType !== "mouse") {
@@ -1210,6 +1226,10 @@
       if (WG.adopt) WG.adopt.pointer("move", e);
       return;
     }
+    if (isSunday() && !JOB.active) {
+      if (WG.sunday) WG.sunday.pointer("move", e);
+      return;
+    }
     if (turnMove(e)) return;
     if (JOB.active) JOB.pointer("move", e);
     if (holding && holding.id === e.pointerId) {
@@ -1221,6 +1241,10 @@
     touches.delete(e.pointerId);
     if (adopting() && !JOB.active) {
       if (WG.adopt) WG.adopt.pointer("up", e);
+      return;
+    }
+    if (isSunday() && !JOB.active) {
+      if (WG.sunday) WG.sunday.pointer("up", e);
       return;
     }
     if (turning) {
@@ -1237,6 +1261,9 @@
     (e) => {
       if (adopting() && !JOB.active) {
         if (WG.adopt) WG.adopt.pointer("wheel", e);
+        e.preventDefault();
+      } else if (isSunday() && !JOB.active) {
+        if (WG.sunday) WG.sunday.pointer("wheel", e);
         e.preventDefault();
       } else if (G.state === "play" && !JOB.active) {
         zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 10, 60);
@@ -1308,6 +1335,10 @@
   on("t-adopt", () => {
     A.sfx("select");
     if (WG.adopt) WG.adopt.enter();
+  });
+  on("t-sunday", () => {
+    A.sfx("select");
+    if (WG.sunday) WG.sunday.enter();
   });
   on("t-how", () => {
     A.sfx("select");
@@ -1507,7 +1538,10 @@
         (keys.has("KeyQ") ? 1 : 0) - (keys.has("KeyE") ? 1 : 0) + turnHold;
       if (q) turnCamera(q * 1.9 * dt);
     }
-    if (adopting() && !JOB.active) {
+    if (isSunday() && !JOB.active) {
+      // Sunday Drive's bird's-eye city camera, Photo Mode, and swoops
+      k = WG.sunday.camera(dt, wantPos, wantLook);
+    } else if (adopting() && !JOB.active) {
       // Adopt-a-Waymo's bird's-eye map, and its swoops down to a Care Spot and back
       k = WG.adopt.camera(dt, wantPos, wantLook);
     } else if (
@@ -1914,12 +1948,13 @@
       for (const c of Traffic.cars)
         if (c.beeped === G.t)
           A.sfx("carBeep", clamp((c.pos.x - P.pos.x) / 40, -1, 1));
-      // the Adopt map has no crew member to walk and no shift clock; its hands-on jobs do walk the crew member
-      if (G.state !== "adopt") playerUpdate(dt);
-      if (!adopting()) playUpdate(dt);
+      // the Adopt and Sunday map have no crew member to walk and no shift clock; hands-on jobs walk the crew member
+      if (G.state !== "adopt" && G.state !== "sunday") playerUpdate(dt);
+      if (!adopting() && !isSunday()) playUpdate(dt);
       JOB.update(dt);
     }
     if (adopting() && WG.adopt) WG.adopt.update(dt);
+    if (isSunday() && WG.sunday) WG.sunday.update(dt);
     VOX.update(dt);
     if (G.state === "ready" && G.stateT > 1.5) go();
     if (G.state === "timeup" && G.stateT > 2.6) showResult();
@@ -1933,6 +1968,7 @@
     placeFloaters();
     placeTags();
     if (adopting() && WG.adopt) WG.adopt.after();
+    if (isSunday() && WG.sunday) WG.sunday.after();
   }
 
   function resize() {

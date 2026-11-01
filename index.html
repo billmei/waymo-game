@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/adopt.css" />
+    <link rel="stylesheet" href="css/sunday.css" />
   </head>
   <body data-state="boot">
     <canvas id="gl" aria-label="The city"></canvas>
@@ -89,6 +90,7 @@
       <div class="menu">
         <button type="button" class="btn primary" id="t-start">Start Shift</button>
         <button type="button" class="btn adopt" id="t-adopt">Adopt-a-Waymo 🐾</button>
+        <button type="button" class="btn sunday" id="t-sunday">Sunday Drive ☀️</button>
         <button type="button" class="btn" id="t-how">How to Play</button>
       </div>
       <p class="t-best" id="t-best"></p>
@@ -288,6 +290,95 @@
       </section>
     </div>
 
+    <!-- ===== Sunday Drive: Zen Sandbox & Grow the Map ===== -->
+    <div id="sunday-hud" hidden>
+      <header class="sh-top">
+        <div class="sh-left">
+          <button type="button" id="sh-back" class="sh-btn" aria-label="Quit to Title">← Title</button>
+          <div class="sh-badge title-tag">Sunday Drive ☀️</div>
+          <div class="sh-badge seals" title="Available Map Seals"><span aria-hidden="true">🌟</span> Map Seals: <b id="sh-seals-val">0</b></div>
+        </div>
+        <div class="sh-right">
+          <div class="sh-badge" title="Fares Delivered"><span>◎</span> Fares: <b id="sh-fares-val">0</b></div>
+          <button type="button" id="sh-album" class="sh-btn" title="Postcard Scrapbook">📮 Scrapbook (<span id="sh-cards-val">0/37</span>)</button>
+          <button type="button" id="sh-photo" class="sh-btn primary" title="Photo Mode (Press P)">📸 Photo (P)</button>
+          <button type="button" id="sh-settings" class="sh-btn" aria-label="Settings &amp; Free Drive">⚙️</button>
+        </div>
+      </header>
+    </div>
+
+    <!-- Inspector Card Dialog -->
+    <div id="sunday-inspector" hidden>
+      <div class="ic-header">
+        <div class="ic-title"></div>
+        <div class="ic-sub"></div>
+      </div>
+      <div class="ic-body"></div>
+      <div class="ic-actions"></div>
+    </div>
+
+    <!-- Photo Mode Overlay -->
+    <div id="sunday-photo" hidden>
+      <div class="pm-flash"></div>
+      <div class="pm-viewfinder">
+        <span class="pm-corner tl"></span>
+        <span class="pm-corner tr"></span>
+        <span class="pm-corner bl"></span>
+        <span class="pm-corner br"></span>
+      </div>
+      <div class="pm-top">
+        <div class="pm-badge" id="pm-landmark-badge">📸 Framing Landmark...</div>
+        <div class="pm-badge waymo" id="pm-waymo-badge">🌟 Waymo Spotted!</div>
+      </div>
+      <div class="pm-bottom">
+        <div class="pm-controls-row">
+          <div class="pm-focal">
+            <span>Lens:</span>
+            <input type="range" id="pm-focal-slider" min="24" max="120" value="35" step="1" />
+            <b id="pm-focal-val">35mm</b>
+          </div>
+          <div class="pm-filters"></div>
+        </div>
+        <div class="pm-snap-row">
+          <button type="button" id="pm-close-btn" class="sh-btn">Exit (Esc)</button>
+          <button type="button" id="pm-snap-btn" class="pm-shutter-btn">📸 Snap Postcard <kbd>Space</kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Postcard Scrapbook Modal -->
+    <div id="sunday-scrapbook" hidden>
+      <div class="sb-panel">
+        <div class="sb-header">
+          <div class="sb-tabs">
+            <button type="button" class="sb-tab-btn active" data-tab="postcards">📮 Postcards</button>
+            <button type="button" class="sb-tab-btn" data-tab="notes">💌 Thank-You Notes</button>
+            <button type="button" class="sb-tab-btn" data-tab="settings">⚙️ Settings &amp; Free Drive</button>
+          </div>
+          <button type="button" class="sb-close round-btn" aria-label="Close Scrapbook (Esc)">✕</button>
+        </div>
+        <div class="sb-body"></div>
+      </div>
+    </div>
+
+    <!-- Postcard Lightbox View -->
+    <div id="sunday-lightbox" hidden>
+      <div class="lb-content">
+        <img class="lb-img" alt="Postcard" />
+        <div class="lb-footer">
+          <div class="lb-title-wrap">
+            <span class="lb-title"></span>
+            <small class="lb-meta"></small>
+          </div>
+          <div class="lb-btns">
+            <span class="lb-star" hidden title="Waymo Spotted!">★ Waymo Spotted</span>
+            <button type="button" class="btn primary lb-dl">Download PNG</button>
+            <button type="button" class="btn" id="lb-close">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <button type="button" id="snd" class="round-btn" aria-label="Sound" aria-pressed="true">
       <svg viewBox="0 0 24 24" class="on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
       <svg viewBox="0 0 24 24" class="off"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
@@ -316,6 +407,12 @@
     <script src="js/adopt/care.js"></script>
     <script src="js/adopt/ui.js"></script>
     <script src="js/adopt/main.js"></script>
+    <script src="js/sunday/album.js"></script>
+    <script src="js/sunday/photo.js"></script>
+    <script src="js/sunday/clouds.js"></script>
+    <script src="js/sunday/swoop.js"></script>
+    <script src="js/sunday/city.js"></script>
+    <script src="js/sunday/main.js"></script>
     <script>
       // the pause menu shows the How to Play instructions too
       document.getElementById("pz-how").innerHTML = document.querySelector("#howto .panel-b").innerHTML;

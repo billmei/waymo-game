@@ -399,6 +399,10 @@
   }
 
   const SONGS = {};
+  // Sunday Drive dynamic stems
+  const SUNDAY_STEMS = { ep: true, bass: false, vibes: false, drums: false, brass: false };
+  let isSundayMusic = false;
+
   // Title / menus: a gentle bossa nova
   SONGS.title = {
     bpm: 104,
@@ -416,6 +420,7 @@
     lead: "vibes",
     leadV: 0.11,
     comp(bar, b, t, step, c, play) {
+      if (isSundayMusic && !SUNDAY_STEMS.ep) return;
       // bossa comping: 1, 2&, 3&, 4 (and its mirror on even bars)
       const hits = bar % 2 ? [0, 3, 5] : [0, 2, 5, 7];
       if (hits.includes(b))
@@ -424,6 +429,7 @@
         );
     },
     bass(bar, b, t, step, c, play, cs) {
+      if (isSundayMusic && !SUNDAY_STEMS.bass) return;
       if (b === cs.at) play("bass", t, c.root, step * 2.8, 0.22);
       else if (b === cs.at + 3 && cs.len > 4)
         play("bass", t, c.root + 7, step * 0.9, 0.17);
@@ -435,6 +441,7 @@
         play("bass", t, c.root + 7, step * 0.9, 0.16);
     },
     drums(bar, b, t, step, d) {
+      if (isSundayMusic && !SUNDAY_STEMS.drums) return;
       d.shaker(t, b % 2 ? 0.05 : 0.09);
       if ([0, 3, 6].includes(b) && bar % 2 === 0) d.rim(t, 0.09);
       if ([2, 5].includes(b) && bar % 2 === 1) d.rim(t, 0.09);
@@ -569,9 +576,21 @@
         c = cs.c;
       // melody
       for (const ev of song.melIdx[s] || []) {
-        play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
-        if (song.lead2 && M.step % (total * 2) >= total)
-          play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
+        if (!isSundayMusic) {
+          play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
+          if (song.lead2 && M.step % (total * 2) >= total)
+            play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
+        } else {
+          if (SUNDAY_STEMS.vibes) {
+            play("vibes", t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
+          }
+          if (SUNDAY_STEMS.brass) {
+            // Mellow horn harmony / counter-accent
+            if ((bar % 2 === 0 && b % 2 === 0) || (bar % 4 === 3 && b === 4)) {
+              play("brass", t, ev.n - 12, ev.d * e8 * 1.1, 0.05, -0.2);
+            }
+          }
+        }
       }
       try {
         song.comp(bar, b, t, e8, c, play);
@@ -909,6 +928,14 @@
     tone(1200, t, 0.05, { v: 0.06, type: "square" });
     tone(1800, t + 0.06, 0.12, { v: 0.05 });
   };
+  S.shutter = () => {
+    const t = now();
+    tone(1800, t, 0.015, { to: 400, v: 0.12, type: "square" });
+    setTimeout(() => {
+      tone(800, now(), 0.02, { to: 200, v: 0.15, type: "triangle" });
+      nz(now(), 0.04, { f: 1200, to: 400, q: 1.5, v: 0.08 });
+    }, 40);
+  };
 
   /* ---------- looping machine sounds: the vacuum and the skateboard's roll ---------- */
   const LOOPS = {};
@@ -1018,6 +1045,31 @@
     },
     get voxBus() {
       return voxBus;
+    },
+    get isSunday() {
+      return isSundayMusic;
+    },
+    setSundayMusic(on) {
+      isSundayMusic = !!on;
+    },
+    setSundayStems(unlockedSet) {
+      isSundayMusic = true;
+      const set = unlockedSet instanceof Set ? unlockedSet : new Set(unlockedSet || []);
+      SUNDAY_STEMS.ep = true;
+      SUNDAY_STEMS.bass = set.has("downtown");
+      SUNDAY_STEMS.vibes = set.has("presidio");
+      SUNDAY_STEMS.drums = set.has("ladies");
+      SUNDAY_STEMS.brass = set.has("windmills");
+      if (set.has("twinpeaks")) {
+        SUNDAY_STEMS.ep = true;
+        SUNDAY_STEMS.bass = true;
+        SUNDAY_STEMS.vibes = true;
+        SUNDAY_STEMS.drums = true;
+        SUNDAY_STEMS.brass = true;
+      }
+    },
+    get sundayStems() {
+      return SUNDAY_STEMS;
     },
   };
 })();

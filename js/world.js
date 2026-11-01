@@ -684,6 +684,7 @@
     inArea,
     toWorld,
     toLocal,
+    puffTex,
   };
 
   W.build = function (scene, renderer) {
