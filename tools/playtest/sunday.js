@@ -123,6 +123,7 @@ const { chromium } = require("playwright");
   // back to the title, and the arcade still starts
   await ev(() => WG.sunday.exit());
   await p.waitForFunction(() => WG.G.state === "title");
+  await p.click("#t-arcade");
   await p.click("#t-start");
   await p.waitForFunction(() => WG.G.state === "brief");
   await p.click("#br-go");

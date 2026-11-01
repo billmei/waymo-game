@@ -88,15 +88,32 @@
         <span class="logo-sub">San Francisco Robotaxi Pit Crew</span>
       </div>
       <div class="menu">
-        <button type="button" class="btn primary" id="t-start">Start Shift</button>
+        <button type="button" class="btn primary" id="t-arcade">Arcade Mode 🕹️</button>
         <button type="button" class="btn adopt" id="t-adopt">Adopt-a-Waymo 🐾</button>
         <button type="button" class="btn sunday" id="t-sunday">Sunday Drive ☀️</button>
-        <button type="button" class="btn" id="t-how">How to Play</button>
       </div>
-      <p class="t-best" id="t-best"></p>
       <p class="t-hint">
-        <span class="desk">Press <kbd>Enter</kbd> to start</span><span class="tch">Tap Start Shift to begin</span>
+        <span class="desk">Press <kbd>Enter</kbd> for Arcade Mode</span><span class="tch">Pick a mode to begin</span>
       </p>
+    </section>
+
+    <!-- ===== Arcade Mode: start a run of five shifts, or read How to Play ===== -->
+    <section id="arcade" class="screen" hidden>
+      <div class="panel">
+        <header class="panel-h"><small>Five shifts, 100 seconds each</small><span>Arcade Mode 🕹️</span></header>
+        <div class="panel-b">
+          <p class="lead">
+            Run between pulled-over robotaxis and fix them on the street before their riders lose patience. Score big across five shifts
+            around San Francisco.
+          </p>
+          <p class="t-best" id="t-best"></p>
+        </div>
+        <div class="panel-f">
+          <button type="button" class="btn" id="ar-back">Back</button>
+          <button type="button" class="btn" id="t-how">How to Play</button>
+          <button type="button" class="btn primary" id="t-start">Start Shift</button>
+        </div>
+      </div>
     </section>
 
     <!-- ===== how to play ===== -->

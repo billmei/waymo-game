@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
   const waitGame = (s) => p.evaluate((s) => new Promise(r => { const t0 = WG.G.t; const f = () => WG.G.t - t0 >= s ? r() : setTimeout(f, 100); f(); }), s);
   await p.goto('http://localhost:8123/index.html?low');
   await p.waitForFunction(() => window.WG && WG.G && WG.G.state === 'title', null, { timeout: 120000 });
+  await p.click('#t-arcade');
   await p.click('#t-start');
   console.log(await p.evaluate(() => JSON.stringify({ start: WG.world.start, kinds: [...document.querySelectorAll('#br-jobs span')].map(e => e.textContent), d: Math.hypot(WG.world.start.x - WG.world.marks[0].x, WG.world.start.z - WG.world.marks[0].z) })));
   await p.click('#br-go');

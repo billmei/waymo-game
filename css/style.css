@@ -194,6 +194,7 @@ body[data-state="play"] #snd {
   padding: 16px;
   animation: fade-in 0.35s ease-out;
 }
+#arcade,
 #brief,
 #result,
 #final,
@@ -504,7 +505,7 @@ body[data-state="play"] #snd {
 
 /* ---------- title ---------- */
 #title {
-  grid-template-rows: 1fr auto auto auto;
+  grid-template-rows: 1fr auto auto;
   align-content: center;
   gap: 18px;
   padding-bottom: max(40px, env(safe-area-inset-bottom));
@@ -560,12 +561,13 @@ body[data-state="play"] #snd {
   align-items: center;
   margin-top: 10px;
 }
+/* Arcade Mode's menu: the best run so far, under the blurb */
 .t-best {
   margin: 0;
   min-height: 1.4em;
   font: 900 18px/1.4 var(--font);
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(10, 50, 100, 0.5);
+  color: var(--blue-d);
+  text-align: center;
 }
 .t-hint {
   margin: 0;
