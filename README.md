@@ -61,6 +61,48 @@ The mode lives in `js/adopt/` and `css/adopt.css`, loaded after `js/game.js`, wh
 node tools/adopt_sim.js 30 --seed 7
 ```
 
+## Sunday Drive
+
+A third, zen mode: from the title screen, **Sunday Drive ☀️** makes the bird's-eye view of San Francisco the whole game. Toy robotaxis, each with its own glowing lidar ring, pick up the game's seven riders and drive them between neighbourhoods on their own. There's no clock, no rating and nothing to lose.
+
+- **Care as an invitation.** Now and then a car picks up a need from the district it's driving through (a flat battery from Russian Hill's climbs, lunch-rush dust Downtown, pigeons in the Presidio, picnic cones on Alamo Square, foggy sensors at Ocean Beach) and a soft bubble floats over it. Tap the car for its Inspector card (where it's going, who's on board, what's up) and choose **Take Care** to swoop down to the street and play the real job with no timer, **Auto-Care** to send it to a depot, or **Ride Along** to follow it low behind. A car nobody visits turns its signal on after three minutes, pops into its district's depot and sorts itself out. A job done by hand ends with a warm word and a thank-you note from the rider.
+- **Grow the map.** You start with Russian Hill. Every other district sleeps under a sea of low clouds. **Map Seals** come from caring for cars by hand (1 per 3), new landmark postcards (1 each) and fares (1 per 10). Tap a clouded district's label to spend them: the camera glides over, the clouds blow away, the camera circles the district's landmark, the new roads light up, a new car joins the fleet and riders start asking for rides there.
+
+  | District | Seals | Its light and quirks | Adds to the music |
+  | --- | --- | --- | --- |
+  | Russian Hill | start | Morning sun, steep climbs, doors left open | Nylon guitar and electric piano |
+  | Downtown | 2 | Lunch-rush dust and crumbs | Upright bass |
+  | The Presidio | 4 | Pigeons and gulls on the lidars | Vibraphone melody |
+  | Alamo Square | 6 | Perpetual golden hour, picnic cones | Brush drums and shaker |
+  | Ocean Beach | 8 | Karl the Fog's wisps over the dunes (fog on the street), misty reboots | Mellow horn |
+  | Twin Peaks & the Waterfront | 10 | Everything else: long scenic routes | Full ensemble |
+
+  A district can be opened once its roads reach the open city. Each district keeps its own light: the map's light follows the district under the camera (Alamo Square is always at golden hour), and a swoop down uses the street patch's own (Karl the Fog at Ocean Beach).
+- **The music grows with the map.** The bossa nova is the title theme split into stems (`SONGS.sunday` in `js/audio.js`); each district switches one on, fading it in over a couple of bars.
+- **Photo Mode.** <kbd>P</kbd> (or 📷) holds the traffic still and frees the camera: drag to look, right-drag or <kbd>WASD</kbd> to move, <kbd>R</kbd>/<kbd>F</kbd> to rise and fall, <kbd>Q</kbd>/<kbd>E</kbd> to orbit, the wheel to fly in, and a 24 to 120 mm lens. Five films (Natural, Golden Hour, Karl's Mist, Kodachrome '68, Monochrome Noir) and four borders (none, vintage postcard, postage stamp, snapshot). The viewfinder checks the view against the island's 37 landmarks: one that's in frame, near the middle, big enough and not hidden behind a hill or building is **Framed!**, and becomes a postcard. A Waymo in the shot earns the golden **Waymo Spotted!** stamp. Landmarks still under the clouds don't count yet.
+- **The Postcard Scrapbook** (<kbd>B</kbd> or 📮): the 37 landmark postcards, every photo (open one big to download it as a PNG) and the riders' thank-you notes.
+- **Free Drive.** A switch in the menu (<kbd>Esc</kbd>) opens every district at once, for pure exploring. Switch it off to go back to growing the map; nothing you earned is lost.
+
+The save is `localStorage["wc.sunday.v1"]` (seals, what's unlocked, totals, postcards, notes, settings); the photos are PNGs in IndexedDB (`wc-sunday-photos`). The fleet itself isn't saved: it starts afresh each visit.
+
+**Controls on the map:** drag to pan, wheel or pinch to zoom, <kbd>Q</kbd> / <kbd>E</kbd> or right-drag to turn, <kbd>WASD</kbd> or the arrows to pan, double-click to frame a car or a spot. With a car's card open, <kbd>C</kbd> takes care of it and <kbd>R</kbd> rides along. <kbd>Esc</kbd> closes things, then opens the menu.
+
+**For testing:** `?mode=sunday` starts in the mode, `?mode=sunday&reset=1` wipes its save and photos. In the console, `WG.sunday.debug` has `seals(n)`, `unlock(id)`, `need(carId, kind)`, `care(carId)`, `fares(n)`, `ageNeeds(secs)`, `select(carId)`, `district(id)`, `photo()` and `book(tab)`.
+
+### How it's made
+
+The mode lives in `js/sunday/` and `css/sunday.css`, loaded after Adopt-a-Waymo. `js/game.js` hands it the `sunday` (the city) and `sundayCare` (a swoop down to a car) states, as it does Adopt's: the camera, the pointer and the keys go to the mode's controller, and it calls its `update` each frame.
+
+- `js/sunday/data.js`: the content: the six districts (their neighbourhoods on the road graph, cost, light, needs, quirk and music stem), the needs' labels, the seal rules, the fleet, the riders' thank-you notes, the photo films and borders.
+- `js/sunday/city.js`: the bird's-eye city. It drives Adopt-a-Waymo's neighbourhood road graph (`js/adopt/sim.js`, at the heights `js/adopt/map.js` gives its roads), lit where the city is open; the toy fleet (`WG.makeCar()` at nine times life size), its fares, needs, depots and bubbles; the labels; and the map camera, which tilts flatter as it comes down.
+- `js/sunday/clouds.js`: the cloud puffs over the locked districts, their parting, and Karl the Fog's wisps over Ocean Beach.
+- `js/sunday/swoop.js`: the flight down to the district's street patch (the arcade's play areas), the job (`js/jobs.js` through `game.js` `startJob`, at its gentlest and with no patience clock) and the flight back up.
+- `js/sunday/photo.js`: Photo Mode: the free camera, the films and borders, the landmark detector (frustum, centring, size, and a line-of-sight march against the island's terrain and buildings) and the photo itself (rendered off screen at twice the size, finished on a 2D canvas).
+- `js/sunday/album.js`: the IndexedDB photo store and the scrapbook.
+- `js/sunday/main.js`: `WG.sunday`, which ties them together: the save, the seals, the Inspector card, the ceremony, each district's light, the music's stems, the menu and the toasts.
+
+`tools/playtest/sunday.js` is a Playwright smoke test of the mode (a care run, an unlock, a postcard, the scrapbook, Free Drive, then a check that the arcade still starts).
+
 ## Controls
 
 - **Move:** WASD or the arrow keys (relative to the camera), or click or tap the street. Hold to keep steering.

@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/adopt.css" />
+    <link rel="stylesheet" href="css/sunday.css" />
   </head>
   <body data-state="boot">
     <canvas id="gl" aria-label="The city"></canvas>
@@ -89,6 +90,7 @@
       <div class="menu">
         <button type="button" class="btn primary" id="t-start">Start Shift</button>
         <button type="button" class="btn adopt" id="t-adopt">Adopt-a-Waymo 🐾</button>
+        <button type="button" class="btn sunday" id="t-sunday">Sunday Drive ☀️</button>
         <button type="button" class="btn" id="t-how">How to Play</button>
       </div>
       <p class="t-best" id="t-best"></p>
@@ -288,6 +290,87 @@
       </section>
     </div>
 
+    <!-- ===== Sunday Drive (js/sunday/): the labels over the city, the tilt-shift blur, then the HUD and its panels ===== -->
+    <div id="sd-labels" hidden></div>
+    <div id="sd-tiltshift" aria-hidden="true"></div>
+    <div id="sunday" hidden>
+      <header id="sd-top">
+        <button type="button" id="sd-menu-btn" class="round-btn" aria-label="Menu and settings (Esc)" title="Menu (Esc)">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke-width="2.6" stroke-linecap="round" /></svg>
+        </button>
+        <button type="button" id="sd-seals" class="card sd-seals" aria-label="Map Seals: open the scrapbook">
+          <small>Map Seals</small>
+          <b><span class="sd-seal-i" aria-hidden="true">✦</span> <span id="sd-seal-n">0</span></b>
+          <i id="sd-seal-next"></i>
+        </button>
+        <div class="card sd-stat"><small>Districts</small><b id="sd-dist-n">1/6</b></div>
+        <div class="card sd-stat"><small>Fares</small><b id="sd-fares-n">0</b></div>
+        <div class="card sd-stat sd-wide"><small>Postcards</small><b id="sd-pc-n">0/37</b></div>
+        <span class="sd-sp"></span>
+        <button type="button" id="sd-photo-btn" class="round-btn sd-emoji" aria-label="Photo Mode (P)" title="Photo Mode (P)">📷</button>
+        <button type="button" id="sd-book-btn" class="round-btn sd-emoji" aria-label="Postcard Scrapbook (B)" title="Scrapbook (B)">📮</button>
+      </header>
+      <p id="sd-hint">
+        <span class="desk">Drag to pan · wheel to zoom · <kbd>Q</kbd> <kbd>E</kbd> to turn · tap a car · <kbd>P</kbd> photo · <kbd>B</kbd> scrapbook</span>
+        <span class="tch">Drag to pan · pinch to zoom and turn · tap a car</span>
+      </p>
+
+      <!-- the Inspector card for the car you tapped -->
+      <aside id="sd-card" class="card" aria-live="polite" hidden>
+        <header>
+          <i class="sd-c-ring" aria-hidden="true"></i>
+          <div><b class="sd-c-name">Waymo #1</b><small class="sd-c-plate"></small></div>
+          <button type="button" class="x round-btn" aria-label="Close (Esc)">✕</button>
+        </header>
+        <p class="sd-c-rider"></p>
+        <p class="sd-c-status"><canvas width="64" height="64" aria-hidden="true"></canvas><span></span></p>
+        <div class="sd-c-btns">
+          <button type="button" class="btn tiny primary" data-a="care">Take Care</button>
+          <button type="button" class="btn tiny" data-a="auto">Auto-Care</button>
+          <button type="button" class="btn tiny" data-a="ride">Ride Along</button>
+        </div>
+      </aside>
+      <div id="sd-toasts" aria-live="polite"></div>
+
+      <!-- Photo Mode: the viewfinder's overlay (vignette and border), the detector's line and the controls -->
+      <section id="sd-photo" aria-label="Photo Mode" hidden>
+        <canvas id="sd-ph-over" aria-hidden="true"></canvas>
+        <div id="sd-ph-flash" aria-hidden="true"></div>
+        <div class="sd-ph-top">
+          <button type="button" id="sd-ph-x" class="round-btn" aria-label="Leave Photo Mode (Esc)" title="Leave (Esc)">✕</button>
+          <p id="sd-ph-det" aria-live="polite"></p>
+        </div>
+        <div class="sd-ph-bar card">
+          <div class="sd-ph-row" id="sd-ph-filters" role="group" aria-label="Film"></div>
+          <div class="sd-ph-row" id="sd-ph-borders" role="group" aria-label="Border"></div>
+          <label class="sd-ph-focal"><span>Lens</span><input type="range" id="sd-ph-focal" min="24" max="120" step="1" value="35" /><b id="sd-ph-mm">35 mm</b></label>
+          <p class="sd-ph-help">
+            <span class="desk">Drag to look · right-drag or <kbd>WASD</kbd> to move · <kbd>R</kbd>/<kbd>F</kbd> up and down · wheel to fly in · <kbd>Q</kbd>/<kbd>E</kbd> orbit · <kbd>1</kbd>–<kbd>5</kbd> film · <kbd>B</kbd> border</span>
+            <span class="tch">Drag to look · two fingers to move · pinch to fly in</span>
+          </p>
+        </div>
+        <button type="button" id="sd-ph-snap" aria-label="Take the photo (Space)" title="Take the photo (Space)"><i></i></button>
+      </section>
+
+      <!-- the Postcard Scrapbook -->
+      <section id="sd-book" class="screen" role="dialog" aria-modal="true" aria-label="Postcard Scrapbook" hidden>
+        <div class="panel wide sd-book-p">
+          <header class="panel-h"><small>Sunday Drive</small><span>Postcard Scrapbook</span></header>
+          <button type="button" class="sd-book-x round-btn" aria-label="Close (Esc)">✕</button>
+          <nav class="sd-book-tabs"></nav>
+          <div class="panel-b sd-book-b"></div>
+        </div>
+      </section>
+
+      <section id="sd-modal" class="screen" role="dialog" aria-modal="true" hidden>
+        <div class="panel">
+          <header class="panel-h"><small></small><span></span></header>
+          <div class="panel-b"></div>
+          <div class="panel-f"></div>
+        </div>
+      </section>
+    </div>
+
     <button type="button" id="snd" class="round-btn" aria-label="Sound" aria-pressed="true">
       <svg viewBox="0 0 24 24" class="on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
       <svg viewBox="0 0 24 24" class="off"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
@@ -316,6 +399,13 @@
     <script src="js/adopt/care.js"></script>
     <script src="js/adopt/ui.js"></script>
     <script src="js/adopt/main.js"></script>
+    <script src="js/sunday/data.js"></script>
+    <script src="js/sunday/city.js"></script>
+    <script src="js/sunday/clouds.js"></script>
+    <script src="js/sunday/swoop.js"></script>
+    <script src="js/sunday/photo.js"></script>
+    <script src="js/sunday/album.js"></script>
+    <script src="js/sunday/main.js"></script>
     <script>
       // the pause menu shows the How to Play instructions too
       document.getElementById("pz-how").innerHTML = document.querySelector("#howto .panel-b").innerHTML;

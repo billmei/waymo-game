@@ -1,0 +1,864 @@
+/* Waymo Care · Sunday Drive: the city's HUD, labels, Inspector card, toasts and thank-you notes, Photo Mode's viewfinder
+   and the Postcard Scrapbook, in the same glossy look as css/style.css, a little warmer (sunny yellow, cream) */
+
+/* ---------- the title screen's button ---------- */
+.btn.sunday {
+  border-color: #e8a01f;
+  background: linear-gradient(180deg, #fff3b8 0%, #ffd25a 50%, #f2a91f 100%);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(150, 80, 0, 0.45);
+  box-shadow:
+    0 4px 0 #c07d10,
+    0 8px 18px rgba(170, 100, 10, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+.btn.sunday:hover,
+.btn.sunday:focus-visible {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 5px rgba(255, 200, 60, 0.5),
+    0 6px 0 #c07d10,
+    0 12px 22px rgba(170, 100, 10, 0.35);
+}
+
+/* ---------- the layer ---------- */
+#sunday {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  font-family: var(--font);
+}
+#sunday > * {
+  pointer-events: auto;
+}
+#sunday #sd-toasts,
+#sunday #sd-hint,
+#sunday .sd-notecard {
+  pointer-events: none;
+}
+/* down on the street (a swoop) and during the ceremony, only the toasts and notes stay */
+body[data-state="sundayCare"] #sunday > :not(#sd-toasts):not(.sd-notecard),
+#sunday.cer > :not(#sd-toasts):not(.sd-notecard),
+body.sd-photo #sunday > :not(#sd-photo):not(#sd-toasts) {
+  display: none !important;
+}
+body:not([data-state="sunday"]) #sd-labels,
+body.sd-photo #sd-labels {
+  display: none;
+}
+body:not([data-state^="sunday"]) #sunday {
+  display: none;
+}
+
+/* the tilt-shift: the top and bottom of the view softly out of focus, so the city reads as a model */
+#sd-tiltshift {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+  -webkit-backdrop-filter: blur(2.6px) saturate(1.12);
+  backdrop-filter: blur(2.6px) saturate(1.12);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 36%, transparent 66%, rgba(0, 0, 0, 0.6) 86%, #000 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 14%, transparent 36%, transparent 66%, rgba(0, 0, 0, 0.6) 86%, #000 100%);
+}
+body.sd-tilt[data-state="sunday"]:not(.sd-photo) #sd-tiltshift {
+  display: block;
+}
+
+/* ---------- the top bar ---------- */
+#sd-top {
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  top: max(12px, env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+#sd-top > * {
+  pointer-events: auto;
+}
+#sd-top .sd-sp {
+  flex: 1;
+  pointer-events: none;
+}
+#sd-top .card {
+  padding: 6px 14px 7px;
+  min-height: 48px;
+}
+.sd-stat b {
+  display: block;
+  font: 900 20px/1.15 var(--font);
+  color: var(--blue-d);
+}
+.sd-seals {
+  display: block;
+  text-align: left;
+  font-family: var(--font);
+  cursor: pointer;
+  border-color: #fff;
+  box-shadow:
+    0 0 0 2px rgba(240, 170, 30, 0.55),
+    0 8px 18px rgba(10, 50, 100, 0.2);
+}
+.sd-seals b {
+  display: block;
+  font: 900 22px/1.1 var(--font);
+  color: #c98a00;
+}
+.sd-seals .sd-seal-i {
+  display: inline-block;
+  color: #f2a91f;
+  text-shadow: 0 0 8px rgba(255, 200, 60, 0.8);
+}
+.sd-seals i {
+  display: block;
+  font: 800 10px/1.2 var(--font);
+  font-style: normal;
+  color: var(--ink-2);
+}
+.sd-seals.bump .sd-seal-i {
+  animation: sd-spin 0.8s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.sd-seals:focus-visible {
+  outline: 3px solid #33c3f6;
+  outline-offset: 2px;
+}
+@keyframes sd-spin {
+  from {
+    transform: rotate(-180deg) scale(1.8);
+  }
+}
+.round-btn.sd-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+#sd-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink-2);
+  font: 800 12px/1.3 var(--font);
+  white-space: nowrap;
+}
+#sd-hint kbd {
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .sd-wide {
+    display: none;
+  }
+  #sd-top .card {
+    padding: 4px 10px 5px;
+    min-height: 42px;
+  }
+  .sd-stat b {
+    font-size: 17px;
+  }
+  #sd-hint {
+    display: none;
+  }
+}
+
+/* ---------- labels over the city ---------- */
+#sd-labels {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+.sd-dlabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 7px;
+  align-items: center;
+  padding: 5px 14px 6px 9px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: rgba(24, 120, 196, 0.9);
+  box-shadow: 0 3px 12px rgba(10, 50, 100, 0.3);
+  color: #fff;
+  text-align: left;
+  font-family: var(--font);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.sd-dlabel i {
+  grid-row: 1 / 3;
+  font-style: normal;
+  font-size: 20px;
+}
+.sd-dlabel b {
+  font: 900 14px/1.15 var(--font);
+}
+.sd-dlabel small {
+  font: 800 10px/1.15 var(--font);
+  opacity: 0.85;
+}
+.sd-dlabel.locked {
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+}
+.sd-dlabel.locked small {
+  color: var(--ink-2);
+  opacity: 1;
+}
+.sd-dlabel.ready {
+  background: linear-gradient(180deg, #fff6c8, #ffd25a);
+  color: #6a4300;
+  animation: sd-glow 1.8s ease-in-out infinite;
+}
+.sd-dlabel.ready small {
+  color: #8a5a00;
+}
+.sd-dlabel:focus-visible {
+  outline: 3px solid #33c3f6;
+  outline-offset: 2px;
+}
+@keyframes sd-glow {
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(255, 210, 58, 0.7),
+      0 3px 16px rgba(255, 190, 30, 0.6);
+  }
+}
+.sd-hlabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 1px 8px 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  font: 800 11px/1.3 var(--font);
+  white-space: nowrap;
+}
+
+/* ---------- the Inspector card ---------- */
+#sd-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: min(340px, calc(100vw - 24px));
+  padding: 10px 12px 12px;
+  border-color: #fff;
+  font-family: var(--font);
+  transition: transform 0.12s linear;
+}
+#sd-card.dock {
+  left: 50%;
+  top: auto;
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px));
+  translate: -50% 0;
+  transition: none;
+}
+#sd-card header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+#sd-card header div {
+  flex: 1;
+  min-width: 0;
+}
+.sd-c-ring {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(10, 50, 100, 0.15);
+}
+.sd-c-name {
+  display: block;
+  font: 900 15px/1.2 var(--font);
+  color: var(--ink);
+}
+#sd-card .sd-c-plate {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+#sd-card .x {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  font: 900 14px/1 var(--font);
+  color: var(--ink-2);
+}
+.sd-c-rider {
+  margin: 8px 0 4px;
+  font: 800 13px/1.3 var(--font);
+  color: var(--ink);
+}
+.sd-c-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 9px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(65, 196, 90, 0.12);
+  color: #237a37;
+  font: 800 13px/1.3 var(--font);
+}
+.sd-c-status.need {
+  background: rgba(42, 159, 230, 0.1);
+  color: var(--blue-d);
+}
+.sd-c-status canvas {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.sd-c-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sd-c-btns .btn {
+  flex: 1 1 auto;
+}
+
+/* ---------- toasts and thank-you notes ---------- */
+#sd-toasts {
+  position: absolute;
+  left: 50%;
+  top: 86px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 6;
+}
+.sd-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 3px solid #fff;
+  border-radius: 18px;
+  background: rgba(255, 253, 246, 0.96);
+  box-shadow:
+    0 0 0 2px rgba(240, 170, 30, 0.35),
+    0 8px 18px rgba(10, 50, 100, 0.2);
+  font: 800 14px/1.3 var(--font);
+  animation: sd-toast 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
+}
+.sd-toast.good {
+  box-shadow:
+    0 0 0 2px rgba(65, 196, 90, 0.5),
+    0 8px 18px rgba(10, 50, 100, 0.2);
+}
+.sd-toast.bad {
+  box-shadow:
+    0 0 0 2px rgba(255, 75, 62, 0.5),
+    0 8px 18px rgba(10, 50, 100, 0.2);
+}
+.sd-toast.out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.sd-toast .ti {
+  font-size: 22px;
+}
+@keyframes sd-toast {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.95);
+  }
+}
+.sd-notecard {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: 84px;
+  width: min(300px, calc(100vw - 36px));
+  padding: 14px 18px 14px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 23px, rgba(42, 159, 230, 0.16) 23px 24px),
+    #fffaf0;
+  box-shadow: 0 14px 30px rgba(10, 50, 100, 0.3);
+  rotate: -2.5deg;
+  font-family: var(--font);
+  pointer-events: none;
+  animation: sd-note 0.7s cubic-bezier(0.2, 1.3, 0.4, 1);
+  transition:
+    opacity 0.7s,
+    transform 0.7s;
+  z-index: 7;
+}
+.sd-notecard small {
+  display: block;
+  color: #c2412f;
+  font: 900 11px/1.2 var(--font);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sd-notecard p {
+  margin: 6px 0;
+  color: #2e3a4a;
+  font: italic 800 16px/1.5 "Segoe Print", "Bradley Hand", var(--font);
+}
+.sd-notecard b {
+  display: block;
+  text-align: right;
+  color: var(--ink-2);
+  font: 800 13px/1.2 var(--font);
+}
+.sd-notecard.out {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+@keyframes sd-note {
+  from {
+    opacity: 0;
+    transform: translateY(40px) rotate(8deg);
+  }
+}
+
+/* ---------- modals ---------- */
+#sd-modal {
+  z-index: 30;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1), rgba(30, 80, 130, 0.32));
+}
+#sd-modal.wide .panel {
+  width: min(640px, 100%);
+}
+#sd-modal .panel-f .btn {
+  min-width: 140px;
+}
+#sd-modal .panel-f .btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+.sd-unlock {
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.sd-unlock li {
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(42, 159, 230, 0.08);
+  font-weight: 700;
+}
+.sd-cost {
+  font-weight: 800;
+  text-align: center;
+}
+.sd-set {
+  padding: 0 0 6px;
+  flex-direction: column;
+  align-items: stretch;
+}
+.sd-set .tgl {
+  justify-content: space-between;
+}
+.sd-stats {
+  margin-top: 10px;
+}
+
+/* ---------- Photo Mode ---------- */
+body.sd-photo #gl {
+  cursor: grab;
+}
+body.sd-photo #snd,
+body.sd-photo #floaters {
+  display: none;
+}
+#sd-photo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#sd-photo > * {
+  pointer-events: auto;
+}
+#sd-ph-over,
+#sd-ph-flash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none !important;
+}
+#sd-ph-flash {
+  background: #fff;
+  opacity: 0;
+}
+#sd-ph-flash.go {
+  animation: sd-flash 0.5s ease-out;
+}
+@keyframes sd-flash {
+  from {
+    opacity: 0.95;
+  }
+}
+.sd-ph-top {
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  top: max(12px, env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none !important;
+}
+.sd-ph-top > * {
+  pointer-events: auto;
+}
+#sd-ph-det {
+  margin: 0 auto;
+  padding: 8px 18px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: rgba(20, 30, 45, 0.6);
+  color: #fff;
+  font: 900 15px/1.3 var(--font);
+  text-align: center;
+  pointer-events: none;
+}
+#sd-ph-det.ok {
+  background: linear-gradient(180deg, #ffe27a, #f2a91f);
+  color: #5a3600;
+  box-shadow: 0 0 0 4px rgba(255, 210, 58, 0.45);
+}
+.sd-ph-bar {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 150px));
+  padding: 10px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+.sd-ph-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.sd-ph-row button {
+  padding: 5px 11px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: 800 13px/1.2 var(--font);
+  cursor: pointer;
+}
+.sd-ph-row button[aria-pressed="true"] {
+  border-color: #e8a01f;
+  background: linear-gradient(180deg, #fff3b8, #ffd25a);
+  color: #5a3600;
+}
+.sd-ph-row button:focus-visible {
+  outline: 3px solid #33c3f6;
+}
+.sd-ph-focal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 900 12px/1 var(--font);
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sd-ph-focal input {
+  flex: 1;
+  accent-color: #f2a91f;
+}
+.sd-ph-focal b {
+  min-width: 56px;
+  color: var(--ink);
+  text-align: right;
+}
+.sd-ph-help {
+  margin: 0;
+  color: var(--ink-2);
+  font: 700 11px/1.3 var(--font);
+  text-align: center;
+}
+.sd-ph-help kbd {
+  font-size: 10px;
+}
+#sd-ph-snap {
+  position: absolute;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  border: 6px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(10, 30, 60, 0.4);
+  cursor: pointer;
+}
+#sd-ph-snap i {
+  display: block;
+  margin: 6px;
+  height: calc(100% - 12px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #ffd25a 45%, #f2a91f);
+  transition: transform 0.1s;
+}
+#sd-ph-snap:hover i,
+#sd-ph-snap:focus-visible i {
+  transform: scale(1.06);
+}
+#sd-ph-snap:active i {
+  transform: scale(0.9);
+}
+#sd-ph-snap:focus-visible {
+  outline: 3px solid #33c3f6;
+}
+@media (max-width: 760px) {
+  .sd-ph-bar {
+    left: 12px;
+    right: 108px;
+    width: auto;
+    transform: none;
+  }
+  .sd-ph-row button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .sd-ph-help {
+    display: none;
+  }
+}
+
+/* ---------- the Postcard Scrapbook ---------- */
+#sd-book {
+  z-index: 30;
+  background: radial-gradient(ellipse at center, rgba(255, 250, 235, 0.15), rgba(60, 40, 10, 0.38));
+}
+.sd-book-p {
+  position: relative;
+  width: min(980px, 100%) !important;
+  height: min(760px, calc(100dvh - 32px));
+  background: linear-gradient(180deg, #fffaf0 0%, #f6efdc 100%);
+}
+.sd-book-p .panel-h {
+  background: linear-gradient(180deg, #ffd88a 0%, #f2a91f 60%, #d98a10 100%);
+  text-shadow: 0 2px 0 rgba(130, 70, 0, 0.4);
+}
+.sd-book-x {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  font: 900 15px/1 var(--font);
+  color: var(--ink-2);
+}
+.sd-book-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding: 12px 16px 0;
+}
+.sd-book-tabs button {
+  padding: 7px 14px;
+  border: 2px solid #e6d7b5;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: 800 14px/1.2 var(--font);
+  cursor: pointer;
+}
+.sd-book-tabs button[aria-pressed="true"] {
+  border-color: #e8a01f;
+  background: linear-gradient(180deg, #fff3b8, #ffd25a);
+  color: #5a3600;
+}
+.sd-book-tabs button:focus-visible {
+  outline: 3px solid #33c3f6;
+}
+.sd-book-b {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 20px 20px !important;
+}
+.sd-book-lead {
+  margin: 0 0 12px;
+  color: var(--ink-2);
+  font: 700 13px/1.4 var(--font);
+  text-align: center;
+}
+.sd-empty {
+  margin: 40px 10px;
+  color: var(--ink-2);
+  font-weight: 800;
+  text-align: center;
+}
+.sd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+}
+.sd-pc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 9px;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(80, 50, 10, 0.18);
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.sd-pc:nth-child(3n) {
+  rotate: 1deg;
+}
+.sd-pc:nth-child(3n + 1) {
+  rotate: -1deg;
+}
+.sd-pc:hover,
+.sd-pc:focus-visible {
+  transform: translateY(-3px) scale(1.03);
+  outline: none;
+  box-shadow:
+    0 0 0 3px #33c3f6,
+    0 8px 16px rgba(80, 50, 10, 0.22);
+}
+.sd-pc-img {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 7px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, #f1ead8 0 8px, #ebe2cc 8px 16px) center / cover no-repeat;
+}
+.sd-pc.got .sd-pc-img {
+  background-color: #dde6ee;
+  background-size: cover;
+}
+.sd-pc-img i {
+  font: 900 30px/1 var(--font);
+  font-style: normal;
+  color: #c9b98f;
+}
+.sd-pc b {
+  font: 900 13px/1.25 var(--font);
+}
+.sd-pc small {
+  margin-top: 2px;
+  color: var(--ink-2);
+  font: 700 11px/1.25 var(--font);
+}
+.sd-pc:not(.got) {
+  opacity: 0.8;
+}
+.sd-gold {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3b0, #ffcc3a 55%, #d99a10);
+  box-shadow: 0 2px 6px rgba(120, 70, 0, 0.4);
+  color: #7a4a00;
+  font: 900 16px/1 var(--font);
+  font-style: normal;
+}
+.sd-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.sd-note {
+  position: relative;
+  padding: 14px 16px 12px 52px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 23px, rgba(42, 159, 230, 0.14) 23px 24px),
+    #fffdf7;
+  box-shadow: 0 4px 12px rgba(80, 50, 10, 0.16);
+}
+.sd-note-i {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  font-size: 28px;
+}
+.sd-note p {
+  margin: 0 0 6px;
+  font: italic 800 15px/1.5 "Segoe Print", "Bradley Hand", var(--font);
+}
+.sd-note small {
+  color: var(--ink-2);
+  font: 800 12px/1.2 var(--font);
+}
+.sd-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+.sd-view img {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #222;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.sd-view-f {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sd-view-f div {
+  flex: 1;
+  min-width: 180px;
+}
+.sd-view-f b {
+  display: block;
+  font: 900 16px/1.2 var(--font);
+}
+.sd-view-f small {
+  color: var(--ink-2);
+  font: 700 12px/1.2 var(--font);
+}
+.sd-view-f span {
+  display: flex;
+  gap: 8px;
+}

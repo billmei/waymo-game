@@ -294,7 +294,8 @@
     const par = j.par();
     j.q = j.t <= par ? 2 : j.t <= par * 1.7 ? 1 : 0;
     A().sfx("sparkle");
-    env.big(DONE_WORD[j.kind], "go");
+    // a mode can put its own word up (Sunday Drive's warm ones)
+    env.big((env.word && env.word(j.kind)) || DONE_WORD[j.kind], "go");
     const c = j.car.parts.g.localToWorld(V3(0, 1.4, 0));
     sparkle(c, 16, 4);
   }
