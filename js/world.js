@@ -675,6 +675,7 @@
     LOOKS,
     Merge,
     mat,
+    puffTex,
     height,
     groundY,
     onStreet,

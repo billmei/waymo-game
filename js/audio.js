@@ -540,6 +540,8 @@
     transpose: 0,
     intense: false,
     filter: null,
+    // Sunday Drive's arrangement: each unlocked neighbourhood brings in a stem of the title bossa
+    sundayStems: null,
   };
   const INST = { ep, vibes, bell, bass, brass, lead };
 
@@ -550,7 +552,8 @@
       bars = song.chords.length,
       total = bars * 8;
     const out = M.gain,
-      tr = M.transpose;
+      tr = M.transpose,
+      sun = M.sundayStems;
     const play = (inst, t, n, d, v, p) => INST[inst](t, n + tr, d, v, out, p);
     const drums = {
       kick: (t, v) => kick(t, v, out),
@@ -567,24 +570,32 @@
         t = M.nextT;
       const cs = song.chords[bar].find((x) => b >= x.at && b < x.at + x.len),
         c = cs.c;
-      // melody
-      for (const ev of song.melIdx[s] || []) {
-        play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
-        if (song.lead2 && M.step % (total * 2) >= total)
-          play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
-      }
+      // melody: in Sunday Drive the vibraphone lead only arrives with the Presidio
+      if (!sun || sun.vibes)
+        for (const ev of song.melIdx[s] || []) {
+          play(song.lead, t, ev.n, ev.d * e8 * 0.95, song.leadV, 0.1);
+          if (song.lead2 && M.step % (total * 2) >= total)
+            play(song.lead2, t, ev.n + 12, ev.d * e8, 0.05, -0.2);
+        }
       try {
-        song.comp(bar, b, t, e8, c, play);
-        song.bass(
-          bar,
-          b,
-          t,
-          e8,
-          c,
-          (i, tt, n, d, v) => play(i, tt, n, d, v),
-          cs,
-        );
-        song.drums(bar, b, t, e8, drums, M.intense);
+        if (!sun || sun.ep) song.comp(bar, b, t, e8, c, play);
+        if (!sun || sun.bass)
+          song.bass(
+            bar,
+            b,
+            t,
+            e8,
+            c,
+            (i, tt, n, d, v) => play(i, tt, n, d, v),
+            cs,
+          );
+        if (!sun || sun.drums)
+          song.drums(bar, b, t, e8, drums, M.intense);
+        // the mellow horn counter-melody joins last, over the whole band
+        if (sun && sun.brass && (b === 0 || b === 4))
+          c.notes.forEach((n, i) =>
+            play("brass", t, n - 12, e8 * (b === 0 ? 2.6 : 1.8), 0.022, i * 0.22 - 0.25),
+          );
       } catch (e) {}
       const sw = b % 2 === 0 ? 1 + song.swing : 1 - song.swing;
       M.nextT += e8 * sw;
@@ -1003,6 +1014,23 @@
     },
     setIntense(on) {
       M.intense = !!on;
+    },
+    // Sunday Drive: grow the title bossa one instrument at a time as the map opens up. Pass null (or nothing) to go
+    // back to the full menu arrangement.
+    setSundayStems(unlocked) {
+      if (!unlocked) {
+        M.sundayStems = null;
+        return;
+      }
+      const has = (k) =>
+        typeof unlocked.has === "function" ? unlocked.has(k) : !!unlocked[k];
+      M.sundayStems = {
+        ep: true,
+        bass: has("downtown"),
+        vibes: has("presidio"),
+        drums: has("ladies"),
+        brass: has("windmills"),
+      };
     },
     // a job ducks the music a little; a voice line ducks it under the words (Slop's radio: -9 dB, quick in, slow out)
     duck(on) {

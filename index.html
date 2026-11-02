@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/adopt.css" />
+    <link rel="stylesheet" href="css/sunday.css" />
   </head>
   <body data-state="boot">
     <canvas id="gl" aria-label="The city"></canvas>
@@ -88,6 +89,7 @@
       </div>
       <div class="menu">
         <button type="button" class="btn primary" id="t-start">Start Shift</button>
+        <button type="button" class="btn" id="t-sunday">Sunday Drive ☀️</button>
         <button type="button" class="btn adopt" id="t-adopt">Adopt-a-Waymo 🐾</button>
         <button type="button" class="btn" id="t-how">How to Play</button>
       </div>
@@ -288,6 +290,79 @@
       </section>
     </div>
 
+    <!-- ===== Sunday Drive (js/sunday/): the bird's-eye city, car tags, inspector and photo viewfinder ===== -->
+    <div id="su-hoods" hidden></div>
+    <div id="su-tags" hidden></div>
+    <div id="su-floats" aria-hidden="true"></div>
+    <div id="sunday" hidden>
+      <header id="su-top">
+        <button type="button" id="su-menu-btn" class="round-btn" aria-label="Menu (Esc)" title="Menu (Esc)">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke-width="2.6" stroke-linecap="round" /></svg>
+        </button>
+        <div class="card su-place">
+          <small>Sunday Drive</small>
+          <b id="su-district">Russian Hill</b>
+          <span id="su-weather">Morning sun</span>
+        </div>
+        <div class="card su-seals" title="Map Seals open the clouds over new neighbourhoods">
+          <small>Map Seals</small>
+          <b><span id="su-seals">0</span> <em>🗺️</em></b>
+        </div>
+        <div class="card su-stat"><small>Cared for</small><b id="su-cared">0</b></div>
+        <div class="card su-stat"><small>Fares</small><b id="su-fares">0</b></div>
+        <button type="button" id="su-photo-btn" class="round-btn" aria-label="Photo mode (P)" title="Photo mode (P)">📷</button>
+        <button type="button" id="su-book-btn" class="round-btn" aria-label="Postcard scrapbook" title="Postcard scrapbook">📮</button>
+      </header>
+      <aside id="su-inspect" class="card" aria-live="polite" hidden></aside>
+      <div id="su-coach" class="card" hidden>
+        <p></p>
+        <div><small></small><button type="button" class="btn tiny primary">Next</button></div>
+      </div>
+      <div id="su-toasts" aria-live="polite"></div>
+    </div>
+
+    <div id="su-photo" hidden>
+      <div class="su-photo-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <header id="su-photo-top">
+        <button type="button" id="su-photo-close" class="round-btn" aria-label="Leave photo mode (Esc)">✕</button>
+        <div class="card su-framed">
+          <small>Framed landmark</small>
+          <b id="su-framed">Look around…</b>
+        </div>
+        <div class="card su-focal">
+          <label for="su-focal">Focal length <b id="su-mm">40mm</b></label>
+          <input id="su-focal" type="range" min="24" max="120" step="1" value="40" />
+        </div>
+      </header>
+      <div id="su-photo-hint" class="card">
+        <b>Photo Mode</b>
+        <span class="desk">Drag to look · WASD to move · wheel to dolly · P / Esc to leave</span>
+        <span class="tch">Drag to look · pinch or use the slider to frame · tap Snap</span>
+      </div>
+      <footer id="su-photo-bar">
+        <div id="su-filters" role="group" aria-label="Film filter"></div>
+        <button type="button" id="su-shutter" class="su-shutter" aria-label="Take a postcard photo">📸<span>Snap</span></button>
+        <button type="button" id="su-photo-album" class="btn tiny">📮 Scrapbook</button>
+      </footer>
+      <div id="su-flash" aria-hidden="true"></div>
+    </div>
+
+    <section id="su-modal" class="screen" role="dialog" aria-modal="true" hidden>
+      <div class="panel">
+        <header class="panel-h"><small></small><span></span></header>
+        <div class="panel-b"></div>
+        <div class="panel-f"></div>
+      </div>
+    </section>
+
+    <section id="su-book" class="screen" role="dialog" aria-modal="true" hidden>
+      <div class="panel wide">
+        <header class="panel-h"><small>Sunday Drive</small><span>Postcard Scrapbook</span></header>
+        <div class="panel-b" id="su-book-b"></div>
+        <div class="panel-f"><button type="button" class="btn primary" id="su-book-close">Back to the city</button></div>
+      </div>
+    </section>
+
     <button type="button" id="snd" class="round-btn" aria-label="Sound" aria-pressed="true">
       <svg viewBox="0 0 24 24" class="on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
       <svg viewBox="0 0 24 24" class="off"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke-width="2.2" stroke-linecap="round" /></svg>
@@ -316,6 +391,12 @@
     <script src="js/adopt/care.js"></script>
     <script src="js/adopt/ui.js"></script>
     <script src="js/adopt/main.js"></script>
+    <script src="js/sunday/city.js"></script>
+    <script src="js/sunday/clouds.js"></script>
+    <script src="js/sunday/swoop.js"></script>
+    <script src="js/sunday/album.js"></script>
+    <script src="js/sunday/photo.js"></script>
+    <script src="js/sunday/main.js"></script>
     <script>
       // the pause menu shows the How to Play instructions too
       document.getElementById("pz-how").innerHTML = document.querySelector("#howto .panel-b").innerHTML;
