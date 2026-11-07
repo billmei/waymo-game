@@ -277,11 +277,13 @@
               on = S.cars.includes(car),
               bondL = String(Math.floor(car.bond));
             const curStuck = !!actsWrap.querySelector('[data-a="roadside"]');
-            const curOn = !!actsWrap.querySelector('[data-a="useItem"]');
+            // Stuck cars have no Use item button; track fleet membership separately.
+            const curOn = actsWrap.dataset.on === "true";
             const curBond = actsWrap.dataset.bond;
             if (curStuck !== stuck || curOn !== on || curBond !== bondL) {
               actsWrap.innerHTML = profileActsHtml(car);
               actsWrap.dataset.bond = bondL;
+              actsWrap.dataset.on = String(on);
             } else if (on && !stuck) {
               const careBtn = actsWrap.querySelector('[data-a="careMenu"]');
               if (careBtn) {
@@ -543,7 +545,7 @@
     }
     h += "</div>";
     // actions
-    h += '<div id="ad-prof-actions" data-bond="' + Math.floor(car.bond) + '">' + profileActsHtml(car) + "</div>";
+    h += '<div id="ad-prof-actions" data-on="' + on + '" data-bond="' + Math.floor(car.bond) + '">' + profileActsHtml(car) + "</div>";
     // stats
     h += '<h3>Stats <small>Car Level ' + lv + "</small></h3><div class='ad-stats'>";
     for (const k of D.STAT_KEYS) {
@@ -618,9 +620,10 @@
     });
   };
   H.care = (ds) => {
-    U.closeModal();
-    U.close();
-    WG.adopt.care(ds.id, ds.k);
+    if (WG.adopt.care(ds.id, ds.k)) {
+      U.closeModal();
+      U.close();
+    }
   };
   H.roadside = (ds) => U.act(Sim.roadside(S, ds.id), { icon: "🚐" });
   H.callCare = (ds) => U.act(Sim.callToCare(S, ds.id), { icon: "📍" });

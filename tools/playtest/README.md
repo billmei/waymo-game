@@ -6,6 +6,7 @@ To run them, serve the repository on port 8123 (`python3 -m http.server 8123` fr
 
 | Script | What it does |
 | --- | --- |
+| `adopt-care.js` | Rescue-button regression: holds clicks across live profile updates for cones and doors, checks rejected starts, and enters a hands-on rescue job. Set `CHROMIUM_EXECUTABLE` to use a system browser. |
 | `adopt.js` | Adopt-a-Waymo: adopts a car, runs the clock, opens the panels and the prize wheel, swoops down for a hands-on job and back, then checks an arcade shift still starts (`adopt_*.png`). |
 | `sunday.js` | Sunday Drive: gives a car a need and takes care of it by hand, opens Downtown with the cloud-parting ceremony, photographs Coit Tower, opens the scrapbook, switches on Free Drive, then checks an arcade shift still starts (`sunday_*.png`). Prints `ok`/`FAIL` per check. |
 | `dump.js` | Prints every island landmark (`WG.isle.MARKS`): position, ground height, height. |

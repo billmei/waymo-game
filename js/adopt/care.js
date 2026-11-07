@@ -41,6 +41,7 @@
       zone,
       phase: "down",
       t: 0,
+      waiting: 0,
       from: g.camera.position.clone(),
       fromLook: new T.Vector3(),
       above: new T.Vector3(hp.x + 160, hp.y + 260, hp.z + 220),
@@ -106,7 +107,7 @@
       round = pet ? 1 + D.STAGES.findIndex((s) => s.id === pet.stage) : 2;
     g.startJob(car, { round, done: (res) => jobEnd(a, res) });
   }
-  function jobEnd(a, res) {
+  function jobEnd(a, res, reason) {
     const car = a.car;
     if (car) {
       car.setProblem(null);
@@ -122,34 +123,44 @@
     WG.game.setState("adopt");
     WG.game.A.duck(false);
     WG.game.A.sfx("whoosh");
-    if (a.onEnd) a.onEnd(res);
+    if (a.onEnd) a.onEnd(res, reason);
   }
   // the player backed out before the job started
-  C.abort = function () {
+  C.abort = function (reason) {
     const a = C.active;
     if (!a || a.phase === "job" || a.phase === "up") return;
     if (a.car) {
       a.car.setProblem(null);
       a.car.state = "leaving";
     }
-    jobEnd(a, null);
+    jobEnd(a, null, reason);
   };
 
   C.update = function (dt) {
     const a = C.active;
     if (!a) return;
     a.t += dt;
+    // Bound the whole setup, including retries, so a blocked fleet cannot lock care forever.
+    if (a.phase === "down" || a.phase === "pull") {
+      a.waiting += dt;
+      if (a.waiting > 24) return C.abort("timeout");
+    }
     if (a.phase === "down") {
       if (!a.street && a.t > 0.8) street(a);
-      if (a.street && a.t > 1.6) pickCar(a);
+      if (a.street && a.t > 1.6 && !pickCar(a) && a.t > 8) {
+        // Cars can all be blocked or in turns. Try a fresh fleet instead of waiting indefinitely.
+        Traffic.reset();
+        a.t = 0.8;
+      }
     } else if (a.phase === "pull") {
-      if (a.car.state === "problem" && a.t > 1.2) beginJob(a);
+      if (a.car.state === "problem" && a.t > 1.2) return beginJob(a);
       // a car that never manages to pull over (it shouldn't happen): try another
       if (a.t > 8) {
         a.car.setProblem(null);
         a.car.state = "leaving";
         a.phase = "down";
         a.car = null;
+        a.t = 0.8;
       }
     } else if (a.phase === "up") {
       if (a.t > 0.9 && a.street) {
