@@ -386,23 +386,28 @@
   AD.care = function (id, kind) {
     const S = AD.S,
       car = Sim.find(S, id);
-    if (!car || (C.active && C.active.phase !== "up")) return;
+    if (!car || !S.cars.includes(car)) return false;
+    if (C.active && C.active.phase !== "up") {
+      U.toast("🔧", "Finish the current care job first, or press Esc to cancel it.", "bad");
+      return false;
+    }
     const incident = kind === "doors" || kind === "cone",
       hood = Sim.careSpot(car) ? car.sim.at : Sim.nearestCare(car);
-    if (!incident && !Sim.careSpot(car))
-      return U.toast(
-        "📍",
-        "Call " + Sim.nameOf(car) + " to a Care Spot first.",
-        "bad",
-      );
+    if (incident && (car.sim.task !== "stuck" || car.sim.incident !== kind)) {
+      U.toast("🙂", Sim.nameOf(car) + " is already moving again. Check its profile for care options.", "", id);
+      U.refresh(true);
+      return false;
+    }
+    if (!incident && !Sim.careSpot(car)) {
+      U.toast("📍", "Call " + Sim.nameOf(car) + " to a Care Spot first.", "bad");
+      return false;
+    }
     const prevTask = car.sim.task;
-    if (!incident) car.sim.task = "care";
-    M.cam.follow = id;
-    C.start({
+    const started = C.start({
       kind,
       carId: id,
       hood,
-      onEnd: (res) => {
+      onEnd: (res, reason) => {
         if (res) {
           const r = Sim.careDone(S, id, kind, res.q);
           U.toast(
@@ -430,8 +435,10 @@
                   : "idle";
           U.toast(
             "🙂",
-            "Maybe later. " + Sim.nameOf(car) + " doesn't mind.",
-            "",
+            reason === "timeout"
+              ? "Couldn't find a clear place to stop. Please try caring for " + Sim.nameOf(car) + " again."
+              : "Maybe later. " + Sim.nameOf(car) + " doesn't mind.",
+            reason === "timeout" ? "bad" : "",
             id,
           );
         }
@@ -439,6 +446,11 @@
         save();
       },
     });
+    if (started) {
+      if (!incident) car.sim.task = "care";
+      M.cam.follow = id;
+    }
+    return started;
   };
   AD.arcade = function (kind) {
     if (C.active && C.active.phase !== "up") return;
@@ -446,7 +458,8 @@
       kind,
       arcade: true,
       hood: Sim.HOME,
-      onEnd: (res) => {
+      onEnd: (res, reason) => {
+        if (reason === "timeout") U.toast("🔧", "Couldn't find a clear place to stop. Please try the arcade again.", "bad");
         if (!res) return;
         const r = Sim.arcadeResult(AD.S, kind, res);
         setTimeout(() => U.arcadeResult(kind, r), 900);
