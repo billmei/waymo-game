@@ -1,5 +1,5 @@
 /* Waymo Care · Adopt-a-Waymo · the bird's-eye map. The whole of San Francisco from above: the roads between the
-   neighbourhoods (drawn over the island as ribbons, riding over the rooftops), a toy-sized robotaxi for each adopted car
+   neighbourhoods (shared street routes, following the ground between buildings), a toy-sized robotaxi for each adopted car
    (in its wrap, ring colour, accessories and dashpet, with a bubble for its most urgent need or an emote), a few NPC
    toys driving about, Karl the Fog's clouds over the west side, name tags and neighbourhood labels in the DOM, and the
    map camera (pan, zoom, rotate, follow). It also takes the postcard photos for the stamp album. */
@@ -14,9 +14,9 @@
   const K = W.SCALE; // island units → game metres
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const $ = (s) => document.querySelector(s);
-  const MS = 9, // how much bigger than life a car is on the map, so it reads as a toy from up here
-    NPC_MS = 7,
-    ROAD_W = 9; // road width, island units
+  const MS = 2.5, // readable toys that fit the existing eight-unit street gaps
+    NPC_MS = 2.2,
+    ROAD_W = WG.roadData.width; // road width, island units
 
   const M = {
     cars: new Map(),
@@ -27,97 +27,68 @@
   };
   let scene = null,
     group = null,
-    roadY = new Map(),
     labels = {},
     tagBox = null;
 
-  /* ---------- the map's geography: Sim's graph, with each centre nudged onto dry land ---------- */
-  function onLand(x, z) {
-    if (I.groundH(x, z) > 3) return [x, z];
-    for (let r = 20; r < 400; r += 20)
-      for (let k = 0; k < 16; k++) {
-        const a = (k / 16) * Math.PI * 2,
-          px = x + Math.cos(a) * r,
-          pz = z + Math.sin(a) * r;
-        if (I.groundH(px, pz) > 4) return [px, pz];
-      }
-    return [x, z];
-  }
-  // how high a road runs at an island point: over the ground, and over the roofs of whatever stands there
+  // Roads stay on the terrain. Buildings are avoided in road-data, never climbed over.
   function surfaceAt(x, z) {
-    let y = Math.max(I.groundH(x, z), 0.4);
-    for (let k = 0; k < 10 && I.hitsBuilding(x, y + 1, z, ROAD_W * 0.4); k++)
-      y += 3;
-    return y;
+    return Math.max(I.groundH(x, z), 0.4);
   }
 
-  /* ---------- the roads: a ribbon along each curve (a light edge, the dark road, a dashed centre line) ---------- */
-  function buildRoads() {
-    const pos = [],
+  // One geometry builder for both modes. Include every turn and subdivide only along streets;
+  // sampling the entire route uniformly could draw a diagonal across a corner.
+  function roadGeometry(e, colors = ["#eef3f7", "#5a6270", "#ffd23a"]) {
+    const pts = [],
+      pos = [],
       col = [],
-      idx = [];
-    const c = new T.Color();
-    function strip(pts, half, lift, hex, dash) {
-      c.set(hex);
+      idx = [],
+      c = new T.Color();
+    for (let j = 1; j < e.points.length; j++) {
+      const a = e.points[j - 1],
+        b = e.points[j],
+        n = Math.ceil((b.distance - a.distance) / 3);
+      for (let k = j === 1 ? 0 : 1; k <= n; k++) {
+        const t = k / n;
+        pts.push({
+          x: a.x + (b.x - a.x) * t,
+          z: a.z + (b.z - a.z) * t,
+          distance: a.distance + (b.distance - a.distance) * t,
+        });
+      }
+    }
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[Math.max(0, i - 1)],
+        b = pts[Math.min(pts.length - 1, i + 1)];
+      const length = Math.hypot(b.x - a.x, b.z - a.z);
+      pts[i].nx = (b.x - a.x) / length;
+      pts[i].nz = (b.z - a.z) / length;
+    }
+    function strip(half, lift, color, dash) {
+      c.set(color);
       for (let i = 0; i < pts.length - 1; i++) {
-        if (dash && i % 2) continue;
-        const a = pts[i],
-          b = pts[i + 1],
-          base = pos.length / 3;
-        for (const p of [a, b]) {
-          pos.push(
-            (p.x - p.nz * half) * K,
-            p.y * K + lift,
-            (p.z + p.nx * half) * K,
-          );
-          pos.push(
-            (p.x + p.nz * half) * K,
-            p.y * K + lift,
-            (p.z - p.nx * half) * K,
-          );
-          col.push(c.r, c.g, c.b, c.r, c.g, c.b);
-        }
+        if (dash && Math.floor(pts[i].distance / 9) % 2) continue;
+        const base = pos.length / 3;
+        for (const p of [pts[i], pts[i + 1]])
+          for (const side of [-1, 1]) {
+            const x = p.x + side * p.nz * half,
+              z = p.z - side * p.nx * half;
+            pos.push(x * K, surfaceAt(x, z) * K + lift, z * K);
+            col.push(c.r, c.g, c.b);
+          }
         idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
       }
     }
-    const pt = {};
-    for (const e of Sim.G.edges) {
-      const n = Math.max(6, Math.ceil(e.len / 14)),
-        pts = [];
-      for (let i = 0; i <= n; i++) {
-        Sim.edgePoint(e, e.a, i / n, pt);
-        pts.push({
-          x: pt.x,
-          z: pt.z,
-          nx: pt.dx,
-          nz: pt.dz,
-          y: surfaceAt(pt.x, pt.z),
-        });
-      }
-      // smooth the heights: a road eases over a roof rather than stepping
-      const ys = pts.map((p) => p.y);
-      for (let i = 0; i < pts.length; i++) {
-        let m = 0;
-        for (
-          let j = Math.max(0, i - 2);
-          j <= Math.min(pts.length - 1, i + 2);
-          j++
-        )
-          m = Math.max(m, ys[j]);
-        pts[i].y = (m * 2 + ys[i]) / 3;
-      }
-      roadY.set(
-        e,
-        pts.map((p) => p.y * K),
-      );
-      strip(pts, ROAD_W * 0.62, 0.6, "#eef3f7");
-      strip(pts, ROAD_W * 0.5, 1.0, "#5a6270");
-      strip(pts, ROAD_W * 0.06, 1.4, "#ffd23a", true);
-    }
+    strip(ROAD_W * 0.62, 0.6, colors[0]);
+    strip(ROAD_W * 0.5, 1.0, colors[1]);
+    strip(ROAD_W * 0.06, 1.1, colors[2], true);
     const g = new T.BufferGeometry();
     g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
     g.setAttribute("color", new T.Float32BufferAttribute(col, 3));
     g.setIndex(idx);
+    return g;
+  }
+
+  function buildRoads() {
     const m = new T.MeshBasicMaterial({
       vertexColors: true,
       side: T.DoubleSide,
@@ -125,12 +96,16 @@
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
-    const mesh = new T.Mesh(g, m);
-    mesh.renderOrder = 2;
-    group.add(mesh);
+    M.roads = [];
+    for (const e of Sim.G.edges) {
+      const mesh = new T.Mesh(roadGeometry(e), m);
+      mesh.renderOrder = 2;
+      group.add(mesh);
+      M.roads.push({ e, mesh });
+    }
     // a little round plaza at every neighbourhood centre
     M.plazas = {};
-    const disc = new T.CircleGeometry(ROAD_W * 1.6 * K, 28);
+    const disc = new T.CircleGeometry(ROAD_W * 0.6 * K, 28);
     for (const name of Sim.G.names) {
       const h = Sim.G.hoods[name],
         y = Math.max(
@@ -155,14 +130,18 @@
       M.plazas[name] = p;
     }
   }
-  // a road's height (game metres) a fraction t of the way along it from its a end
+  // Height and motion refer to the exact same route, with no rooftop or height smoothing.
+  const heightPoint = {};
   function edgeY(e, t) {
-    const ys = roadY.get(e);
-    if (!ys) return 0;
-    const f = clamp(t, 0, 1) * (ys.length - 1),
-      i = Math.floor(f),
-      j = Math.min(ys.length - 1, i + 1);
-    return ys[i] + (ys[j] - ys[i]) * (f - i);
+    Sim.edgePoint(e, e.a, t, heightPoint);
+    return surfaceAt(heightPoint.x, heightPoint.z) * K + 1.1;
+  }
+  function parkPoint(name, index, out) {
+    const e = Sim.G.adj[name][0][1];
+    const t = Math.min(0.3, (index + 1) * 9 / e.len);
+    Sim.edgePoint(e, name, t, out);
+    out.y = edgeY(e, name === e.a ? t : 1 - t);
+    return out;
   }
 
   /* ---------- dressing a car: wrap (a tint on its own copy of the body material, plus decals), ring, gear, dashpet ---------- */
@@ -974,7 +953,7 @@
     group.visible = false;
     scene.add(group);
     tagBox = $("#ad-tags");
-    Sim.setGeo(I.ISL.DIST, (x, z) => onLand(x, z));
+    Sim.setGeo(I.ISL.DIST);
     buildRoads();
     for (const name of Sim.G.names)
       Sim.G.hoods[name].y =
@@ -1032,26 +1011,24 @@
         y = edgeY(e, s.from === e.a ? s.t : 1 - s.t);
         yaw = m.yaw;
       } else {
-        // parked round the plaza, nose out
-        const h = Sim.G.hoods[s.at],
-          list = byHood[s.at],
-          i = list.indexOf(car),
-          a = (i / Math.max(1, list.length)) * Math.PI * 2 + 0.6;
-        x = (h.x + Math.cos(a) * ROAD_W * 1.05) * K;
-        z = (h.z + Math.sin(a) * ROAD_W * 1.05) * K;
-        y = h.y;
-        yaw = Math.atan2(-Math.cos(a), -Math.sin(a));
+        const list = byHood[s.at];
+        parkPoint(s.at, list.indexOf(car), _p);
+        x = _p.x * K;
+        z = _p.z * K;
+        y = _p.y;
+        yaw = Math.atan2(-_p.dx, -_p.dz);
       }
+
       if (m.x === null) {
         m.x = x;
         m.z = z;
         m.y = y;
         m.yaw = yaw;
       }
-      const f = Math.min(1, dt * 10);
-      m.x += (x - m.x) * f;
-      m.z += (z - m.z) * f;
-      m.y += (y - m.y) * f;
+      // Smooth the heading, never the position: easing positions cuts inside street corners.
+      m.x = x;
+      m.z = z;
+      m.y = y;
       let dy = yaw - m.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       m.yaw += dy * Math.min(1, dt * 6);
@@ -1316,6 +1293,8 @@
   M.MS = MS;
   M.ROAD_W = ROAD_W;
   // the geography's helpers, for Sunday Drive's map (js/sunday/city.js), which drives the same roads
+  M.roadGeometry = roadGeometry;
+  M.parkPoint = parkPoint;
   M.edgeY = edgeY;
   M.surfaceAt = surfaceAt;
   WG.adoptMap = M;

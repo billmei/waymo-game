@@ -18,12 +18,12 @@
   const Sim = { on: null, now: () => Date.now(), fast: 1 };
 
   /* ======================================================================================================
-     the map: neighbourhoods, the roads between them (gentle curves) and routes
+     the map: neighbourhoods, street geometry and shortest routes
      ====================================================================================================== */
   const G = { hoods: {}, names: [], edges: [], adj: {}, cache: {} };
   Sim.G = G;
-  // rows are js/isle.js ISL.DIST rows [id, name, x, z, …] in island units; fix(x, z) may move a centre (onto land)
-  Sim.setGeo = function (rows, fix) {
+  // Both modes and the offline simulation use the same baked, collision-checked street map.
+  Sim.setGeo = function (rows) {
     G.hoods = {};
     G.names = [];
     G.edges = [];
@@ -32,7 +32,7 @@
     for (const r of rows) {
       const name = r[1];
       if (!D.HOODS[name] || D.EXCLUDE.includes(name)) continue;
-      const [x, z] = fix ? fix(r[2], r[3], name) : [r[2], r[3]];
+      const [x, z] = WG.roadData.hoods[name];
       G.hoods[name] = Object.assign({ name, x, z }, D.HOODS[name]);
       G.names.push(name);
       G.adj[name] = [];
@@ -48,20 +48,15 @@
         const k = [A.name, B.name].sort().join("|");
         if (seen.has(k)) continue;
         seen.add(k);
-        const dx = B.x - A.x,
-          dz = B.z - A.z,
-          L = Math.hypot(dx, dz);
-        // the curve bends to one side or the other (decided by the names, so it's always the same)
-        let h = 0;
-        for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) | 0;
-        const s = (h & 1 ? 1 : -1) * (0.07 + ((h >>> 3) % 7) * 0.012);
-        const e = {
-          a: A.name,
-          b: B.name,
-          len: L * 1.25,
-          cx: (A.x + B.x) / 2 - (dz / L) * L * s,
-          cz: (A.z + B.z) / 2 + (dx / L) * L * s,
-        };
+        const points = WG.roadData.edges[k].map(([x, z]) => ({ x, z }));
+        if (A.name !== k.split("|")[0]) points.reverse();
+        let len = 0;
+        points[0].distance = 0;
+        for (let i = 1; i < points.length; i++) {
+          len += Math.hypot(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z);
+          points[i].distance = len;
+        }
+        const e = { a: A.name, b: B.name, len, points };
         G.edges.push(e);
         G.adj[A.name].push([B.name, e]);
         G.adj[B.name].push([A.name, e]);
@@ -73,24 +68,29 @@
     return null;
   };
   Sim.edgeOf = edgeOf;
-  // a point on a road, travelling from `from` (t from 0 to 1): a quadratic Bézier between the two centres
+  // Arc-length interpolation keeps speed constant through every street segment, in either direction.
   Sim.edgePoint = function (e, from, t, out) {
     out = out || {};
-    if (from !== e.a) t = 1 - t;
-    const A = G.hoods[e.a],
-      B = G.hoods[e.b],
-      u = 1 - t;
-    out.x = u * u * A.x + 2 * u * t * e.cx + t * t * B.x;
-    out.z = u * u * A.z + 2 * u * t * e.cz + t * t * B.z;
-    let dx = 2 * u * (e.cx - A.x) + 2 * t * (B.x - e.cx),
-      dz = 2 * u * (e.cz - A.z) + 2 * t * (B.z - e.cz);
-    if (from !== e.a) {
-      dx = -dx;
-      dz = -dz;
+    const reverse = from !== e.a;
+    const distance = clamp(reverse ? 1 - t : t, 0, 1) * e.len;
+    let lo = 1,
+      hi = e.points.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      // t and 1-(1-t) can differ by a few ulps at a junction. Pick the same
+      // segment in either direction so cars do not flicker between headings.
+      if (e.points[mid].distance < distance - 1e-7) lo = mid + 1;
+      else hi = mid;
     }
-    const l = Math.hypot(dx, dz) || 1;
-    out.dx = dx / l;
-    out.dz = dz / l;
+    const a = e.points[lo - 1],
+      b = e.points[lo],
+      length = b.distance - a.distance,
+      f = clamp((distance - a.distance) / length, 0, 1);
+    out.x = a.x + (b.x - a.x) * f;
+    out.z = a.z + (b.z - a.z) * f;
+    const direction = reverse ? -1 : 1;
+    out.dx = direction * (b.x - a.x) / length;
+    out.dz = direction * (b.z - a.z) / length;
     return out;
   };
   // the shortest route (Dijkstra), as a list of neighbourhood names from a to b; cached

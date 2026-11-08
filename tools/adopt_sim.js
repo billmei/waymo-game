@@ -20,7 +20,7 @@ const ROOT = path.join(__dirname, "..");
 const mem = {};
 if (args.includes("--saves"))
   globalThis.localStorage = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => (mem[k] = String(v)), removeItem: (k) => delete mem[k] };
-for (const f of ["js/adopt/data.js", "js/adopt/state.js", "js/adopt/sim.js"]) vm.runInThisContext(fs.readFileSync(path.join(ROOT, f), "utf8"), { filename: f });
+for (const f of ["js/adopt/data.js", "js/adopt/state.js", "js/road-data.js", "js/adopt/sim.js"]) vm.runInThisContext(fs.readFileSync(path.join(ROOT, f), "utf8"), { filename: f });
 const { adoptData: D, adoptState: St, adoptSim: Sim } = globalThis.WG;
 
 // the districts' centres, straight out of js/isle.js (ISL.DIST)
