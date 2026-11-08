@@ -90,11 +90,11 @@
     else if (away && away.minutes >= 30)
       U.modal(
         "While you were away",
-        "<p class='lead'>While you were away for " +
+        "<p class='lead'>Away for " +
           (away.realHours < 1
             ? Math.round(away.realHours * 60) + " minutes"
             : away.realHours.toFixed(1) + " hours") +
-          ". The fleet continued: <b>" +
+          ". Fleet: <b>" +
           away.rides +
           " ride" +
           (away.rides === 1 ? "" : "s") +

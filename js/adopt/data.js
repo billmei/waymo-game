@@ -380,7 +380,7 @@ Hunters Point: Candlestick`;
     ["wax_sea_salt", "Sea Salt Scrub (Cleanliness)", "🧂", 28, 55, { effect: { cleanliness: 30 }, desc: "Gritty, but it works." }],
     ["wax_surf", "Surf Wax (Cleanliness)", "🏄", 35, 75, { effect: { cleanliness: 40, mood: 4 }, desc: "Made for boards. Works on robotaxis." }],
     ["wax_showroom", "Showroom Polish (Cleanliness)", "✨", 65, 220, { effect: { cleanliness: 70 }, desc: "So shiny the gulls get confused." }],
-    ["cozy_lint", "Lint Roller (Cleanliness)", "🧽", 8, 25, { effect: { cleanliness: 15 }, desc: "Takes care of the dog hair. And the crumbs." }],
+    ["cozy_lint", "Lint Roller (Cleanliness)", "🧽", 8, 25, { effect: { cleanliness: 15 }, desc: "Clears dog hair and crumbs." }],
     ["cozy_air", "Eucalyptus Air Freshener (Cleanliness)", "🌿", 24, 45, { effect: { cleanliness: 25, mood: 3 }, desc: "Smells like the Presidio after rain." }],
     ["cozy_cushion", "Hand-Knit Seat Cushion (Cleanliness)", "🧶", 45, 110, { effect: { cleanliness: 45 }, desc: "Knitted by a grandma in the Sunset." }],
     ["cozy_crumbvac", "Pocket Crumb-Vac (Cleanliness)", "🌀", 55, 160, { effect: { cleanliness: 60 }, desc: "A tiny vacuum with a big attitude." }],
@@ -457,7 +457,7 @@ Hunters Point: Candlestick`;
   ]);
   // radio songs: kept, not used up. The Playlist Club counts which songs each car has heard
   add("song", [
-    ["song_bossa", "Bossa on the Bay", "🎵", 10, 60, { song: true, desc: "Gentle guitar for a gentle commute." }],
+    ["song_bossa", "Bossa on the Bay", "🎵", 10, 60, { song: true, desc: "Bossa nova guitar for the commute." }],
     ["song_fog_blues", "Karl's Blues", "🎵", 25, 120, { song: true, theme: ["fog"], desc: "Slow and grey and beautiful." }],
     ["song_cable_swing", "Cable Car Swing", "🎵", 30, 150, { song: true, desc: "Ding-ding, doo-wop." }],
     ["song_surf", "Ocean Beach Surf Rock", "🎵", 35, 180, { song: true, theme: ["beach"], desc: "Reverb all the way up." }],
@@ -485,7 +485,7 @@ Hunters Point: Candlestick`;
     ["rare_sea_glass", "Sutro Sea Glass", "🔹", 100, 2500, { desc: "Worn smooth by a hundred years of tides. Sell it, or keep it as a treasure." }],
     ["rare_old_token", "Old Muni Token", "🪙", 100, 1800, { desc: "From before the Clipper card. A collector's dream." }],
     ["rare_bison_hair", "Lucky Bison Hair (All Needs)", "🦬", 100, 1500, { effect: { mood: 25, charge: 25, cleanliness: 50, code: 25 }, desc: "Freely given. Very lucky." }],
-    ["rare_fog_jar", "Jar of Karl (Code)", "🫙", 101, 4000, { effect: { code: 100 }, desc: "A whole morning of fog, in a jar. Handle gently." }],
+    ["rare_fog_jar", "Jar of Karl (Code)", "🫙", 101, 4000, { effect: { code: 100 }, desc: "A morning of fog in a jar." }],
     ["rare_starter_loaf", "Sourdough Mother Loaf (Charge)", "🍞", 101, 6000, { effect: { charge: 100, mood: 30 }, desc: "Grown from a Sourdough Starter over thirty days." }],
   ]);
   // paint wraps: used up when applied (Neopets' paint brushes)
@@ -849,7 +849,7 @@ Hunters Point: Candlestick`;
         { title: "The Pumpkin Patch", text: "The Corner Store is out of pumpkins. Bring a Pumpkin Spice Power Cell (Charge) to the garage to start the decorations.", ask: { item: "snack_pumpkin_cell" } },
         { title: "Phantom Fares", text: "Riders keep asking for a ride to 'the old baths'. Send a car to Ocean Beach to see what's out there.", ask: { visit: "Ocean Beach" } },
         { title: "Cobweb Clean-up", text: "Somebody spun cobwebs all over a cabin. Vacuum it out before the trick-or-treaters arrive.", ask: { job: "vacuum" } },
-        { title: "The Ghost of Lombard Street", text: "It was a pigeon in a sheet all along. Shoo it (gently) and it'll haunt someone else.", ask: { job: "birds" } },
+        { title: "The Ghost of Lombard Street", text: "It was a pigeon in a sheet all along. Shoo it and it'll haunt someone else.", ask: { job: "birds" } },
       ],
       reward: { avatar: "ghost", item: "wrap_haunted", fares: 1000 },
     },

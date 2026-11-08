@@ -614,7 +614,7 @@
       const v = car.needs[k];
       return '<button type="button" class="ad-pick need ' + needCol(v) + '" data-a="care" data-id="' + car.id + '" data-k="' + job + '"><canvas width="64" height="64" data-icon="' + job + '"></canvas><b>' + name + "</b><small>" + D.NEEDS[k].name + ": " + esc(Sim.label(k, v)) + "</small>" + bar(v) + "</button>";
     }).join("");
-    U.modal("Care for " + nm(car), '<p class="lead">Pick a job. The crew swoops down to the ' + esc(car.sim.at) + ' Care Spot and you do it by hand: the best care there is (+bond).</p><div class="ad-picks">' + rows + "</div>", {
+    U.modal("Care for " + nm(car), '<p class="lead">Pick a job at the ' + esc(car.sim.at) + ' Care Spot for hands-on care (+bond).</p><div class="ad-picks">' + rows + "</div>", {
       buttons: [["close", "Not now"]],
       after: (b) => $$("canvas[data-icon]", b).forEach((cv) => WG.drawIcon(cv.getContext("2d"), cv.dataset.icon, 32, 34, 1)),
     });
@@ -658,7 +658,7 @@
       .sort();
     U.modal(
       "Send " + nm(car) + " to…",
-      '<p class="lead">It drives there and hangs out for a couple of hours. Favourite places cheer it up. (You can also drag its name tag onto a neighbourhood.)</p><div class="ad-hoodlist">' +
+      '<p class="lead">Choose a neighbourhood to visit. Favourite places boost mood. You can also drag its name tag onto a neighbourhood.</p><div class="ad-hoodlist">' +
         names.map((n) => '<button type="button" class="btn tiny' + (n === fav ? " primary" : "") + '" data-a="send" data-id="' + car.id + '" data-h="' + esc(n) + '">' + (n === fav ? "❤️ " : "") + esc(n) + "</button>").join("") +
         "</div>",
       { buttons: [["close", "Cancel"]], wide: true },
@@ -861,7 +861,7 @@
         return scratch(d, claim, result);
       case "sneak":
         U.sneak = (yes) => result(claim({ sneak: yes }));
-        return U.modal(d.icon + " " + esc(d.name), '<p class="lead">' + esc(d.desc) + "</p><p class='ad-hint'>It might wake up. Nothing bad will really happen. Probably damp, though.</p>", {
+        return U.modal(d.icon + " " + esc(d.name), '<p class="lead">' + esc(d.desc) + "</p><p class='ad-hint'>It might wake up.</p>", {
           buttons: [
             ["sneakNo", "Tiptoe away"],
             ["sneakYes", "Sneak in", "primary"],
@@ -1045,7 +1045,7 @@
     U.act(Sim.showEnter(S, ds.id), { icon: "🎀" });
   };
   FEAT.academy = () => {
-    let h = "<h3>🎓 Twin Peaks Driving Academy</h3><p class='ad-hint'>Courses take 1 in-game hour. Pay Fares and a firmware chip; the car studies at the top of the hill and comes back +1 (sometimes +2).</p>";
+    let h = "<h3>🎓 Twin Peaks Driving Academy</h3><p class='ad-hint'>Pay Fares and a firmware chip for a 1-hour in-game course: +1 stat, sometimes +2.</p>";
     const at = S.cars.filter((c) => c.training);
     if (at.length) h += "<ul class='ad-list'>" + at.map((c) => "<li>🎓 " + nm(c) + ": " + D.STATS[c.training.stat].name + ", back " + when(c.training.endsAt) + "</li>").join("") + "</ul>";
     return h + "<div class='ad-acts'>" + btn("enrol", "Enrol a car", { cls: "tiny primary" }) + "</div>";
@@ -1062,7 +1062,7 @@
             return "<button type='button' class='ad-pick' data-a='train' data-id='" + id + "' data-k='" + k + "'" + (ok ? "" : " disabled") + "><b>" + D.STATS[k].icon + " " + D.STATS[k].name + " " + car.stats[k] + "</b><small>Level " + c.level + " · " + c.hours + " h · ◎" + c.fares + " + " + item(c.chip).name + (Sim.has(S, c.chip) ? "" : " (you need one)") + "</small></button>";
           })
           .join("");
-        U.modal("Courses for " + nm(car), "<p class='lead'>Smarts can't be taught here: it comes from reading map packs and podcasts.</p><div class='ad-picks'>" + rows + "</div>", { buttons: [["close", "Cancel"]] });
+        U.modal("Courses for " + nm(car), "<p class='lead'>Raise Smarts with map packs and podcasts.</p><div class='ad-picks'>" + rows + "</div>", { buttons: [["close", "Cancel"]] });
       },
       (c) => !c.training,
     );
@@ -1085,7 +1085,7 @@
   };
   FEAT.derby = () => {
     if (S.player.rank < 6) return "<h3>⛰️ Hill Climb Derby</h3><p class='ad-hint'>Opens at Crew Rank 6.</p>";
-    return "<h3>⛰️ Hill Climb Derby <small>prizes for 3 races a day (" + Math.max(0, 3 - (S.dailies.derby || 0)) + " left)</small></h3><p class='ad-hint'>A gentle race up the hill against three regulars. Handling, Range and Charm count. No damage, just placing.</p><div class='ad-acts'>" + btn("derby", "Race!", { cls: "tiny primary" }) + "</div>";
+    return "<h3>⛰️ Hill Climb Derby <small>prizes for 3 races a day (" + Math.max(0, 3 - (S.dailies.derby || 0)) + " left)</small></h3><p class='ad-hint'>Race three regulars uphill. Handling, Range and Charm count.</p><div class='ad-acts'>" + btn("derby", "Race!", { cls: "tiny primary" }) + "</div>";
   };
   H.derby = () =>
     U.pickCar("Who's racing?", (id) => {
@@ -1127,7 +1127,7 @@
   FEAT.rally = () => {
     const r = S.quests.rally;
     let h = "<h3>🏁 Rider Rally <small>one a day</small></h3>";
-    if (r && r.day === S.clock.day) return h + "<p>" + r.hoods.map((n) => (r.done.includes(n) ? "✅ " : "◻️ ") + esc(n)).join(" · ") + "</p>" + (r.won ? "<p class='ad-hint'>Won! ◎400 and a Chip-Sutro.</p>" : "<p class='ad-hint'>Any of your cars counts. Send them, or let the rides take them there. Before midnight!</p>");
+    if (r && r.day === S.clock.day) return h + "<p>" + r.hoods.map((n) => (r.done.includes(n) ? "✅ " : "◻️ ") + esc(n)).join(" · ") + "</p>" + (r.won ? "<p class='ad-hint'>Won! ◎400 and a Chip-Sutro.</p>" : "<p class='ad-hint'>Any car counts. Visit by midnight, on rides or by sending cars.</p>");
     return h + "<p class='ad-hint'>Visit five places with your fleet before midnight for ◎400 and a firmware chip.</p><div class='ad-acts'>" + btn("rally", "Start today's rally", { cls: "tiny primary", off: S.clock.night }) + "</div>";
   };
   H.rally = () => U.act(Sim.rallyStart(S), { icon: "🏁" });
@@ -1136,7 +1136,7 @@
   function seasonHtml(se) {
     const s = Sim.story(S, se.id);
     let h = '<div class="ad-event"><h3>' + se.icon + " " + esc(se.name) + " <small>until " + se.to.replace("-", "/") + "</small></h3>";
-    h += "<p class='ad-hint'>Limited items: they're retired when the event ends.</p><ul class='ad-shop'>";
+    h += "<p class='ad-hint'>Items available until the event ends.</p><ul class='ad-shop'>";
     for (const id of se.shop) {
       const it = item(id);
       const fx = it.effect ? Object.entries(it.effect).map(([k, v]) => (v > 0 ? "+" : "") + v + " " + (D.NEEDS[k] ? D.NEEDS[k].name : k)).join(", ") : "";
@@ -1163,7 +1163,7 @@
     const cats = {};
     for (const id of ids) (cats[item(id).cat] = cats[item(id).cat] || []).push(id);
     let h = "<p class='ad-hint'>Snack fridge: " + Sim.invCount(S) + " / " + Sim.invCap(S) + " items." + (car ? " Using items on <b>" + nm(car) + "</b>." : "") + " Selling goes to the Pawn Shop at half price.</p>";
-    if (!ids.length) h += "<p class='lead'>Your fridge is empty. The shops in each land restock every in-game hour.</p>";
+    if (!ids.length) h += "<p class='lead'>No items. Neighbourhood shops restock hourly in-game.</p>";
     const order = o.look ? ["wrap", "gear", "dashpet", "song"] : Object.keys(D.CAT_NAMES);
     for (const cat of order) {
       if (!cats[cat]) continue;
@@ -1219,7 +1219,7 @@
     let h = "<div class='ad-tabs' role='tablist'>" + tabs.map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (k === tab) + '" data-a="tab" data-t="' + k + '">' + l + "</button>").join("") + "</div>";
     if (tab === "stamps") {
       const got = Object.keys(S.album.stamps).length;
-      h += "<p class='ad-hint'>" + got + " of " + D.STAMPS.length + " stamps. The first time any of your cars visits a landmark in the right conditions, you might get its stamp and a postcard.</p><div class='ad-stamps'>";
+      h += "<p class='ad-hint'>" + got + " of " + D.STAMPS.length + " stamps. First visits to landmarks in the right conditions may earn a stamp and postcard.</p><div class='ad-stamps'>";
       for (const s of D.STAMPS) {
         const g = S.album.stamps[s.name];
         h += g
@@ -1269,7 +1269,7 @@
       return { title: "Album", sub: "Dashpets", html: h + "</div>" };
     }
     if (tab === "songs") {
-      h += "<p class='ad-hint'>The Playlist Club: which songs each car has heard on its radio. Buy songs in the shops; play them from the inventory.</p><ul class='ad-list'>";
+      h += "<p class='ad-hint'>Songs each car has heard. Buy in shops; play from Items.</p><ul class='ad-list'>";
       for (const id of Object.keys(D.ITEMS).filter((i) => item(i).cat === "song")) {
         const who = (S.album.playlist[id] || []).map((cid) => Sim.find(S, cid)).filter(Boolean);
         h += "<li>🎵 <b>" + esc(item(id).name) + "</b>: " + (who.length ? who.map((c) => nm(c)).join(", ") : "nobody yet") + "</li>";
@@ -1316,7 +1316,7 @@
   U.arcadeResult = function (k, r) {
     U.modal(
       "🕹️ " + esc(WG.jobs.TITLE[k]),
-      "<div class='big-num'><small>Score</small><b>" + fmt(r.score) + "</b></div><p class='lead'>" + (r.newBest ? "New best! " : "") + (r.tier ? ["", "Bronze", "Silver", "Gold"][r.tier] + " trophy score. " : "") + (r.paid ? "+◎" + r.paid + " (" + r.left + " paid play" + (r.left === 1 ? "" : "s") + " left today)" : "Just for fun: today's pay for this game is used up.") + "</p>",
+      "<div class='big-num'><small>Score</small><b>" + fmt(r.score) + "</b></div><p class='lead'>" + (r.newBest ? "New best! " : "") + (r.tier ? ["", "Bronze", "Silver", "Gold"][r.tier] + " trophy score. " : "") + (r.paid ? "+◎" + r.paid + " (" + r.left + " paid play" + (r.left === 1 ? "" : "s") + " left today)" : "No paid plays left today.") + "</p>",
       {
         buttons: [
           ["close", "Back to the map"],
@@ -1370,8 +1370,8 @@
     const lot = Sim.lot(S),
       fee = Sim.adoptFee(S),
       full = S.cars.length >= S.unlocked.carSlots;
-    let h = "<p class='lead'>Three cars are looking for a home today. New faces every morning. " + (fee ? "Adopting costs ◎" + fmt(fee) + "." : "<b>Your first adoption is free!</b>") + "</p>";
-    if (full) h += "<p class='ad-hint'>Your car slots are full: a car you adopt now waits in the lot until you swap it in from the Garage.</p>";
+    let h = "<p class='lead'>Three cars available; new arrivals each morning. " + (fee ? "Adopting costs ◎" + fmt(fee) + "." : "<b>Your first adoption is free!</b>") + "</p>";
+    if (full) h += "<p class='ad-hint'>Fleet full. New adoptions wait in the lot; swap them in from the Garage.</p>";
     if (!lot.cars.length) h += "<p class='ad-hint'>Everybody found a home today! Come back tomorrow.</p>";
     lot.cars.forEach((c, i) => {
       const w = D.WRAPS[c.wrap];
@@ -1406,7 +1406,7 @@
     return { title: "Diary", sub: "As told by Dispatch", html: h };
   };
   RENDER.inbox = function () {
-    let h = S.inbox.length ? "" : "<p class='lead'>No news. Enjoy the quiet.</p>";
+    let h = S.inbox.length ? "" : "<p class='lead'>No news.</p>";
     // the open rider requests first
     const asks = D.RIDER_KEYS.filter((r) => S.riders[r] && S.riders[r].request);
     if (asks.length) {
@@ -1428,12 +1428,12 @@
   /* ---------- how to play ---------- */
   RENDER.help = function () {
     const h = `
-      <p class="lead">Adopt robotaxis as pets. They drive themselves round San Francisco, give rides, earn Fares (◎) and come home to the garage at night. Nothing ever breaks for good: a neglected car just sulks until you make it up to it.</p>
+      <p class="lead">Adopt robotaxis, care for them and earn Fares (◎) from rides. They drive themselves and return to the garage at night.</p>
       <ul class="ad-list">
         <li>🗺️ <b>The map</b>: drag to pan, wheel or pinch to zoom, <kbd>Q</kbd>/<kbd>E</kbd> to turn. <kbd>WASD</kbd> or the arrows pan too.</li>
         <li>🚗 <b>Cars</b>: tap a car's name tag (or its card at the bottom) to follow it; tap again for its profile. Drag a name tag onto a neighbourhood to send it there.</li>
         <li>🔋 <b>Needs</b>: Charge, Cleanliness and Code drop as a car drives. A bubble shows the most urgent. Use items anywhere, or call the car to a Care Spot 🔧 and do the job by hand (more bond).</li>
-        <li>★ <b>Lands</b>: each neighbourhood with a label is a land, with a shop, a daily freebie (★ when it's waiting) and things to do. More open as your Crew Rank rises.</li>
+        <li>★ <b>Lands</b>: labelled neighbourhoods have shops, daily freebies (★) and activities. Unlock more with Crew Rank.</li>
         <li>❤️ <b>Bond</b>: pats, items and hands-on care earn hearts. Hearts unlock a nickname, a horn, the lidar dance, Ride Along and a trait upgrade.</li>
         <li>🌙 <b>Days</b>: an in-game day is about 13 minutes. At midnight the cars drive home and Dispatch writes the diary. The lands' dailies come back every in-game morning.</li>
         <li>⏸ <b>Speed</b>: 1×, 2×, 4× or paused at the top. <kbd>Space</kbd> pauses. <kbd>Esc</kbd> closes a panel or opens the menu.</li>
@@ -1465,10 +1465,10 @@
     U.modal(
       "Paused",
       '<div class="pz-set" role="group" aria-label="Settings">' +
-        '<button type="button" class="tgl" data-a="setOff" role="switch" aria-checked="' + (off === "gentle") + '"><span>Fleet keeps going while I\'m away (gently)</span><i aria-hidden="true"></i></button>' +
+        '<button type="button" class="tgl" data-a="setOff" role="switch" aria-checked="' + (off === "gentle") + '"><span>Run fleet while away</span><i aria-hidden="true"></i></button>' +
         '<button type="button" class="tgl" data-a="setMusic" role="switch" aria-checked="' + A().musicOn + '"><span>Music</span><i aria-hidden="true"></i></button>' +
         '<button type="button" class="tgl" data-a="setVoice" role="switch" aria-checked="' + WG.game.VOX.on + '"><span>Voices &amp; captions</span><i aria-hidden="true"></i></button>' +
-        "</div><p class='ad-hint'>Away, the fleet runs at a sixth of the speed for up to a day, and needs never drop below 25. Turn it off to stop the clock while you're gone.</p>",
+        "</div><p class='ad-hint'>While away: ⅙ speed for up to one in-game day; needs stay at 25 or above. Turn off to pause while away.</p>",
       {
         buttons: [
           ["quit", "Save & quit to title"],
@@ -1503,10 +1503,10 @@
 
   /* ---------- the tutorial: a few coach cards after the first adoption ---------- */
   const COACH = [
-    "This is {car} on the map! Tap its name tag (or its card down below) to follow it. Tap again to open its profile.",
+    "Tap {car}’s name tag or bottom card to follow. Tap again for its profile.",
     "Cars drive themselves between neighbourhoods and give rides for Fares (◎). The bubble over a car shows its most urgent need.",
-    "When a need gets low, use an item from your inventory, or call the car to a Care Spot 🔧 and do the job by hand: the best care there is.",
-    "Labelled neighbourhoods are lands, each with a shop and a free daily (★). Start with the Lombard Zigzag Spin at Russian Hill, right by your garage!",
+    "Restore needs with items, or visit a Care Spot 🔧 for hands-on care and extra bond.",
+    "Neighbourhood labels open shops and daily freebies (★). Try the Lombard Zigzag Spin in Russian Hill.",
   ];
   U.coach = function () {
     const box = $("#ad-coach");

@@ -644,7 +644,7 @@
         (i.reachable
           ? "<p class='sd-cost'>Needs <b>" + d.cost + " ✦ Map Seals</b>. You have <b>" + S.mapSeals + "</b>.</p>" +
             (i.can ? "" : "<p class='sub small'>Seals come from caring for cars by hand (1 per " + D.SEALS.perCares + "), new landmark postcards (1 each) and fares (1 per " + D.SEALS.perFares + ").</p>")
-          : "<p class='sd-cost'>Open a neighbouring district first: its roads don't reach the open city yet.</p>");
+          : "<p class='sd-cost'>Open a neighbouring district to connect its roads first.</p>");
     modal(d.name, d.sub, body, [
       ["Not yet", "", () => closeModal()],
       [i.can ? "Part the clouds ✦" + d.cost : "Part the clouds", "primary", i.can ? () => unlock(id) : null],
@@ -909,11 +909,11 @@
     if (!SD.active) return;
     modal(
       "Sunday Drive",
-      "A chill San Francisco sandbox",
-      "<p class='lead'>No clock, no ratings, nothing to lose. Watch the robotaxis pick up riders and cruise across town.</p>" +
+      "San Francisco sandbox",
+      "<p class='lead'>Watch robotaxis pick up riders and drive across town.</p>" +
         "<ul class='sd-unlock'>" +
-        "<li>🫧 A car with a bubble could use a hand. Tap it and choose <b>Take Care</b> to swoop down and help (take as long as you like), or leave it: it'll sort itself out at a depot.</li>" +
-        "<li>✦ Caring for cars, delivering fares and photographing landmarks earn <b>Map Seals</b>. Spend them to part the clouds over a new district.</li>" +
+        "<li>🫧 Tap a car with a bubble and choose <b>Take Care</b> to help. Unattended cars visit a depot automatically.</li>" +
+        "<li>✦ Earn <b>Map Seals</b> from care, fares and landmark photos. Spend them to unlock districts.</li>" +
         "<li>🎵 Every district you open adds an instrument to the bossa nova.</li>" +
         "<li>📷 Press <kbd>P</kbd> for Photo Mode, <kbd>B</kbd> for your scrapbook.</li>" +
         "</ul><p class='sub small'>Drag to pan · wheel or pinch to zoom · <kbd>Q</kbd>/<kbd>E</kbd> or right-drag to turn · double-click to frame</p>",
@@ -943,7 +943,7 @@
         sw("sd-s-free", "Free Drive: every neighbourhood open", S.freeDrive) +
         sw("sd-s-music", "Music", A.musicOn) +
         sw("sd-s-tilt", "Tilt-shift blur", S.settings.tilt) +
-        "</div><p class='sub small'>Free Drive opens the whole city straight away, for pure exploring. Switch it off to go back to growing the map; your unlocked districts and seals are kept.</p>" +
+        "</div><p class='sub small'>Free Drive opens the whole city. Turn off to resume unlocking districts; progress and seals are saved.</p>" +
         "<dl class='stats sd-stats'><div><dt>Cars cared for</dt><dd>" + S.totalCared + "</dd></div><div><dt>Fares</dt><dd>" + S.faresDelivered +
         "</dd></div><div><dt>Postcards</dt><dd>" + Object.keys(S.postcards).length + "/" + I.MARKS.length + "</dd></div><div><dt>Notes</dt><dd>" +
         S.thankYouNotes.length + "</dd></div></dl>",
