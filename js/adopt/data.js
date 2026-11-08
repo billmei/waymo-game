@@ -184,7 +184,7 @@
   };
   // the island's districts that aren't San Francisco proper (and so aren't on the map)
   D.EXCLUDE = ["Daly City", "Colma", "Brisbane", "South San Francisco", "Pacifica", "San Bruno Mountain", "Westlake", "Bayshore Heights", "Sunnydale", "Serramonte", "Crocker Heights"];
-  // the roads between neighbourhoods (undirected). Length is the straight line × 1.25 (sim.js)
+  // the roads between neighbourhoods (undirected). Geometry and measured lengths come from js/road-data.js
   D.EDGES = `
 Fisherman's Wharf: North Beach, Russian Hill, Telegraph Hill, Marina
 North Beach: Telegraph Hill, Russian Hill, Nob Hill, Financial District

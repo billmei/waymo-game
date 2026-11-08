@@ -19,8 +19,8 @@
   const rr = (a, b) => a + Math.random() * (b - a);
   const pick = (a) => a[(Math.random() * a.length) | 0];
   const $ = (s) => document.querySelector(s);
-  const MS = 9, // toy scale: a robotaxi nine times life size reads as a toy from up here
-    ROAD_W = 9;
+  const MS = AM.MS,
+    ROAD_W = AM.ROAD_W;
 
   const City = {
     cars: [],
@@ -142,41 +142,10 @@
   City.route = route;
 
   /* ---------- the roads: a ribbon per road, lit where both ends are open ---------- */
-  const roads = []; // { e, mesh, lit, k (0 dim → 1 lit), delay }
+  const roads = (City.roads = []); // { e, mesh, lit, k (0 dim → 1 lit), delay }
   function buildRoads() {
-    const c = new T.Color(),
-      pt = {};
     for (const e of Sim.G.edges) {
-      const pos = [],
-        col = [],
-        idx = [];
-      const n = Math.max(6, Math.ceil(e.len / 14)),
-        pts = [];
-      for (let i = 0; i <= n; i++) {
-        const t = i / n;
-        Sim.edgePoint(e, e.a, t, pt);
-        pts.push({ x: pt.x, z: pt.z, nx: pt.dx, nz: pt.dz, y: AM.edgeY(e, t) / K });
-      }
-      const strip = (half, lift, hex, dash) => {
-        c.set(hex);
-        for (let i = 0; i < pts.length - 1; i++) {
-          if (dash && i % 2) continue;
-          const base = pos.length / 3;
-          for (const p of [pts[i], pts[i + 1]]) {
-            pos.push((p.x - p.nz * half) * K, p.y * K + lift, (p.z + p.nx * half) * K);
-            pos.push((p.x + p.nz * half) * K, p.y * K + lift, (p.z - p.nx * half) * K);
-            col.push(c.r, c.g, c.b, c.r, c.g, c.b);
-          }
-          idx.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
-        }
-      };
-      strip(ROAD_W * 0.62, 0.7, "#f6f1e4");
-      strip(ROAD_W * 0.5, 1.1, "#5f6878");
-      strip(ROAD_W * 0.07, 1.5, "#ffd23a", true);
-      const g = new T.BufferGeometry();
-      g.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
-      g.setAttribute("color", new T.Float32BufferAttribute(col, 3));
-      g.setIndex(idx);
+      const g = AM.roadGeometry(e, ["#f6f1e4", "#5f6878", "#ffd23a"]);
       const mat = new T.MeshBasicMaterial({
         vertexColors: true,
         side: T.DoubleSide,
@@ -197,6 +166,7 @@
   // a road's light: k from 0 (dim, under the clouds) to 1 (lit)
   function paint(r, k) {
     r.k = k;
+    r.mesh.renderOrder = k > 0.99 ? 3 : 2;
     r.mesh.material.opacity = 0.35 + k * 0.65;
     r.mesh.material.color.setRGB(0.6 + k * 0.4, 0.64 + k * 0.36, 0.68 + k * 0.32);
     r.mesh.material.depthWrite = k > 0.99;
@@ -204,7 +174,7 @@
   /* ---------- a plaza at each neighbourhood centre, a depot (a little garage) at each district's hub ---------- */
   const plazas = {};
   function buildPlazas() {
-    const disc = new T.CircleGeometry(ROAD_W * 1.5 * K, 28);
+    const disc = new T.CircleGeometry(ROAD_W * 0.6 * K, 28);
     for (const name of Sim.G.names) {
       const h = Sim.G.hoods[name],
         p = new T.Mesh(
@@ -623,15 +593,12 @@
       y = AM.edgeY(e, car.from === e.a ? car.t : 1 - car.t);
       yaw = Math.atan2(-_p.dx, -_p.dz);
     } else {
-      // waiting at a plaza, nose out, spread round it
-      const h = Sim.G.hoods[car.at],
-        here = City.cars.filter((c) => !c.from && c.at === car.at),
-        i = here.indexOf(car),
-        a = (i / Math.max(1, here.length)) * Math.PI * 2 + 0.6 + car.id;
-      x = (h.x + Math.cos(a) * ROAD_W * 1.1) * K;
-      z = (h.z + Math.sin(a) * ROAD_W * 1.1) * K;
-      y = h.y;
-      yaw = Math.atan2(-Math.cos(a), -Math.sin(a));
+      const here = City.cars.filter((c) => !c.from && c.at === car.at);
+      AM.parkPoint(car.at, here.indexOf(car), _p);
+      x = _p.x * K;
+      z = _p.z * K;
+      y = _p.y;
+      yaw = Math.atan2(-_p.dx, -_p.dz);
       if (car.mode === "servicing") {
         // tucked under the depot's awning
         const d = D.BY_ID[car.depot];
@@ -649,10 +616,10 @@
       car.z = z;
       car.yaw = yaw;
     }
-    const f = Math.min(1, dt * 8);
-    car.x += (x - car.x) * f;
-    car.y += (y - car.y) * f;
-    car.z += (z - car.z) * f;
+    // Keep the wheels on the route through turns; only ease the heading.
+    car.x = x;
+    car.y = y;
+    car.z = z;
     let dy = yaw - car.yaw;
     dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     car.yaw += dy * Math.min(1, dt * 6);

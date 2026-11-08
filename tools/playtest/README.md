@@ -18,6 +18,8 @@ To run them, serve the repository on port 8123 (`python3 -m http.server 8123` fr
 | `doors.js` | Starts shift 1, forces a door job on the nearest car and steers into the doors. |
 | `router.js` | Page-side road routers: `__route` (grade-limited A*) and `__walk` (a walker that hugs the hill). |
 | `roads.js '<json job>'` + `ann_rd.py <zone>` | Routes trial roads with `router.js` over a zone and renders them from above. |
+| `build-road-map.js` | Builds the shared Adopt/Sunday routes from existing street centerlines, exact intersections and short district seams. Checks four island units of building clearance and terrain grade, then finds street routes for all neighborhood connections. Stages `work/road-data.js`; copy it to `js/road-data.js` and run `shared-roads.js` after changing city geometry. |
+| `shared-roads.js` | Checks all routes for building/water overlaps, endpoint continuity, reverse travel, ground height and reachability. Adopts a car, drives turns in both directions, switches to Sunday Drive, and verifies both modes use identical geometry. Screenshots go to `work/`. Uses `CHROMIUM_PATH`, system Chromium when installed, or Playwright's default browser. |
 | `td2.js <zone> <cx> <cz> <halfWidth>` + `ann2.py <zone>` | Renders a zone as `world.js` builds it, including one-way roads and generated houses. This needs the experimental road and house code, which is not in `main`. |
 
 Zone, landmark and route coordinates are island units. The game's metres are island units × `world.js` `SCALE` (1.6).
