@@ -132,7 +132,7 @@
   function postcards(body) {
     const S = ctx.S;
     body.innerHTML =
-      '<p class="sd-book-lead">Frame a landmark nicely in Photo Mode (<kbd>P</kbd>) to add its postcard. Each new one earns a Map Seal; catch a Waymo in the shot for the golden <b>Waymo Spotted!</b> stamp.</p><div class="sd-cards"></div>';
+      '<p class="sd-book-lead">Photograph landmarks in Photo Mode (<kbd>P</kbd>) for postcards and Map Seals. Include a Waymo for the gold <b>Waymo Spotted!</b> stamp.</p><div class="sd-cards"></div>';
     const grid = body.querySelector(".sd-cards");
     for (const m of I.MARKS) {
       const key = Album.markKey(m),
@@ -190,7 +190,7 @@
     const S = ctx.S;
     if (!S.thankYouNotes.length) {
       body.innerHTML =
-        '<p class="sd-empty">No notes yet. Take care of a car by hand (tap one with a bubble, then <b>Take Care</b>) and its rider will write you one.</p>';
+        '<p class="sd-empty">No notes yet. Tap a car with a bubble, then <b>Take Care</b> to earn a rider note.</p>';
       return;
     }
     body.innerHTML =

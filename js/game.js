@@ -22,7 +22,7 @@
       name: "Crooked Street",
       look: "morning",
       blurb:
-        "Morning on Russian Hill, between the top of Lombard Street's crooked bricks and Coit Tower. The early riders left crumbs, flat batteries and open doors behind them. Mind the hills!",
+        "Morning on Russian Hill, from Lombard Street to Coit Tower. Clear crumbs, recharge batteries and close doors. Mind the hills!",
       dur: 100,
       every: [5.5, 7.5],
       max: 3,
@@ -35,7 +35,7 @@
       name: "Main Post",
       look: "day",
       blurb:
-        "Sunshine on the Presidio's old Army post, the Golden Gate Bridge over the trees: red-brick barracks and Mission Revival offices round the Parade Ground. Watch out for birds on the warm sensors.",
+        "The Presidio, beneath the Golden Gate Bridge. Watch for birds on the sensors.",
       dur: 100,
       every: [5, 7],
       max: 3,
@@ -48,7 +48,7 @@
       name: "Lunch Rush",
       look: "day",
       blurb:
-        "Noon between the Financial District's towers, from the Transamerica Pyramid down to Salesforce Tower on Market Street. The towers empty out, and the gulls have been at the paintwork.",
+        "Lunch rush from the Transamerica Pyramid to Salesforce Tower. Wash off the mess left by gulls.",
       dur: 100,
       every: [4.6, 6.4],
       max: 4,
@@ -61,7 +61,7 @@
       name: "Golden Hour",
       look: "dusk",
       blurb:
-        "Golden hour on Alamo Square: the Painted Ladies glow and Sutro Tower stands on the ridge. Somebody's been boxing the cars in with traffic cones.",
+        "Golden hour by the Painted Ladies and Sutro Tower. Clear the cones boxing cars in.",
       dur: 100,
       every: [4.2, 6],
       max: 4,
@@ -74,7 +74,7 @@
       name: "Karl the Fog",
       look: "fog",
       blurb:
-        "Karl the Fog rolls in off the Pacific over the west end of Golden Gate Park, between the Dutch and Murphy windmills. Everything goes wrong at once, and the seagulls are out!",
+        "Fog rolls between the Dutch and Murphy windmills by Ocean Beach. All seven jobs are in play!",
       dur: 100,
       every: [3.8, 5.4],
       max: 5,

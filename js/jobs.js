@@ -393,11 +393,11 @@
     hint() {
       if (this.nudge())
         return TOUCH
-          ? "Can't see the rest? Hold the turn arrows to look round the other side of the car!"
-          : "Can't see the rest? Press Q or E to turn the camera round the car!";
+          ? "Hold the turn arrows to find remaining dirt."
+          : "Press Q / E to find remaining dirt.";
       return TOUCH
-        ? "Rub your finger over the dirty spots to scrub them off!"
-        : "Hold the mouse button and scrub the dirty spots off!";
+        ? "Drag over dirty spots to scrub."
+        : "Click and drag over dirty spots to scrub.";
     },
     // nothing scrubbed for five seconds: the rest of the dirt is probably round the other side
     nudge() {
@@ -570,8 +570,8 @@
     hint() {
       return this.phase === "plug"
         ? TOUCH
-          ? "Drag the charging plug to the glowing port on the car."
-          : "Drag the charging plug to the glowing port on the car (or press Space)."
+          ? "Drag the plug to the glowing port."
+          : "Drag the plug to the glowing port (or press Space)."
         : TOUCH
           ? "Tap when the needle is in the green!"
           : "Click (or press Space) when the needle is in the green!";
@@ -829,8 +829,8 @@
     },
     hint() {
       return TOUCH
-        ? "Someone boxed the car in! Grab each cone and flick it off the road."
-        : "Someone boxed the car in! Grab each cone and fling it off the road. (Space flicks one)";
+        ? "Grab cones and flick them off the road."
+        : "Fling cones off the road. Space flicks one.";
     },
     progress() {
       return (
@@ -997,8 +997,8 @@
     },
     hint() {
       return TOUCH
-        ? "Tap the pigeons to shoo them off the sensors!"
-        : "Click the pigeons to shoo them off the sensors! (Space shoos one)";
+        ? "Tap birds to shoo them."
+        : "Click birds to shoo them. Space shoos one.";
     },
     progress() {
       return this.gone / this.total;
@@ -1144,8 +1144,8 @@
     },
     hint() {
       return TOUCH
-        ? "Tap the arrows to enter the recalibration code."
-        : "Enter the recalibration code with the arrow keys / WASD (or click the arrows).";
+        ? "Tap the arrows to enter the code."
+        : "Enter the code: arrow keys / WASD, or click the arrows.";
     },
     progress() {
       return this.i / this.code.length;
@@ -1405,8 +1405,8 @@
     },
     hint() {
       return TOUCH
-        ? "Hold your finger down and sweep the vacuum over the mess!"
-        : "Hold the mouse button and sweep the vacuum over the mess!";
+        ? "Hold and sweep the vacuum over the mess."
+        : "Click and drag the vacuum over the mess.";
     },
     progress() {
       return this.gone / this.items.length;
@@ -1578,8 +1578,8 @@
     },
     hint() {
       return TOUCH
-        ? "Run into the open doors to bump them shut! Hold to steer."
-        : "Run into the open doors to bump them shut! WASD / arrows (or hold the mouse) to steer.";
+        ? "Bump doors shut. Hold to steer."
+        : "Bump doors shut. Steer with WASD / arrows or hold the mouse.";
     },
     progress() {
       return this.open.filter((d) => d.shut).length / this.open.length;
