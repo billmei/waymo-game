@@ -416,7 +416,7 @@
       P.dirt.visible = false;
       // the dirt sits where it landed this time (actors.js lays it out afresh for every wash)
       const pr = this.car.problem,
-        spots = (pr.spots || (pr.spots = WG.dirtSpots(12))).map((d) => [
+        spots = (pr.spots || (pr.spots = WG.dirtSpots(12, P.model))).map((d) => [
           d.p.x,
           d.p.y,
           d.p.z,
@@ -1008,17 +1008,11 @@
     },
     init() {
       this.car.parts.birds.visible = false;
+      const model = this.car.parts.model, shape = WG.vehicleShape(model);
       const spots = [
-        [0.3, 1.895, 1.0],
-        [-0.35, 1.895, 0.2],
-        [0.25, 1.895, -0.6],
-        [-0.4, 1.232, -1.7],
-        [0.35, 1.232, -1.35],
-        [0, 2.37, 0.1],
-        [-0.35, 1.895, 1.25],
-        [0.4, 1.232, -2.0],
-        [-0.25, 1.232, 1.95],
-      ].sort(() => Math.random() - 0.5);
+        [0.3, 1.0], [-0.35, 0.2], [0.45, -0.6], [-0.4, -1.7],
+        [0.35, -1.35], [0, shape.lidarZ], [-0.35, 1.25], [0.4, -2.0], [-0.25, 1.95],
+      ].map(([x, z]) => [x, WG.vehicleTop(model, x, z), z]).sort(() => Math.random() - 0.5);
       const n = 4 + Math.min(3, this.round);
       this.free = spots.slice(n);
       this.birds = spots
