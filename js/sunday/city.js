@@ -324,8 +324,8 @@
 
   /* ---------- the fleet ---------- */
   let nextId = 1;
-  function makeToy(ring, model) {
-    const parts = WG.makeCar(model);
+  function makeToy(ring) {
+    const parts = WG.makeCar(WG.randomVehicleModel());
     parts.root.scale.setScalar(MS);
     parts.sprite.renderOrder = 12;
     // its own ring colour (the lidar's glow), so you can tell the cars apart from up here
@@ -344,7 +344,7 @@
       name: "Waymo #" + id,
       plate: "7" + String.fromCharCode(65 + ((id * 7) % 26)) + String.fromCharCode(65 + ((id * 11) % 26)) + String.fromCharCode(65 + ((id * 5) % 26)) + (100 + ((id * 37) % 900)),
       ring,
-      parts: makeToy(ring, id % 2 ? "ipace" : "ojai"),
+      parts: makeToy(ring),
       at,
       from: null,
       to: null,

@@ -885,7 +885,7 @@
             a,
             b,
             END + 2 + Math.random() * Math.max(1, len - 2 * END - 10),
-            model || (k % 2 ? "ojai" : "ipace"),
+            model || WG.randomVehicleModel(),
           ),
         );
       }

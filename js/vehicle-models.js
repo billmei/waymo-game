@@ -3,6 +3,7 @@
   "use strict";
   const WG = window.WG;
   WG.modelName = (model) => (model === "ojai" ? "Waymo Ojai" : "Jaguar I-PACE");
+  WG.randomVehicleModel = () => (Math.random() < 0.5 ? "ipace" : "ojai");
 
   // Each station gives longitudinal position, half width, shoulder and crown height.
   const shapes = {
