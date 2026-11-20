@@ -91,11 +91,6 @@
     beak: new T.MeshLambertMaterial({ color: 0xe9a23b }),
   };
   const GEO = {
-    body: roundBox(1.9, 0.8, 4.6, 0.34, 4),
-    skirt: roundBox(1.94, 0.3, 4.5, 0.12, 2),
-    cabin: roundBox(1.72, 0.74, 2.7, 0.3, 4),
-    roof: roundBox(1.56, 0.12, 2.2, 0.06, 2),
-    hood: roundBox(1.7, 0.2, 1.5, 0.1, 2),
     wheel: new T.CylinderGeometry(0.4, 0.4, 0.32, 16),
     hubG: new T.CylinderGeometry(0.22, 0.22, 0.34, 12),
     domeB: new T.CylinderGeometry(0.42, 0.46, 0.28, 20),
@@ -135,13 +130,13 @@
   WG.CAR_MAT = MAT;
 
   // every robotaxi shares three merged, vertex-coloured meshes: the car, the spinning lidar head and the headlights
-  let CAR = null;
+  const carMeshes = new Map();
   const HEAD_MAT = new T.MeshLambertMaterial({
     color: 0xfffbe8,
     emissive: 0x333322,
   });
-  function carGeo() {
-    if (CAR) return CAR;
+  function carGeo(model) {
+    if (carMeshes.has(model)) return carMeshes.get(model);
     const M = new W.Merge(),
       S = new W.Merge(),
       Hd = new W.Merge(),
@@ -151,31 +146,8 @@
           col,
           W.mat(x, y, z, sx || 1, sy || 1, sz || 1, 0, 0, rz || 0),
         );
-    const WHITE = "#f8f9fb",
-      TRIM = "#2b3038";
-    put(M, GEO.skirt, TRIM, 0, 0.5, 0);
-    put(M, GEO.body, WHITE, 0, 0.82, 0);
-    put(M, GEO.cabin, "#1c2734", 0, 1.45, 0.25);
-    put(M, GEO.roof, WHITE, 0, 1.83, 0.25);
-    put(M, GEO.domeB, WHITE, 0, 2.0, 0.1);
-    // perimeter sensors and mirror pods
-    put(M, GEO.box, TRIM, 0, 0.72, -2.3, 0.7, 0.16, 0.08);
-    for (const s of [-1, 1]) {
-      put(M, GEO.box, WHITE, s * 1.04, 1.28, -0.75, 0.22, 0.22, 0.36);
-      put(M, GEO.box, TRIM, s * 1.1, 1.28, -0.84, 0.08, 0.16, 0.2);
-      put(M, GEO.cyl, TRIM, s * 0.82, 1.17, -1.95, 0.09, 0.2, 0.09);
-      put(M, GEO.box, "#e8433f", s * 0.64, 0.98, 2.3, 0.4, 0.12, 0.06);
-      put(Hd, GEO.box, "#fffbe8", s * 0.62, 0.92, -2.3, 0.44, 0.13, 0.06);
-    }
-    for (const [x, z] of [
-      [-0.9, -1.45],
-      [0.9, -1.45],
-      [-0.9, 1.45],
-      [0.9, 1.45],
-    ]) {
-      put(M, GEO.wheel, "#23262b", x, 0.4, z, 1, 1, 1, Math.PI / 2);
-      put(M, GEO.hubG, "#c7ccd3", x, 0.4, z, 1, 1, 1, Math.PI / 2);
-    }
+    WG.buildVehicleBody(model, M, Hd, GEO);
+    const TRIM = "#2b3038";
     put(S, GEO.domeT, TRIM, 0, 0, 0);
     put(S, GEO.box, "#36d3c4", 0.3, 0.02, 0, 0.12, 0.1, 0.06);
     const bm = M.mesh(
@@ -187,17 +159,20 @@
       ),
       sm = S.mesh(new T.MeshLambertMaterial({ vertexColors: true })),
       hm = Hd.mesh(HEAD_MAT);
-    CAR = {
+    const meshes = {
       body: [bm.geometry, bm.material],
       spin: [sm.geometry, sm.material],
       head: [hm.geometry, hm.material],
     };
-    return CAR;
+    carMeshes.set(model, meshes);
+    return meshes;
   }
   WG.CAR_HEAD = HEAD_MAT;
 
-  function makeCar() {
-    const C = carGeo(),
+  function makeCar(model = "ipace") {
+    model = model === "ojai" ? "ojai" : "ipace";
+    const shape = WG.vehicleShape(model),
+      C = carGeo(model),
       root = new T.Group(),
       g = new T.Group();
     root.add(g);
@@ -208,7 +183,7 @@
     g.add(new T.Mesh(C.head[0], C.head[1]));
     // the spinning lidar
     const spin = new T.Group();
-    spin.position.set(0, 2.24, 0.1);
+    spin.position.set(0, shape.lidarY, shape.lidarZ);
     g.add(spin);
     spin.add(new T.Mesh(C.spin[0], C.spin[1]));
     const ring = add(spin, GEO.ring, MAT.teal.clone(), 0, -0.06, 0);
@@ -223,13 +198,13 @@
     cone.visible = false;
     g.add(cone);
     const birds = new T.Group();
-    for (const [x, y, z, r] of [
-      [0.3, 1.9, 0.9, 0.4],
-      [-0.4, 1.9, 0.0, -0.6],
-      [0.1, 1.24, -1.4, 2.6],
+    for (const [x, z, r] of [
+      [0.3, 0.9, 0.4],
+      [-0.4, 0.0, -0.6],
+      [0.1, -1.4, 2.6],
     ]) {
       const b = makeBird();
-      b.position.set(x, y, z);
+      b.position.set(x, WG.vehicleTop(model, x, z), z);
       b.rotation.y = r;
       birds.add(b);
     }
@@ -258,6 +233,7 @@
       if (o.isMesh) o.receiveShadow = false;
     });
     return {
+      model,
       root,
       g,
       body,
@@ -277,17 +253,18 @@
 
   // dirt where it lands this time: rays from all round the car onto its body, spread out, clear of the wheels, the skirt
   // and the lidar
-  let _probe = null;
+  const probes = new Map();
   const _ray = new T.Raycaster(),
     UP = new T.Vector3(0, 1, 0);
-  function dirtSpots(n) {
-    if (!_probe) {
-      const C = carGeo();
-      _probe = new T.Mesh(
+  function dirtSpots(n, model = "ipace") {
+    if (!probes.has(model)) {
+      const C = carGeo(model);
+      const probe = new T.Mesh(
         C.body[0],
         new T.MeshBasicMaterial({ side: T.FrontSide }),
       );
-      _probe.updateMatrixWorld(true);
+      probe.updateMatrixWorld(true);
+      probes.set(model, probe);
     }
     const out = [],
       o = new T.Vector3(),
@@ -306,7 +283,7 @@
         (Math.random() - 0.5) * 4,
       );
       _ray.set(o, at.sub(o).normalize());
-      const h = _ray.intersectObject(_probe, false)[0];
+      const h = _ray.intersectObject(probes.get(model), false)[0];
       if (!h || !h.face) continue;
       const p = h.point,
         nr = h.face.normal.clone();
@@ -636,8 +613,8 @@
     return { A, B, dx: dx / len, dz: dz / len, len };
   }
 
-  function Car(scene, a, b, s) {
-    this.parts = makeCar();
+  function Car(scene, a, b, s, model) {
+    this.parts = makeCar(model);
     this.parts.root.scale.setScalar(CAR_SCALE);
     scene.add(this.parts.root);
     this.a = a;
@@ -764,7 +741,7 @@
     const P = this.parts;
     // fresh dirt (and cones) in fresh places every time
     if (p && p.type === "dirty") {
-      if (!p.spots) p.spots = dirtSpots(12);
+      if (!p.spots) p.spots = dirtSpots(12, this.parts.model);
       this.showDirt(p.spots);
     }
     if (p && p.type === "cone") {
@@ -880,13 +857,13 @@
   const Traffic = {
     cars: [],
     // a fresh fleet on the current street graph (the shifts work different districts)
-    reset() {
+    reset(model) {
       for (const c of this.cars) this.scene.remove(c.parts.root);
       this.cars = [];
       for (const k in locks) delete locks[k];
-      this.init(this.scene, this.n);
+      this.init(this.scene, this.n, model);
     },
-    init(scene, n) {
+    init(scene, n, model) {
       this.scene = scene;
       this.n = n;
       const used = new Set(),
@@ -908,6 +885,7 @@
             a,
             b,
             END + 2 + Math.random() * Math.max(1, len - 2 * END - 10),
+            model || (k % 2 ? "ojai" : "ipace"),
           ),
         );
       }

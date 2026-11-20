@@ -65,7 +65,7 @@
     const g = WG.game;
     g.moveDistrict(a.zone);
     Traffic.n = 3;
-    Traffic.reset();
+    Traffic.reset(a.carId && Sim.find(WG.adopt.S, a.carId)?.model);
     fleetVisible(true);
     WG.adoptMap.show(false);
     g.mii.root.visible = true;
@@ -149,7 +149,7 @@
       if (!a.street && a.t > 0.8) street(a);
       if (a.street && a.t > 1.6 && !pickCar(a) && a.t > 8) {
         // Cars can all be blocked or in turns. Try a fresh fleet instead of waiting indefinitely.
-        Traffic.reset();
+        Traffic.reset(a.carId && Sim.find(WG.adopt.S, a.carId)?.model);
         a.t = 0.8;
       }
     } else if (a.phase === "pull") {

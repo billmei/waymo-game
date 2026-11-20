@@ -198,6 +198,7 @@
   };
   const fillCar = (c) => {
     fill(c, CAR_DEF);
+    c.model = c.model === "ojai" ? "ojai" : "ipace";
     if (c.needs) {
       if (c.needs.cleanliness === undefined) {
         c.needs.cleanliness =

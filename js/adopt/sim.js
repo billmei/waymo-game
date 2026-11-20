@@ -2595,7 +2595,7 @@
           .toString(16)
           .padStart(6, "0"),
       name,
-      model: "cruiser",
+      model: St.pick(S, ["ipace", "ojai"]),
       wrap,
       ring: St.pick(S, D.RINGS),
       plate: plate(S),
@@ -2640,7 +2640,7 @@
       return "You already have a car called " + name + ".";
     return null;
   };
-  Sim.adopt = function (S, idx, name) {
+  Sim.adopt = function (S, idx, name, model) {
     const lot = Sim.lot(S),
       car = lot.cars[idx];
     if (!car) return { ok: false, msg: "That car has already found a home." };
@@ -2652,6 +2652,7 @@
     fares(S, -fee);
     lot.cars.splice(idx, 1);
     car.name = String(name).trim();
+    car.model = (model || car.model) === "ojai" ? "ojai" : "ipace";
     car.born = Sim.today();
     car.needs.charge = Math.max(85, car.needs.charge);
     car.sim = {

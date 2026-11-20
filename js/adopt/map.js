@@ -579,12 +579,20 @@
     const look = (parts.look = new T.Group());
     parts.g.add(look);
     decals(look, w.decal);
-    for (const k in car.gear)
-      if (car.gear[k] && GEAR[car.gear[k]]) GEAR[car.gear[k]](look);
+    for (const k in car.gear) {
+      const build = GEAR[car.gear[k]];
+      if (!build) continue;
+      const gear = new T.Group();
+      if (k === "topper") gear.position.set(0, parts.spin.position.y - 2.24, parts.spin.position.z - 0.1);
+      if (k === "roof") gear.position.y = WG.vehicleTop(parts.model, 0, 0.95) - 1.89;
+      build(gear);
+      look.add(gear);
+    }
     parts.pet = null;
     if (car.dashpet && PETS[car.dashpet.id]) {
       const pg = new T.Group();
-      pg.position.set(0.42, 1.89, -0.45);
+      pg.userData.restY = WG.vehicleTop(parts.model, 0.42, -0.45);
+      pg.position.set(0.42, pg.userData.restY, -0.45);
       pg.scale.setScalar(1.5);
       PETS[car.dashpet.id](pg);
       if (car.dashpet.mite)
@@ -686,7 +694,7 @@
 
   /* ---------- the fleet's markers ---------- */
   function marker(car) {
-    const parts = WG.makeCar();
+    const parts = WG.makeCar(car.model);
     parts.root.scale.setScalar(MS);
     parts.sprite.renderOrder = 12;
     group.add(parts.root);
@@ -787,7 +795,7 @@
   /* ---------- the NPC toys: a few plain robotaxis wandering the roads ---------- */
   function npcs() {
     for (let k = 0; k < 5; k++) {
-      const parts = WG.makeCar();
+      const parts = WG.makeCar(k % 2 ? "ojai" : "ipace");
       parts.root.scale.setScalar(NPC_MS);
       group.add(parts.root);
       const a = Sim.G.names[(k * 7 + 3) % Sim.G.names.length],
@@ -1054,7 +1062,7 @@
             : 3 + mood / 14);
       if (P.pet)
         P.pet.position.y =
-          1.89 + Math.abs(Math.sin(t * 3 + car.id.length)) * 0.06;
+          P.pet.userData.restY + Math.abs(Math.sin(t * 3 + car.id.length)) * 0.06;
       bubble(m, S, car, now);
       P.sprite.position.y = 4.2 + Math.sin(t * 2.5 + m.x) * 0.15;
     }

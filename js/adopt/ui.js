@@ -64,6 +64,9 @@
   };
 
   /* ---------- the car's portrait: a little side view in its colours ---------- */
+  function paintName(car) {
+    return car.model === "ojai" && car.wrap === "default" ? "Light Blue" : D.WRAPS[car.wrap].name;
+  }
   U.portrait = function (cv, car, big) {
     const x = cv.getContext("2d"),
       w = cv.width,
@@ -76,13 +79,14 @@
     x.translate(0, (h / k - 80) / 2);
     x.lineJoin = x.lineCap = "round";
     // the body
-    x.fillStyle = wr.tint;
+    const van = car.model === "ojai";
+    x.fillStyle = van && car.wrap === "default" ? "#9cd7ed" : wr.tint;
     x.strokeStyle = "#2e3a4a";
     x.lineWidth = 2.5;
     x.beginPath();
     x.moveTo(14, 60);
     x.quadraticCurveTo(8, 58, 10, 46);
-    x.quadraticCurveTo(14, 30, 40, 26);
+    x.quadraticCurveTo(van ? 11 : 14, 30, van ? 23 : 40, 26);
     x.lineTo(84, 26);
     x.quadraticCurveTo(108, 30, 110, 46);
     x.quadraticCurveTo(111, 60, 104, 60);
@@ -109,8 +113,8 @@
     // the windows and the lidar
     x.fillStyle = "#1c2734";
     x.beginPath();
-    x.moveTo(34, 28);
-    x.quadraticCurveTo(44, 14, 62, 13);
+    x.moveTo(van ? 18 : 34, 28);
+    x.quadraticCurveTo(van ? 24 : 44, 14, van ? 30 : 62, 13);
     x.lineTo(80, 13);
     x.quadraticCurveTo(92, 16, 96, 28);
     x.closePath();
@@ -532,7 +536,7 @@
       lv = Sim.level(car);
     let h = '<div class="ad-prof"><canvas width="240" height="150" id="ad-big" aria-hidden="true"></canvas><div>';
     h += '<p class="ad-badges"><span class="ad-badge">' + st.badge + " " + st.name + "</span>" + (car.title ? '<span class="ad-badge gold">' + esc(car.title) + "</span>" : "") + "</p>";
-    h += "<p>" + esc(D.WRAPS[car.wrap].name) + " · " + esc(car.model === "cruiser" ? "Cruiser" : car.model) + ' · plate <span class="ad-plate">' + esc(car.plate) + "</span></p>";
+    h += "<p>" + esc(paintName(car)) + " · " + WG.modelName(car.model) + ' · plate <span class="ad-plate">' + esc(car.plate) + "</span></p>";
     h += "<p>Adopted " + esc(car.born || "—") + " · " + Sim.age(car) + " day" + (Sim.age(car) === 1 ? "" : "s") + " old</p>";
     h += "<p>" + hearts(car.bond) + "</p>";
     h += on ? '<p class="ad-doing" id="ad-doing" aria-live="polite">' + esc(Sim.doing(car)) + "</p>" : "<p class='ad-doing'>Resting in the Adoption Lot</p>";
@@ -715,7 +719,7 @@
     x.font = "800 16px 'M PLUS Rounded 1c', system-ui, sans-serif";
     const st = D.STAGES.find((s) => s.id === car.stage);
     x.fillText(st.badge + " " + st.name + (car.title ? " · " + car.title : ""), 290, 98);
-    x.fillText(D.WRAPS[car.wrap].name + " · " + car.plate, 290, 122);
+    x.fillText(paintName(car) + " · " + car.plate, 290, 122);
     x.fillStyle = "#ff5a8a";
     x.fillText("♥".repeat(Math.floor(car.bond)) || "♡", 290, 148);
     x.fillStyle = "#2e3a4a";
@@ -1374,14 +1378,13 @@
     if (full) h += "<p class='ad-hint'>Fleet full. New adoptions wait in the lot; swap them in from the Garage.</p>";
     if (!lot.cars.length) h += "<p class='ad-hint'>Everybody found a home today! Come back tomorrow.</p>";
     lot.cars.forEach((c, i) => {
-      const w = D.WRAPS[c.wrap];
-      h += "<div class='ad-lotcar'><canvas width='180' height='112' data-lot='" + i + "'></canvas><div><b>" + esc(w.name) + (c.wrap !== "default" && D.ITEMS["wrap_" + c.wrap] && D.ITEMS["wrap_" + c.wrap].rarity >= 55 ? " ✨ rare!" : "") + "</b><p>" + c.traits.map((t) => D.TRAITS[t].icon + " " + D.TRAITS[t].name).join(" · ") + "</p><p class='ad-hint'>" + esc(c.story) + "</p><p class='ad-hint'>Loves " + esc(c.likes.hood) + ".</p>" + btn("adopt", fee ? "Adopt · ◎" + fmt(fee) : "Adopt · free!", { cls: "tiny primary", data: { i }, off: S.player.fares < fee }) + "</div></div>";
+      h += "<div class='ad-lotcar'><canvas width='180' height='112' data-lot='" + i + "'></canvas><div><b>" + WG.modelName(c.model) + " · " + esc(paintName(c)) + (c.wrap !== "default" && D.ITEMS["wrap_" + c.wrap] && D.ITEMS["wrap_" + c.wrap].rarity >= 55 ? " ✨ rare!" : "") + "</b><p>" + c.traits.map((t) => D.TRAITS[t].icon + " " + D.TRAITS[t].name).join(" · ") + "</p><p class='ad-hint'>" + esc(c.story) + "</p><p class='ad-hint'>Loves " + esc(c.likes.hood) + ".</p>" + btn("adopt", fee ? "Adopt · ◎" + fmt(fee) : "Adopt · free!", { cls: "tiny primary", data: { i }, off: S.player.fares < fee }) + "</div></div>";
     });
     return { title: "Adoption Lot", sub: "Russian Hill", html: h, after: (b) => $$("canvas[data-lot]", b).forEach((cv) => U.portrait(cv, lot.cars[+cv.dataset.lot], true)) };
   };
   H.adopt = (ds) => {
     const c = Sim.lot(S).cars[+ds.i];
-    U.modal("Name your car", "<p class='lead'>What will you call this " + esc(D.WRAPS[c.wrap].name) + " robotaxi?</p><label class='ad-field'>Name <input id='ad-name' maxlength='14' value='" + esc(c.name) + "' autocomplete='off'></label><p class='ad-hint' id='ad-name-err'></p>", {
+    U.modal("Name your car", "<label class='ad-field'>Name <input id='ad-name' maxlength='14' value='" + esc(c.name) + "' autocomplete='off'></label><label class='ad-field'>Model <select id='ad-model'><option value='ipace'>Jaguar I-PACE</option><option value='ojai'" + (c.model === "ojai" ? " selected" : "") + ">Waymo Ojai</option></select></label><p class='ad-hint' id='ad-name-err'></p>", {
       buttons: [
         ["close", "Back"],
         ["adoptOk", "Adopt!", "primary", { i: ds.i }],
@@ -1393,7 +1396,7 @@
     const v = $("#ad-name").value,
       bad = Sim.validName(S, v);
     if (bad) return ($("#ad-name-err").textContent = bad);
-    const r = Sim.adopt(S, +ds.i, v);
+    const r = Sim.adopt(S, +ds.i, v, $("#ad-model").value);
     if (!r.ok) return ($("#ad-name-err").textContent = r.msg);
     U.closeModal();
     WG.adopt.adopted(r.car);

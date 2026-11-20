@@ -53,7 +53,7 @@
     g.moveDistrict(a.zone);
     if (a.look) W.setLook(a.look);
     Traffic.n = 3;
-    Traffic.reset();
+    Traffic.reset(a.mapCar.parts.model);
     fleetVisible(true);
     mapVisible(false);
     g.mii.root.visible = true;
